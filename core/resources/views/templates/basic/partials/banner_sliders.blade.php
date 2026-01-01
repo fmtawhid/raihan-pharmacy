@@ -7,7 +7,7 @@
 <div class="container">
     <div class="row gy-3">
         <!-- Slider Section -->
-        <div class="col-lg-8 col-md-12">
+        <div class="col-lg-12 col-md-12">
             @if ($sliders->isNotEmpty())
                 <div class="slider-wrapper overflow-hidden rounded--5 w-100 h-100">
                     <div class="banner-slider owl-theme owl-carousel">
@@ -24,7 +24,7 @@
         </div>
 
         <!-- Banner Section 1 & 2 stacked vertically on all screens -->
-        <div class="col-lg-4 col-md-12 d-flex flex-column gap-3">
+        <!-- <div class="col-lg-4 col-md-12 d-flex flex-column gap-3">
             @if ($sliders1->isNotEmpty())
                 <div class="banner-item overflow-hidden rounded--5 w-100">
                     <a href="{{ @$sliders1->first()->data_values->link }}" class="d-block w-100">
@@ -40,7 +40,7 @@
                     </a>
                 </div>
             @endif
-        </div>
+        </div> -->
     </div>
 </div>
 

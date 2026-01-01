@@ -94,16 +94,7 @@
                                         </li>
                                     @endif
                                 @endforeach
-                                <li class="d-none d-lg-block">
-                                    <a href="{{ route('multi_express.deal.index') }}" 
-                                    class="ecommerce deal-btn"
-                                    style="background: linear-gradient(135deg, #423fce, #db4437); color: #fff; border: none; padding: 10px 20px; border-radius: 8px; text-decoration: none; display: inline-block; transition: all 0.3s ease;">
-                                        <span class="ecommerce__icon">
-                                            <span class="ecommerce__is deal-count d-none"></span>
-                                        </span>
-                                        <span class="" style="color:#fff;">@lang('Deals')</span>
-                                    </a>
-                                </li>
+                                
 
                             </ul>
                         @endif
