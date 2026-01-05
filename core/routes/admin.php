@@ -11,6 +11,7 @@ use App\Http\Controllers\Admin\FollowUpLogController;
 use App\Http\Controllers\Admin\AdminUserController;
 use App\Http\Controllers\Admin\PermissionController;
 use App\Http\Controllers\Admin\RoleController;
+use App\Http\Controllers\Admin\PosController;
 
 
 use App\Models\OrderDetail;
@@ -93,6 +94,24 @@ Route::middleware('admin')->group(function () {
         Route::get('download-attachments/{file_hash}', 'downloadAttachment')->name('download.attachment');
         Route::get('print/{order}', 'printInvoice')->name('print.invoice');
     });
+
+
+    Route::controller(PosController::class)->group(function(){
+        Route::get('pos', 'Pos')->name('pos.index');
+        Route::get('pos/search', 'searchProducts')->name('pos.searchProducts');
+        Route::get('pos/customers/search', 'searchCustomers')->name('pos.searchCustomers');
+        Route::post('pos/customers/create', 'createCustomer')->name('pos.createCustomer');
+        Route::post('pos/customers/select', 'selectCustomer')->name('pos.selectCustomer');
+        Route::get('pos/customer', 'getSelectedCustomer')->name('pos.getCustomer');
+        Route::post('pos/customer/clear', 'clearSelectedCustomer')->name('pos.clearCustomer');
+        Route::post('pos/add-to-cart', 'addToCart')->name('pos.addToCart');
+        Route::post('pos/remove-from-cart', 'removeFromCart')->name('pos.removeFromCart');
+        Route::post('pos/clear-cart', 'clearCart')->name('pos.clearCart');
+        Route::get('pos/cart', 'getCart')->name('pos.getCart');
+        Route::post('pos/confirm', 'confirmOrder')->name('pos.confirmOrder');
+    });
+
+
 
     // Banner
     Route::controller('PromoBannerController')->name('promo.banner.')->prefix('promotion/banner')->group(function () {

@@ -460,7 +460,7 @@ class ProductController extends Controller
         return $product->editUrl();
     }
 
-    /**
+ 
     /**
      * Soft delete a product.
      *
@@ -716,5 +716,25 @@ class ProductController extends Controller
         // Provide a success response
         $notify[] = ['success', 'Media assigned successfully to attribute values'];
         return redirect()->to(route('admin.products.edit', $product->id) . '#media-content')->withNotify($notify);
+    }
+
+
+    /**
+     * Handle purchaser information from the request.
+     *
+     * @param \Illuminate\Http\Request $request
+     * @return int Purchaser ID
+     */
+    private function handlePurchaserInfo(Request $request)
+    {
+        if ($request->purchaser_id === 'self' || !$request->filled('purchaser_id')) {
+            return 1; // ID of 'SELF / MANUFACTURER'
+        } elseif ($request->purchaser_id === 'new') {
+            return Purchaser::firstOrCreate(
+                ['name' => trim($request->new_purchaser)]
+            )->id;
+        } else {
+            return $request->purchaser_id;
+        }
     }
 }
