@@ -7,8 +7,11 @@ use App\Http\Controllers\Controller;
 use App\Models\Product;
 use App\Models\Order;
 use App\Models\OrderDetail;
+use App\Lib\ProductManager;
+use App\Models\Deposit;
+use Illuminate\Support\Str;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\DB; 
 
 class PosController extends Controller
 {
@@ -245,7 +248,7 @@ class PosController extends Controller
                 'is_cod'         => true,
             ]);
 
-            // Create order items
+            // Create order items and update stock
             foreach($cart as $productId => $item){
                 OrderDetail::create([
                     'order_id'           => $order->id,
@@ -255,6 +258,36 @@ class PosController extends Controller
                     'price'              => $item['price'],
                     'discount'           => 0,
                 ]);
+
+                // adjust stock if product tracks inventory
+                try {
+                    $product = Product::find($productId);
+                    if ($product && $product->track_inventory) {
+                        $product->in_stock = max(0, $product->in_stock - $item['quantity']);
+                        $product->save();
+
+                        $description = "Sold $item[quantity] " . Str::plural('product', $item['quantity']) . " (POS)";
+                        $productManager = new ProductManager();
+                        $productManager->createStockLog($product, $item['quantity'], $description, null, '-', $order->id);
+                    }
+                } catch (\Throwable $e) {
+                    \Log::error('POS stock update error: ' . $e->getMessage());
+                }
+            }
+
+            // Create a deposit record so payments show up in dashboards/reports
+            try {
+                $deposit = new Deposit();
+                $deposit->user_id = $customerId ?? null;
+                $deposit->order_id = $order->id;
+                $deposit->amount = $total;
+                $deposit->method_code = 0; // POS/manual
+                $deposit->method_currency = gs('cur_text');
+                $deposit->trx = 'POS-' . $order->id . '-' . time();
+                $deposit->status = Status::PAYMENT_SUCCESS;
+                $deposit->save();
+            } catch (\Throwable $e) {
+                \Log::error('POS deposit creation error: ' . $e->getMessage());
             }
 
             // Clear cart + selected customer

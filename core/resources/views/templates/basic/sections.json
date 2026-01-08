@@ -34,7 +34,7 @@
                 }
             },
             "banner_heading": "text",
-            "link":"text"
+            "link": "text"
         }
     },
     "banner2": {
@@ -48,10 +48,9 @@
                 }
             },
             "banner_heading": "text",
-            "link":"text"
+            "link": "text"
         }
-    },    
-
+    },
     "notices": {
         "page": "home",
         "builder": true,
@@ -62,19 +61,6 @@
             "modal": true
         }
     },
-    "text_content": {
-        "page": "home",
-        "builder": true,
-        "name": "Text Content",
-        "element": {
-            "title": "text",
-            "description": "textarea-nic",
-            "modal": false
-        }
-    },
-    
-
-    
     "top_selling_products": {
         "page": "home",
         "builder": true,
@@ -134,28 +120,6 @@
             "description": "textarea-nic"
         }
     },
-    
-      "multiexpress": {
-        "page": "home",
-        "builder": true,
-        "name": "Multiexpress Deal Section",
-        "content": {
-          "heading": "text",
-          "subheading": "text",
-          "selected_deals": {
-            "type": "select",
-            "label": "Select Deals",
-            "multiple": true,
-            "options_source": "MultiExpressDeal",
-            "option_value": "id", 
-            "option_label": "title",
-            "default": []
-          }
-        }
-      },
-
-
-
     "counter": {
         "page": "about",
         "builder": true,
@@ -252,7 +216,6 @@
             "modal": true
         }
     },
-    
     "footer": {
         "builder": true,
         "no_selection": true,
@@ -266,9 +229,9 @@
                     "size": "250x30"
                 }
             },
-            "contact_heading":"text",
+            "contact_heading": "text",
             "cell_number": "text",
-            "contact_heading2":"text",
+            "contact_heading2": "text",
             "cell_number2": "text",
             "email": "text",
             "contact_address": "text",
@@ -362,13 +325,13 @@
             "modal": false
         }
     },
-    "order_confirmation":{
-        "builder":true,
-        "no_selection":true,
-        "name":"Order Confirmation Page",
-        "content":{
-            "title":"text",
-            "description":"textarea"
+    "order_confirmation": {
+        "builder": true,
+        "no_selection": true,
+        "name": "Order Confirmation Page",
+        "content": {
+            "title": "text",
+            "description": "textarea"
         }
     }
 }

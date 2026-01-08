@@ -1,42 +1,87 @@
 @extends('admin.layouts.app')
 
 @section('panel')
-<div class="row gy-4">
+<div class="row g-4">
 
-    <!-- Product Search & Customer -->
-    <div class="col-md-6">
-        <h5>Search Products</h5>
-        <input type="text" id="product-search" class="form-control" placeholder="Type product name...">
-        <ul id="search-results" class="list-group mt-2"></ul>
+    {{-- LEFT SIDE --}}
+    <div class="col-lg-6">
 
-        <hr>
-        <h5 class="mt-3">Customer</h5>
-        <input type="text" id="customer-search" class="form-control" placeholder="Type customer name, email or mobile...">
-        <ul id="customer-results" class="list-group mt-2"></ul>
-        <div id="selected-customer" class="mt-2"></div>
+        {{-- Product Search --}}
+        <div class="card shadow-sm mb-4">
+            <div class="card-header bg-primary text-white">
+                <strong><i class="la la-search"></i> Product Search</strong>
+            </div>
+            <div class="card-body">
+                <input type="text"
+                       id="product-search"
+                       class="form-control form-control-lg"
+                       placeholder="🔍 Search product name...">
+
+                <ul id="search-results" class="list-group list-group-flush mt-3"></ul>
+            </div>
+        </div>
+
+        {{-- Customer --}}
+        <div class="card shadow-sm">
+            <div class="card-header bg-dark text-white">
+                <strong><i class="la la-user"></i> Customer</strong>
+            </div>
+            <div class="card-body">
+                <input type="text"
+                       id="customer-search"
+                       class="form-control"
+                       placeholder="Search name / email / mobile">
+
+                <ul id="customer-results" class="list-group list-group-flush mt-2"></ul>
+
+                <div id="selected-customer" class="mt-3"></div>
+            </div>
+        </div>
+
     </div>
 
-    <!-- Cart -->
-    <div class="col-md-6">
-        <h5>Cart</h5>
-        <table class="table table-bordered" id="cart-table">
-            <thead>
-                <tr>
-                    <th>Name</th>
-                    <th>Qty</th>
-                    <th>Price</th>
-                    <th>Total</th>
-                    <th>Action</th>
-                </tr>
-            </thead>
-            <tbody></tbody>
-        </table>
-        <button id="clear-cart" class="btn btn-danger">Clear Cart</button>
-        <button id="confirm-order" class="btn btn-success float-end">Confirm Order</button>
+    {{-- RIGHT SIDE --}}
+    <div class="col-lg-6">
+
+        {{-- Cart --}}
+        <div class="card shadow-sm h-100">
+            <div class="card-header bg-success text-white d-flex justify-content-between align-items-center">
+                <strong><i class="la la-shopping-cart"></i> Cart</strong>
+                <button id="clear-cart" class="btn btn-sm btn-outline-light">
+                    <i class="la la-trash"></i> Clear
+                </button>
+            </div>
+
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-hover mb-0" id="cart-table">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Product</th>
+                                <th class="text-center">Qty</th>
+                                <th class="text-end">Price</th>
+                                <th class="text-end">Total</th>
+                                <th class="text-center">✖</th>
+                            </tr>
+                        </thead>
+                        <tbody></tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div class="card-footer bg-light">
+                <button id="confirm-order"
+                        class="btn btn-success btn-lg w-100">
+                    <i class="la la-check-circle"></i> Confirm Order
+                </button>
+            </div>
+        </div>
+
     </div>
 
 </div>
 @endsection
+
 
 @push('script')
 <script>
