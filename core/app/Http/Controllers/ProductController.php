@@ -26,6 +26,24 @@ class ProductController extends Controller
         return $this->getProducts('shopPageProducts');
     }
 
+    // Product search used by cart (AJAX)
+    public function search(Request $request)
+    {
+        $q = trim($request->get('q', ''));
+
+        if (strlen($q) < 2) {
+            return response()->json(['html' => view('Template::partials.search-results', ['products' => collect()])->render()]);
+        }
+
+        $products = Product::published()
+            ->where('name', 'like', "%{$q}%")
+            ->with('productVariants')
+            ->limit(10)
+            ->get();
+
+        return response()->json(['html' => view('Template::partials.search-results', compact('products'))->render()]);
+    }
+
     private function productRelations()
     {
         return [

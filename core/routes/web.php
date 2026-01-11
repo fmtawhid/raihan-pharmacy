@@ -45,6 +45,7 @@ Route::controller('WishlistController')->name('wishlist.')->group(function () {
 
 Route::controller('ProductController')->name('product.')->group(function () {
     Route::get('products', 'products')->name('all');
+    Route::get('products/search', 'search')->name('search');
     // category products
     Route::get('products/{category}', 'productByCategory')->name('by.category');
     // brand products

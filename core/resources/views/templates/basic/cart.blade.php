@@ -169,6 +169,19 @@
             <!-- Right Column - Order Summary and Payment -->
             <div class="col-lg-4">
                 <div class="checkout-sidebar">
+                    <!-- Product Search -->
+                    <div class="checkout-card mb-4">
+                        <div class="checkout-card-header">
+                            <h5 class="title">@lang('Search Products')</h5>
+                        </div>
+                        <div class="checkout-card-body">
+                            <div class="form-group mb-0">
+                                <input type="search" id="productSearchInput" class="form-control" placeholder="@lang('Search products by name...')">
+                            </div>
+                            <div id="searchResults" class="search-results mt-3"></div>
+                        </div>
+                    </div>
+
                     <!-- Order Summary -->
                     <div class="checkout-card mb-4">
                         <div class="checkout-card-header">
@@ -489,6 +502,26 @@
                 return newTotal;
             }
 
+            // Listen for cart updates from other scripts (e.g., global cart handler)
+            document.addEventListener('cart:updated', function(e) {
+                const amount = parseFloat(e?.detail?.subtotal) || 0;
+                subtotal = amount;
+
+                // Debug: show cart update event in console
+                console.debug('cart:updated event received:', subtotal);
+
+                // Update visible fields
+                $('#subtotal').text(subtotal.toFixed(2));
+                $('#cartSubtotal').text(subtotal.toFixed(2));
+                $('.cartSubtotal').text(Math.abs(subtotal).toFixed(2));
+
+                // Recalculate totals and payment fees
+                updateTotals();
+                if ($('[name="gateway"]:checked').length) {
+                    calculation($('[name="gateway"]:checked').data('gateway'), updateTotals());
+                }
+            });
+
             // Shipping method change handler - FIXED
 
 
@@ -639,7 +672,7 @@ $('#areaSelect').on('change', function () {
             `<option value="${m.postCode}">${m.postOffice} (${m.postCode})</option>`
         ));
 
-        $('#postcodeInput').replaceWith($select);shi
+        $('#postcodeInput').replaceWith($select);
     } else {
         // no match – allow manual entry
         $('#postcodeInput')
@@ -649,6 +682,116 @@ $('#areaSelect').on('change', function () {
     }
 });
 </script>
+
+    <script>
+        (function($){
+            'use strict';
+
+            const csrf = '{{ csrf_token() }}';
+            let searchTimer;
+
+            $('#productSearchInput').on('input', function(){
+                clearTimeout(searchTimer);
+                const q = $(this).val().trim();
+
+                $('#searchResults').empty();
+
+                if (q.length < 2) return;
+
+                searchTimer = setTimeout(function(){
+                    $.get("{{ route('product.search') }}", { q: q }).done(function(res){
+                        $('#searchResults').html(res.html);
+                    }).fail(function(){
+                        $('#searchResults').html('<div class="text-danger small">@lang("Search failed")</div>');
+                    });
+                }, 300);
+            });
+
+            $(document).on('click', '.search-add-to-cart', function(e){
+                e.preventDefault();
+                const id = $(this).data('id');
+                const $btn = $(this);
+
+                $btn.prop('disabled', true).text('@lang("Adding...")');
+
+                $.post(`{{ route('cart.add', '') }}/${id}`, { _token: csrf, quantity: 1 })
+                    .done(function(response){
+                        if (response.status === 'success') {
+                            notify('success', response.message);
+
+                            if (typeof setPartialCart === 'function' && response.partialCartData) {
+                                setPartialCart(response.partialCartData);
+                            }
+
+                            if (typeof setCartCount === 'function' && response.cartItemCount !== undefined) {
+                                setCartCount(response.cartItemCount);
+                            }
+
+                            if (typeof setCartSubtotal === 'function' && response.cartSubtotal !== undefined) {
+                                setCartSubtotal(response.cartSubtotal);
+                            }
+
+                            $('#searchResults').empty();
+                            $('#productSearchInput').val('');
+
+                            // Update mini cart / sidebar (existing helper)
+                            if (typeof setPartialCart === 'function' && response.partialCartData) {
+                                setPartialCart(response.partialCartData);
+                            }
+
+                            // If we're on the cart page, update the main cart items and totals without reloading
+                            try {
+                                // Replace cart items if the response contains them
+                                if (response.partialCartData) {
+                                    const $partial = $('<div>').html(response.partialCartData);
+                                    const itemsHtml = $partial.find('.cart-items-wrapper').html();
+                                    if (itemsHtml && $('.cart-items').length) {
+                                        $('.cart-items').html(itemsHtml);
+                                        // Re-run lazy loader for newly injected images
+                                        if (typeof lazyload === 'function') lazyload();
+                                    }
+                                }
+
+                                // Update subtotal and related totals
+                                let newSubtotal = parseFloat(response.cartSubtotal) || 0;
+
+                                // Update JS subtotal variable used by updateTotals()
+                                subtotal = newSubtotal;
+
+                                // Update visible elements
+                                $('#subtotal').text(newSubtotal.toFixed(2));
+                                $('#cartSubtotal').text(newSubtotal.toFixed(2));
+                                $('.cartSubtotal').text(Math.abs(newSubtotal).toFixed(2));
+
+                                // Recalculate totals (uses subtotal, currentShippingCharge, couponAmount)
+                                if (typeof updateTotals === 'function') {
+                                    updateTotals();
+                                    // Also recalc payment processing if a gateway is checked
+                                    if ($('[name="gateway"]:checked').length) {
+                                        calculation($('[name="gateway"]:checked').data('gateway'), updateTotals());
+                                    }
+                                }
+
+                            } catch (e) {
+                                console.warn('Error updating cart UI:', e);
+                            }
+
+                        } else {
+                            notify(response.status || 'error', response.message || '@lang("Unable to add to cart")');
+                        }
+                    })
+                    .fail(function(xhr){
+                        const msg = xhr.responseJSON?.message || '@lang("Something went wrong")';
+                        notify('error', msg);
+                    })
+                    .always(function(){
+                        $btn.prop('disabled', false).text('@lang("Add")');
+                    });
+            });
+
+        })(jQuery);
+    </script>
+
 @endpush
 
 @push('style')
@@ -1006,6 +1149,19 @@ $('#areaSelect').on('change', function () {
 
         textarea.form-control {
             min-height: 100px;
+        }
+
+        /* Product Search Results */
+        .search-results {
+            max-height: 280px;
+            overflow-y: auto;
+        }
+
+        .search-result-item img {
+            width: 50px;
+            height: 50px;
+            object-fit: cover;
+            border-radius: 6px;
         }
 
         /* Empty Cart */

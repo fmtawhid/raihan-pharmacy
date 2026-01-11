@@ -12,7 +12,7 @@
 
     <div class="single-product-item cartItem" data-id="{{ @$cartItem->id ?? 0 }}" data-price="{{ $price }}">
         <div class="thumb">
-            <img class="lazyload" src="{{ getImage(null) }}" data-src="{{ $mainImage }}" alt="product-image">
+            <img class="lazyload" src="{{ getImage(null) }}" data-src="{{ $mainImage ?? getImage(null) }}" alt="product-image">
         </div>
         <div class="content">
             <div class="content-top">
