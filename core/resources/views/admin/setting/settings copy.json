@@ -69,7 +69,50 @@
         "icon": "las la-images",
         "route_name": "admin.setting.logo.icon"
     },
-
+    "payment_gateways": {
+        "keyword": [
+            "automatic",
+            "manual",
+            "configure payment gateways",
+            "aamarpay",
+            "amarpay",
+            "authorize",
+            "autorize.net",
+            "btcpay",
+            "btc pay",
+            "binance",
+            "blockchain",
+            "cashmaal",
+            "checkout",
+            "coinbase commerce",
+            "coingate",
+            "coinpayments",
+            "flutterwave",
+            "instamojo",
+            "mercado pago",
+            "mollie",
+            "nmi",
+            "now payments",
+            "nowpayments",
+            "payeer",
+            "paypal",
+            "paystack",
+            "paytm",
+            "perfect money",
+            "perfectmoney",
+            "razorpay",
+            "skrill",
+            "sslcommerz",
+            "stripe",
+            "twocheckout",
+            "two checkout",
+            "2checkout"
+        ],
+        "title": "Payment Gateways",
+        "subtitle": "Configure automatic or manual payment gateways to accept payment from users.",
+        "icon": "las la-credit-card",
+        "route_name": "admin.gateway.automatic.index"
+    },
     "seo_configuration": {
         "keyword": [
             "SEO",
@@ -120,7 +163,31 @@
         "icon": "las la-language",
         "route_name": "admin.language.manage"
     },
-    
+    "extensions": {
+        "keyword": [
+            "extensions",
+            "plugins",
+            "addons",
+            "extension settings",
+            "plugin settings",
+            "addon settings",
+            "captcha",
+            "custom captcha",
+            "google captcha",
+            "recaptcha",
+            "re-captcha",
+            "re captcha",
+            "tawk",
+            "tawk.to",
+            "tawk to",
+            "analytics",
+            "google analytics"
+        ],
+        "title": "Extensions",
+        "subtitle": "Manage extensions of the system here to extend some extra features of the system.",
+        "icon": "las la-puzzle-piece",
+        "route_name": "admin.extensions.index"
+    },
     "policy_pages": {
         "keyword": [
             "privacy and policy",

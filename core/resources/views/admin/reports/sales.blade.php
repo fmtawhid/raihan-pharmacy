@@ -62,9 +62,16 @@
                                             <td><a
                                                     href="{{ route('admin.order.details', $log->id) }}">{{ $log->order_number }}</a>
                                             </td>
-                                            <td><a
-                                                    href="{{ route('admin.users.detail', @$log->user->id) }}">{{ @$log->user->username }}</a>
+                                            <td>
+                                                @if($log->user)
+                                                    <a href="{{ route('admin.users.detail', $log->user->id) }}">
+                                                        {{ $log->user->username }}
+                                                    </a>
+                                                @else
+                                                    {{  $log->guest_name }}
+                                                @endif
                                             </td>
+
                                             <td>{{ showDateTime($log->created_at, 'd M, Y') }}</td>
                                             <td>{{ $log->total_product }}</td>
                                             <td>{{ showAmount($log->shipping_charge) }}</td>
@@ -133,7 +140,7 @@
             <i class="las la-file-excel"></i> @lang('Download Excel')
         </a> --}}
       @if($admin->can('download_csv_sales_reports'))
-      <a href="{{ route('admin.reports.sales.csv', request()->all()) }}" class="btn btn-sm btn-outline--dark">
+        <a href="{{ route('admin.reports.sales.csv', request()->all()) }}" class="btn btn-sm btn-outline--dark">
             <i class="las la-file-csv"></i> @lang('Download CSV')
         </a>
         @endif
@@ -167,7 +174,7 @@
             printWindow.document.write('</head><body>');
 
             // Header
-            printWindow.document.write('<h2>MultiTech BD</h2>');
+            printWindow.document.write('<h2>Raihan Pharmacy</h2>');
             printWindow.document.write('<h4>Sales Report</h4>');
             printWindow.document.write(`<p>Date Range: ${dateRange}</p>`);
             printWindow.document.write('<hr>');

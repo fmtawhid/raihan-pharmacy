@@ -28,9 +28,9 @@
         "@graph": [
           {
             "@type": "Organization",
-            "name": "Multitech Bangladesh",
-            "url": "https://multitech.com.bd/",
-            "logo": "https://multitech.com.bd/assets/images/logo_icon/favicon.png",
+            "name": "Rayhan Pharmacy Bangladesh",
+            "url": "hhttps://rayhanpharmacy.com/",
+            "logo": "hhttps://rayhanpharmacy.com/assets/images/logo_icon/favicon.png",
             "sameAs": [
               "https://www.facebook.com/multitechbd",
               "https://www.linkedin.com/company/multitechbd"
@@ -38,12 +38,12 @@
           },
           {
             "@type": "WebSite",
-            "name": "Multitech Bangladesh",
-            "url": "https://multitech.com.bd/",
+            "name": "Rayhan Pharmacy Bangladesh",
+            "url": "hhttps://rayhanpharmacy.com/",
             "inLanguage": "en",
             "potentialAction": {
               "@type": "SearchAction",
-              "target": "https://multitech.com.bd/products?search={search_term_string}",
+              "target": "hhttps://rayhanpharmacy.com/products?search={search_term_string}",
               "query-input": "required name=search_term_string"
             }
           }
@@ -95,8 +95,8 @@
     @unless(in_array(Route::currentRouteName(), ['product.detail']))
         <!-- SEO Content -->
         <div class="seo-text">
-            <h1>{{ @$seoContents->social_title ?? $seo->social_title ?? ' Multitech Title'}}</h1>
-            <p>{{ @$seoContents->social_description ?? $seo->social_description ?? ' Multitech Description'}}</p>
+            <h1>{{ @$seoContents->social_title ?? $seo->social_title ?? ' Rayhan Pharmacy Bangladesh'}}</h1>
+            <p>{{ @$seoContents->social_description ?? $seo->social_description ?? 'Rayhan Pharmacy Bangladesh'}}</p>
         </div>
         <style>
             .seo-text {

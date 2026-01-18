@@ -308,7 +308,7 @@ class ReportController extends Controller
             $handle = fopen('php://output', 'w');
 
             // Header
-            fputcsv($handle, ['Unisales BD']);
+            fputcsv($handle, ['Rayhan Pharmacy']);
             fputcsv($handle, ['Sales Report']);
             fputcsv($handle, ['Date Range:', $dateRange]);
             fputcsv($handle, ['Generated On:', $generatedDate]);

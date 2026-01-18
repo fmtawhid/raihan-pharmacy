@@ -257,7 +257,7 @@
             printWindow.document.write('</style>');
             printWindow.document.write('</head><body>');
 
-            printWindow.document.write('<h2>MultiTech BD</h2>');
+            printWindow.document.write('<h2>Rayhan Pharmacy</h2>');
             printWindow.document.write('<h4>Business Report</h4>');
             printWindow.document.write(`<p>Date Range: ${dateRange}</p>`);
             printWindow.document.write('<hr>');

@@ -41,7 +41,8 @@ class PosController extends Controller
                 return [
                     'id'    => $p->id,
                     'name'  => $p->name,
-                    'price' => $p->regular_price ?? $p->sale_price ?? 0,
+                    'regular_price' => $p->regular_price ?? null,
+                    'sale_price' => $p->sale_price ?? null,
                 ];
             });
 
@@ -59,7 +60,7 @@ class PosController extends Controller
         } else {
             $cart[$product->id] = [
                 'name' => $product->name,
-                'price' => $product->regular_price ?? $product->sale_price ?? 0,
+                'price' => $product->sale_price ?? $product->regular_price ?? 0,
                 'quantity' => 1,
             ];
         }
@@ -101,7 +102,24 @@ class PosController extends Controller
             return response()->json(['customer' => null]);
         }
         $customer = \App\Models\User::find($id);
-        return response()->json(['customer' => $customer ? $customer->only(['id', 'name', 'email', 'mobile']) : null]);
+        if (!$customer) {
+            return response()->json(['customer' => null]);
+        }
+        
+        $customerName = $customer->name;
+        if (!$customerName && isset($customer->firstname, $customer->lastname)) {
+            $customerName = trim($customer->firstname . ' ' . $customer->lastname);
+        }
+        if (!$customerName) {
+            $customerName = $customer->email ?? 'Customer';
+        }
+        
+        return response()->json(['customer' => [
+            'id' => $customer->id,
+            'name' => $customerName,
+            'email' => $customer->email ?? null,
+            'mobile' => $customer->mobile ?? null
+        ]]);
     }
 
     // AJAX: Search customers (robust to different schema variants)
@@ -195,9 +213,17 @@ class PosController extends Controller
         $user = \App\Models\User::create($data);
         session()->put('pos_customer', $user->id);
 
+        $customerName = $user->name;
+        if (!$customerName && isset($user->firstname, $user->lastname)) {
+            $customerName = trim($user->firstname . ' ' . $user->lastname);
+        }
+        if (!$customerName) {
+            $customerName = $user->email ?? 'Customer';
+        }
+
         return response()->json(['customer' => [
             'id' => $user->id,
-            'name' => $user->name ?? ($user->firstname . ' ' . $user->lastname ?? $user->email),
+            'name' => $customerName,
             'email' => $user->email ?? null,
             'mobile' => $user->mobile ?? null
         ]]);
@@ -208,7 +234,21 @@ class PosController extends Controller
     {
         $user = \App\Models\User::findOrFail($request->user_id);
         session()->put('pos_customer', $user->id);
-        return response()->json(['customer' => $user->only(['id', 'name', 'email', 'mobile'])]);
+        
+        $customerName = $user->name;
+        if (!$customerName && isset($user->firstname, $user->lastname)) {
+            $customerName = trim($user->firstname . ' ' . $user->lastname);
+        }
+        if (!$customerName) {
+            $customerName = $user->email ?? 'Customer';
+        }
+        
+        return response()->json(['customer' => [
+            'id' => $user->id,
+            'name' => $customerName,
+            'email' => $user->email ?? null,
+            'mobile' => $user->mobile ?? null
+        ]]);
     }
 
     // AJAX: Clear selected customer
@@ -297,8 +337,10 @@ class PosController extends Controller
 
         return response()->json([
             'status'  => 'success',
-            'message' => 'POS order confirmed successfully',
-            'order_id'=> $order->id
+            'message' => 'POS Order Confirmed Successfully! Order #' . $order->order_number,
+            'order_id'=> $order->id,
+            'order_number' => $order->order_number,
+            'total_amount' => $order->total_amount
         ]);
     }
 }

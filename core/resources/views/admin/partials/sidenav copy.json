@@ -77,7 +77,20 @@
                 "counter": "bannedUsersCount",
                 "permission": "banned_customers"
             },
-            
+            {
+                "keyword": [
+                    "email unverified customers",
+                    "Manage Customers",
+                    "Customer verification",
+                    "Customer authentication",
+                    "Customer management"
+                ],
+                "title": "Email Unverified",
+                "route_name": "admin.users.email.unverified",
+                "menu_active": "admin.users.email.unverified",
+                "counter": "emailUnverifiedUsersCount",
+                "permission": "email_unverified_customers"
+            },
             {
                 "keyword": [
                     "Profile Completed customers",
@@ -490,7 +503,21 @@
                     "user_id": ""
                 }
             },
-            
+            {
+                "keyword": [
+                    "Initiated Payments",
+                    "Payments",
+                    "Payment management",
+                    "Payment activity"
+                ],
+                "title": "Initiated Deposits",
+                "route_name": "admin.deposit.initiated",
+                "menu_active": "admin.deposit.initiated",
+                "permission": "initiated_payments",
+                "params": {
+                    "user_id": ""
+                }
+            },
             {
                 "keyword": [
                     "All Payments",
@@ -571,7 +598,41 @@
             }
         ]
     },
-
+    "express_deals": {
+        "title": "Express Deals",
+        "icon": "la la-ticket",
+        "counters": [
+            "pendingDealCount"
+        ],
+        "menu_active": "admin.multi_express.deal*",
+        "submenu": [
+            {
+                "keyword": [
+                    "All Categories",
+                    "Category management"
+                ],
+                "title": "Categories",
+                "route_name": "admin.multi_express.category.index",
+                "menu_active": "admin.multi_express.category*",
+                "permission": "category_express"
+            },
+            {
+                "keyword": [
+                    "Pending Deal",
+                    "Express Deal",
+                    "Deal management",
+                    "Deal control",
+                    "Deal status",
+                    "Deal activity"
+                ],
+                "title": "Deals Management",
+                "route_name": "admin.multi_express.deal.index",
+                "menu_active": "admin.multi_express.deal.index",
+                "counter": "pendingDealCount",
+                "permission": "deals_express"
+            }
+        ]
+    },
     "store_setting": {
         "header": "Settings",
         "keyword": [
