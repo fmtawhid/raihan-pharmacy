@@ -37,6 +37,7 @@ class ProductController extends Controller
 
         $products = Product::published()
             ->where('name', 'like', "%{$q}%")
+            ->orWhere('sku', 'like', "%{$q}%")
             ->with('productVariants')
             ->limit(10)
             ->get();
