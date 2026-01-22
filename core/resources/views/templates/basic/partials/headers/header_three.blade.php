@@ -27,7 +27,7 @@ $mainMenuLimit = 12; // Define the limit for main menu items
                             <span class="navbar-toggler-icon"></span>
                         </button>
 
-                        <li class="d-lg-none " style="list-style: none;">
+                        <!-- <li class="d-lg-none " style="list-style: none;">
                             <a href="{{ route('multi_express.deal.index') }}" 
                             class="ecommerce deal-btn"
                             style="background: linear-gradient(135deg, #423fce, #db4437); color: #fff; border: none; padding: 10px 20px; border-radius: 8px; text-decoration: none; display: inline-block; transition: all 0.3s ease;">
@@ -36,7 +36,7 @@ $mainMenuLimit = 12; // Define the limit for main menu items
                                 </span>
                                 <span class="" style="color:#fff;">@lang('Deals')</span>
                             </a>
-                        </li>
+                        </li> -->
 
                         <div class="collapse navbar-collapse" id="navbarMegaMenu">
                             <ul class="main-menu navbar-nav flex-lg-row flex-column">
