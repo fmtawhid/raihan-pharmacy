@@ -302,6 +302,17 @@
         "submenu": [
             {
                 "keyword": [
+                    "Coupon",
+                    "Promotion",
+                    "Discount"
+                ],
+                "title": "Coupons",
+                "route_name": "admin.coupon.index",
+                "menu_active": "admin.coupon*",
+                "permission": "list_view_coupons"
+            },
+            {
+                "keyword": [
                     "Offers",
                     "Promotion"
                 ],
@@ -595,6 +606,7 @@
             "admin.frontend.manage.*",
             "admin.maintenance.mode",
             "admin.setting.cookie",
+            "admin.setting.popup.banner",
             "admin.setting.custom.css",
             "admin.setting.robot",
             "admin.frontend.index",

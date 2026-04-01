@@ -7,6 +7,7 @@ use App\Http\Controllers\Controller;
 use App\Rules\FileTypeValidate;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
+use Illuminate\Http\UploadedFile;
 
 class FrontendController extends Controller
 {
@@ -94,9 +95,9 @@ class FrontendController extends Controller
         foreach ($request->except('_token', 'video') as $inputField => $val) {
             if ($inputField == 'has_image' && $imgJson) {
                 foreach ($imgJson as $imgValKey => $imgJsonVal) {
-                    $validationRule['image_input.'.$imgValKey] = ['nullable','image',new FileTypeValidate(['jpg','jpeg','png', 'webp'])];
+                    // Simplified validation - just check if it's an image
+                    $validationRule['image_input.'.$imgValKey] = ['nullable', 'image'];
                     $validationMessage['image_input.'.$imgValKey.'.image'] = keyToTitle($imgValKey).' must be an image';
-                    $validationMessage['image_input.'.$imgValKey.'.mimes'] = keyToTitle($imgValKey).' file type not supported';
                 }
                 continue;
             }elseif($inputField == 'seo_image'){
@@ -145,7 +146,7 @@ class FrontendController extends Controller
                 foreach ($imgJson as $imgKey => $imgValue) {
                     $imgData = @$request->image_input[$imgKey];
 
-                    if (is_file($imgData)) {
+                    if ($imgData instanceof UploadedFile) {
                         try {
                             $inputContentValue[$imgKey] = $this->storeImage($imgJson,$type,$key,$imgData,$imgKey,@$content->data_values->$imgKey);
                         } catch (\Exception $exp) {

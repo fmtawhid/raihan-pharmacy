@@ -4,6 +4,7 @@ namespace App\Http\Controllers\User;
 
 use App\Http\Controllers\Controller;
 use App\Lib\CartManager;
+use App\Models\Coupon;
 use App\Models\Order;
 use App\Models\ShippingAddress;
 use App\Models\ShippingMethod;
@@ -141,4 +142,86 @@ class CheckoutController extends Controller
 
         return $coupon;
     }
+
+    /**
+     * Apply coupon code via AJAX
+     */
+    public function applyCoupon(Request $request)
+    {
+        $request->validate([
+            'code' => 'required|string',
+            'subtotal' => 'required|numeric|min:0',
+        ]);
+
+        try {
+            $couponCode = $request->code;
+            $subtotal = $request->subtotal;
+
+            // Get coupon by code
+            $coupon = Coupon::matchCode($couponCode)->active()->first();
+
+            if (!$coupon) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Invalid coupon code'
+                ], 400);
+            }
+
+            // Check if coupon is expired
+            if ($coupon->expired_at && $coupon->expired_at < now()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Coupon has expired'
+                ], 400);
+            }
+
+            // Validate coupon using CartManager
+            $cartData = $this->cartManager->getCart();
+            $checkCoupon = $this->cartManager->isValidCoupon($coupon, $subtotal, $cartData);
+
+            if (isset($checkCoupon['error'])) {
+                return response()->json([
+                    'success' => false,
+                    'message' => $checkCoupon['error']
+                ], 400);
+            }
+
+            // Calculate discount amount
+            $discountAmount = $coupon->discountAmount($subtotal);
+
+            // Store coupon in session
+            session()->put('coupon', [
+                'code' => $coupon->coupon_code,
+                'id' => $coupon->id,
+                'amount' => $discountAmount,
+            ]);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Coupon applied successfully! Discount: ' . showAmount($discountAmount),
+                'discount_amount' => $discountAmount,
+                'coupon_code' => $coupon->coupon_code,
+            ]);
+
+        } catch (\Exception $e) {
+            \Log::error('Coupon apply error: ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'message' => 'Error applying coupon'
+            ], 500);
+        }
+    }
+
+    /**
+     * Remove applied coupon
+     */
+    public function removeCoupon()
+    {
+        session()->forget('coupon');
+        return response()->json([
+            'success' => true,
+            'message' => 'Coupon removed'
+        ]);
+    }
+
 }

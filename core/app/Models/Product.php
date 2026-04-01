@@ -21,6 +21,7 @@ class Product extends Model
     protected $casts = [
         'sale_price'         => 'double',
         'regular_price'      => 'double',
+        'wholesale_price'    => 'double',
         'sale_starts_from'   => 'datetime',
         'sale_ends_at'       => 'datetime',
         'reviews_avg_rating' => 'double',

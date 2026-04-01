@@ -297,6 +297,59 @@
         </div>
     </div>
 
+    {{-- ===== Prescription Uploads ===== --}}
+    <div class="row mt-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header d-flex align-items-center justify-content-between">
+                    <h5 class="mb-0"><i class="las la-file-medical me-2"></i>@lang('Uploaded Prescriptions')</h5>
+                    <span class="badge bg--primary fs-6">{{ $prescriptions->count() }}</span>
+                </div>
+                <div class="card-body p-0">
+                    @if($prescriptions->count())
+                    <div class="table-responsive">
+                        <table class="table table--light style--two mb-0">
+                            <thead>
+                                <tr>
+                                    <th>#</th>
+                                    <th>@lang('File Name')</th>
+                                    <th>@lang('Type')</th>
+                                    <th>@lang('Note')</th>
+                                    <th>@lang('Uploaded At')</th>
+                                    <th>@lang('View')</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach($prescriptions as $index => $rx)
+                                <tr>
+                                    <td>{{ $index + 1 }}</td>
+                                    <td>{{ $rx->original_name }}</td>
+                                    <td><span class="badge bg--info">{{ strtoupper($rx->file_extension) }}</span></td>
+                                    <td>{{ $rx->note ?? '—' }}</td>
+                                    <td>{{ $rx->created_at->format('d M Y, h:i A') }}</td>
+                                    <td>
+                                        <a href="{{ asset('storage/' . $rx->file_path) }}" target="_blank"
+                                            class="btn btn-sm btn--primary">
+                                            <i class="las la-eye"></i> @lang('View')
+                                        </a>
+                                    </td>
+                                </tr>
+                                @endforeach
+                            </tbody>
+                        </table>
+                    </div>
+                    @else
+                    <div class="text-center py-4 text-muted">
+                        <i class="las la-file-medical-alt fs-2"></i>
+                        <p class="mt-1 mb-0">@lang('No prescriptions uploaded by this user.')</p>
+                    </div>
+                    @endif
+                </div>
+            </div>
+        </div>
+    </div>
+    {{-- ===== End Prescription Uploads ===== --}}
+
     <div id="userStatusModal" class="modal fade" tabindex="-1" role="dialog">
         <div class="modal-dialog" role="document">
             <div class="modal-content">

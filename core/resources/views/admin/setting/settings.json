@@ -121,6 +121,23 @@
         "route_name": "admin.language.manage"
     },
     
+    "how_to_order": {
+        "keyword": [
+            "how to order",
+            "order steps",
+            "order guide",
+            "ordering process",
+            "order instructions",
+            "how to buy"
+        ],
+        "title": "How to Order",
+        "subtitle": "Configure the how-to-order section with steps and video for the homepage.",
+        "icon": "las la-shopping-cart",
+        "route_name": "admin.frontend.sections",
+        "params": {
+            "key": "how_to_order"
+        }
+    },
     "policy_pages": {
         "keyword": [
             "privacy and policy",
@@ -164,6 +181,20 @@
         "subtitle": "Set GDPR Cookie policy if required. It will ask visitor of the system to accept if enabled.",
         "icon": "las la-cookie-bite",
         "route_name": "admin.setting.cookie"
+    },
+    "popup_banner": {
+        "keyword": [
+            "Popup Banner",
+            "popup",
+            "banner",
+            "promotional popup",
+            "homepage popup",
+            "announcement popup"
+        ],
+        "title": "Popup Banner",
+        "subtitle": "Configure a popup banner that will be displayed to visitors on the homepage.",
+        "icon": "las la-image",
+        "route_name": "admin.setting.popup.banner"
     },
     "custom_css": {
         "keyword": [

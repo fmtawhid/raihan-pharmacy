@@ -99,7 +99,7 @@
     </div>
 
     <div class="version-info text-center text-uppercase">
-        <span class="text--primary">Rafusoft Dashboard</span>
+        <span class="text--primary">Tawhid Dashboard</span>
         <span class="text--success">@lang('V')1.0 </span>
     </div>
 </div>

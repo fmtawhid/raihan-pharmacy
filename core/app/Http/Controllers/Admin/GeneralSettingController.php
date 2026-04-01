@@ -266,6 +266,50 @@ class GeneralSettingController extends Controller
         return back()->withNotify($notify);
     }
 
+    public function popupBanner()
+    {
+        $pageTitle = 'Popup Banner';
+        $popup = Frontend::where('data_keys', 'popup_banner.data')->firstOrFail();
+        return view('admin.setting.popup_banner', compact('pageTitle', 'popup'));
+    }
+
+    public function popupBannerSubmit(Request $request)
+    {
+        $request->validate([
+            'title'       => 'nullable|string|max:255',
+            'description' => 'nullable|string|max:1000',
+            'image'       => 'nullable|image|mimes:jpg,jpeg,png,gif,webp|max:2048',
+            'btn_text'    => 'nullable|string|max:100',
+            'btn_url'     => 'nullable|url|max:255',
+        ]);
+
+        $popup = Frontend::where('data_keys', 'popup_banner.data')->firstOrFail();
+
+        $dataValues = [
+            'status'      => $request->status ? Status::ENABLE : Status::DISABLE,
+            'title'       => $request->title,
+            'description' => $request->description,
+            'btn_text'    => $request->btn_text,
+            'btn_url'     => $request->btn_url,
+            'image'       => @$popup->data_values->image ?? '',
+        ];
+
+        if ($request->hasFile('image')) {
+            try {
+                $dataValues['image'] = fileUploader($request->image, getFilePath('popupBanner'), getFileSize('popupBanner'), @$popup->data_values->image);
+            } catch (\Exception $exp) {
+                $notify[] = ['error', 'Couldn\'t upload the image'];
+                return back()->withNotify($notify);
+            }
+        }
+
+        $popup->data_values = $dataValues;
+        $popup->save();
+
+        $notify[] = ['success', 'Popup banner updated successfully'];
+        return back()->withNotify($notify);
+    }
+
 
     public function socialiteCredentials()
     {

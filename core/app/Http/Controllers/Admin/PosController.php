@@ -11,7 +11,7 @@ use App\Lib\ProductManager;
 use App\Models\Deposit;
 use Illuminate\Support\Str;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB; 
+use Illuminate\Support\Facades\DB;
 
 class PosController extends Controller
 {
@@ -19,23 +19,35 @@ class PosController extends Controller
     public function Pos()
     {
         $pageTitle = 'Point of Sale';
-        return view('admin.pos', compact('pageTitle'));
+        return view('admin.pos.index', compact('pageTitle'));
     }
 
-    // AJAX: Search products
-    
-    public function searchProducts(Request $request)
+    // Debug: Check if data exists
+    public function debugData()
     {
-        $query = trim($request->query('query',''));
+        return response()->json([
+            'products_count' => Product::count(),
+            'users_count' => \App\Models\User::count(),
+            'sample_products' => Product::limit(3)->get(['id', 'name', 'regular_price', 'sale_price']),
+            'sample_users' => \App\Models\User::limit(3)->get(['id', 'name', 'email'])
+        ]);
+    }
 
-        if(strlen($query) < 2){
-            return response()->json([]);
-        }
+    // AJAX: Get paginated products
+    public function getProducts(Request $request)
+    {
+        $page = (int) $request->query('page', 1);
+        $perPage = (int) $request->query('per_page', 20);
+        $offset = ($page - 1) * $perPage;
 
-        $products = Product::withoutGlobalScopes() // 🔥 THIS IS THE FIX
-            ->where('name', 'like', "%{$query}%")
-            ->orWhere('sku', 'like', "%{$query}%")
-            ->limit(10)
+        // Get total count
+        $totalProducts = Product::count();
+        $totalPages = ceil($totalProducts / $perPage);
+
+        // Fetch products with pagination
+        $products = Product::offset($offset)
+            ->limit($perPage)
+            ->orderBy('id', 'desc')
             ->get()
             ->map(function ($p) {
                 return [
@@ -43,6 +55,44 @@ class PosController extends Controller
                     'name'  => $p->name,
                     'regular_price' => $p->regular_price ?? null,
                     'sale_price' => $p->sale_price ?? null,
+                    'wholesale_price' => $p->wholesale_price ?? null,
+                ];
+            });
+
+        return response()->json([
+            'products' => $products,
+            'pagination' => [
+                'current_page' => $page,
+                'total_pages' => $totalPages,
+                'total_items' => $totalProducts,
+                'per_page' => $perPage
+            ]
+        ]);
+    }
+
+    // AJAX: Search products
+    public function searchProducts(Request $request)
+    {
+        $query = trim($request->input('query', $request->query('query', '')));
+
+        if (strlen($query) < 2) {
+            return response()->json([]);
+        }
+
+        $products = Product::where(function ($q) use ($query) {
+            $q->where('name', 'like', "%{$query}%")
+                ->orWhere('sku', 'like', "%{$query}%");
+        })
+            ->orderBy('id', 'desc')
+            ->limit(120)
+            ->get()
+            ->map(function ($p) {
+                return [
+                    'id'    => $p->id,
+                    'name'  => $p->name,
+                    'regular_price' => $p->regular_price ?? null,
+                    'sale_price' => $p->sale_price ?? null,
+                    'wholesale_price' => $p->wholesale_price ?? null,
                 ];
             });
 
@@ -55,12 +105,13 @@ class PosController extends Controller
         $product = Product::findOrFail($request->product_id);
         $cart = session()->get('pos_cart', []);
 
-        if(isset($cart[$product->id])){
+        if (isset($cart[$product->id])) {
             $cart[$product->id]['quantity']++;
         } else {
             $cart[$product->id] = [
                 'name' => $product->name,
                 'price' => $product->sale_price ?? $product->regular_price ?? 0,
+                'wholesale_price' => $product->wholesale_price ?? null,
                 'quantity' => 1,
             ];
         }
@@ -73,10 +124,59 @@ class PosController extends Controller
     public function removeFromCart(Request $request)
     {
         $cart = session()->get('pos_cart', []);
-        if(isset($cart[$request->product_id])){
+        if (isset($cart[$request->product_id])) {
             unset($cart[$request->product_id]);
             session()->put('pos_cart', $cart);
         }
+        return response()->json(['cart' => $cart]);
+    }
+
+    // AJAX: Update product quantity
+    public function updateQty(Request $request)
+    {
+        $cart = session()->get('pos_cart', []);
+        $productId = $request->product_id;
+        $action = $request->action;
+
+        if (isset($cart[$productId])) {
+            if ($action === 'increment') {
+                $cart[$productId]['quantity']++;
+            } elseif ($action === 'decrement') {
+                if ($cart[$productId]['quantity'] > 1) {
+                    $cart[$productId]['quantity']--;
+                } else {
+                    // Remove if quantity becomes 0
+                    unset($cart[$productId]);
+                }
+            }
+            session()->put('pos_cart', $cart);
+        }
+
+        return response()->json(['cart' => $cart]);
+    }
+
+    public function updateQtyDirect(Request $request)
+    {
+        $request->validate([
+            'product_id' => 'required|numeric',
+            'quantity' => 'required|numeric|min:1|max:9999'
+        ]);
+
+        $cart = session()->get('pos_cart', []);
+        $productId = $request->product_id;
+        $newQuantity = (int) $request->quantity;
+
+        if (isset($cart[$productId])) {
+            if ($newQuantity < 1) {
+                // Remove if quantity is less than 1
+                unset($cart[$productId]);
+            } else {
+                // Set the quantity directly
+                $cart[$productId]['quantity'] = $newQuantity;
+            }
+            session()->put('pos_cart', $cart);
+        }
+
         return response()->json(['cart' => $cart]);
     }
 
@@ -105,7 +205,7 @@ class PosController extends Controller
         if (!$customer) {
             return response()->json(['customer' => null]);
         }
-        
+
         $customerName = $customer->name;
         if (!$customerName && isset($customer->firstname, $customer->lastname)) {
             $customerName = trim($customer->firstname . ' ' . $customer->lastname);
@@ -113,7 +213,7 @@ class PosController extends Controller
         if (!$customerName) {
             $customerName = $customer->email ?? 'Customer';
         }
-        
+
         return response()->json(['customer' => [
             'id' => $customer->id,
             'name' => $customerName,
@@ -234,7 +334,7 @@ class PosController extends Controller
     {
         $user = \App\Models\User::findOrFail($request->user_id);
         session()->put('pos_customer', $user->id);
-        
+
         $customerName = $user->name;
         if (!$customerName && isset($user->firstname, $user->lastname)) {
             $customerName = trim($user->firstname . ' ' . $user->lastname);
@@ -242,7 +342,7 @@ class PosController extends Controller
         if (!$customerName) {
             $customerName = $user->email ?? 'Customer';
         }
-        
+
         return response()->json(['customer' => [
             'id' => $user->id,
             'name' => $customerName,
@@ -258,22 +358,82 @@ class PosController extends Controller
         return response()->json(['customer' => null]);
     }
 
-    // AJAX: Confirm order
+    // AJAX: Confirm order (uses cart from frontend)
     public function confirmOrder(Request $request)
     {
-        $cart = session()->get('pos_cart', []);
-        if(empty($cart)){
+        // Get cart from frontend request (not from session)
+        $cartData = $request->input('cart', []);
+        
+        // If cart is empty, get from session (fallback)
+        if (empty($cartData)) {
+            $cartData = session()->get('pos_cart', []);
+        }
+        
+        if (empty($cartData)) {
             return response()->json([
                 'status' => 'error',
                 'message' => 'Cart is empty'
             ]);
         }
 
-        DB::transaction(function() use ($cart, &$order){
-            $total = 0;
-            foreach($cart as $item){
-                $total += $item['price'] * $item['quantity'];
+        // Normalize cart data (convert from frontend format if needed)
+        $cart = [];
+        foreach ($cartData as $id => $item) {
+            if (is_array($item)) {
+                $cart[$id] = [
+                    'name' => $item['name'] ?? '',
+                    'price' => (float)($item['price'] ?? 0),
+                    'wholesale_price' => isset($item['wholesale_price']) ? (float)$item['wholesale_price'] : null,
+                    'quantity' => (int)($item['quantity'] ?? 1),
+                ];
             }
+        }
+
+        if (empty($cart)) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'No valid items in cart'
+            ]);
+        }
+
+        // Snapshot cart items + customer
+        $cartSnapshot = $cart;
+        $customerId = session('pos_customer');
+        $customerName = 'Walk-in Customer';
+        if ($customerId) {
+            $customer = \App\Models\User::find($customerId);
+            if ($customer) {
+                $customerName = $customer->name;
+                if (!$customerName && isset($customer->firstname, $customer->lastname)) {
+                    $customerName = trim($customer->firstname . ' ' . $customer->lastname);
+                }
+                if (!$customerName) {
+                    $customerName = $customer->email ?? 'Walk-in Customer';
+                }
+            }
+        }
+
+        $priceType = $request->input('price_type', 'regular'); // 'regular' or 'wholesale'
+        $discountType = $request->input('discount_type'); // 'percentage' or 'fixed'
+        $discountAmount = floatval($request->input('discount_amount', 0));
+
+        DB::transaction(function () use ($cart, &$order, $priceType, $discountType, $discountAmount) {
+            $subtotal = 0;
+            foreach ($cart as $item) {
+                $useWholesale = ($priceType === 'wholesale') && !empty($item['wholesale_price']);
+                $unitPrice    = $useWholesale ? (float)$item['wholesale_price'] : (float)$item['price'];
+                $subtotal += $unitPrice * $item['quantity'];
+            }
+
+            // Calculate discount
+            $actualDiscount = 0;
+            if ($discountType === 'percentage' && $discountAmount > 0) {
+                $actualDiscount = ($subtotal * $discountAmount) / 100;
+            } elseif ($discountType === 'fixed' && $discountAmount > 0) {
+                $actualDiscount = min($discountAmount, $subtotal);
+            }
+
+            $total = $subtotal - $actualDiscount;
 
             // Attach customer if selected
             $customerId = session('pos_customer');
@@ -289,14 +449,21 @@ class PosController extends Controller
             ]);
 
             // Create order items and update stock
-            foreach($cart as $productId => $item){
+            foreach ($cart as $productId => $item) {
+                $useWholesale = ($priceType === 'wholesale') && !empty($item['wholesale_price']);
+                $unitPrice    = $useWholesale ? (float)$item['wholesale_price'] : (float)$item['price'];
+
+                // Distribute discount proportionally across items
+                $itemSubtotal = $unitPrice * $item['quantity'];
+                $itemDiscount = ($itemSubtotal / $subtotal) * $actualDiscount;
+
                 OrderDetail::create([
                     'order_id'           => $order->id,
                     'product_id'         => $productId,
                     'product_variant_id' => 0,
                     'quantity'           => $item['quantity'],
-                    'price'              => $item['price'],
-                    'discount'           => 0,
+                    'price'              => $unitPrice,
+                    'discount'           => round($itemDiscount, 2),
                 ]);
 
                 // adjust stock if product tracks inventory
@@ -335,12 +502,53 @@ class PosController extends Controller
             session()->forget('pos_customer');
         });
 
+        // Build invoice items array
+        $invoiceItems = [];
+        $totalQty = 0;
+        $subtotal = 0;
+        foreach ($cartSnapshot as $productId => $item) {
+            $useWholesale = ($priceType === 'wholesale') && !empty($item['wholesale_price']);
+            $unitPrice    = $useWholesale ? (float)$item['wholesale_price'] : (float)$item['price'];
+            $itemTotal = $unitPrice * $item['quantity'];
+            $subtotal += $itemTotal;
+            $invoiceItems[] = [
+                'name'     => $item['name'],
+                'qty'      => $item['quantity'],
+                'price'    => $unitPrice,
+                'total'    => $itemTotal,
+            ];
+            $totalQty += $item['quantity'];
+        }
+
+        // Calculate final discount for display
+        $displayDiscount = 0;
+        if ($discountType === 'percentage' && $discountAmount > 0) {
+            $displayDiscount = ($subtotal * $discountAmount) / 100;
+        } elseif ($discountType === 'fixed' && $discountAmount > 0) {
+            $displayDiscount = min($discountAmount, $subtotal);
+        }
+
         return response()->json([
             'status'  => 'success',
             'message' => 'POS Order Confirmed Successfully! Order #' . $order->order_number,
-            'order_id'=> $order->id,
+            'order_id' => $order->id,
             'order_number' => $order->order_number,
-            'total_amount' => $order->total_amount
+            'total_amount' => $order->total_amount,
+            'invoice' => [
+                'store_name'    => gs('site_name') ?? 'Store',
+                'store_address' => gs('address') ?? gs('support_address') ?? 'Address not set',
+                'store_phone'   => gs('phone_number') ?? gs('support_phone') ?? 'Phone not set',
+                'currency_sym'  => gs('cur_sym') ?? '$',
+                'order_number'  => $order->order_number,
+                'date'          => now()->format('d-m-Y H:i:s'),
+                'customer_name' => $customerName,
+                'items'         => $invoiceItems,
+                'subtotal'      => $subtotal,
+                'discount'      => $displayDiscount,
+                'total_qty'     => $totalQty,
+                'grand_total'   => $order->total_amount,
+                'sold_by'       => auth()->guard('admin')->user()->name ?? 'Admin',
+            ],
         ]);
     }
 }

@@ -150,8 +150,9 @@ class ManageUsersController extends Controller
         $widget['answeredTickets']    = SupportTicket::where('user_id', $user->id)->where('status', Status::TICKET_ANSWER)->count();
         $bdData = getBangladeshLocationData();
 
+        $prescriptions      = \App\Models\PrescriptionUpload::where('user_id', $user->id)->latest()->get();
         $countries          = getCountries();
-        return view('admin.users.detail', compact('pageTitle', 'user', 'countries', 'widget', 'bdData'));
+        return view('admin.users.detail', compact('pageTitle', 'user', 'countries', 'widget', 'bdData', 'prescriptions'));
     }
 
     public function update(Request $request, $id)

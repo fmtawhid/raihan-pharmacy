@@ -57,10 +57,10 @@ class PaymentController extends Controller
             'address',
 
         ]);
-        $checkoutData['division_id'] = $request->division_id;
-        $checkoutData['district_id'] = $request->district_id;
-        $checkoutData['area_name']   = $request->area_name;
-        $checkoutData['postcode']    = $request->postcode;
+        $checkoutData['division_id'] = $request->division_id ?? null;
+        $checkoutData['district_id'] = $request->district_id ?? null;
+        $checkoutData['area_name']   = $request->area_name ?? null;
+        $checkoutData['postcode']    = $request->postcode ?? null;
 
         if (!auth()->check()) {
             $checkoutData['guest_email'] = $request->guest_email;
@@ -87,11 +87,12 @@ class PaymentController extends Controller
 
         // dd('completeCheckout');
 
+        // Optional location fields - only validate if provided
         $request->validate([
-            'division_id' => 'required',
-            'district_id' => 'required',
-            'area_name'   => 'required',
-            'postcode'    => 'required',
+            'division_id' => 'nullable',
+            'district_id' => 'nullable',
+            'area_name'   => 'nullable',
+            'postcode'    => 'nullable',
         ]);
 
         $this->validation($request);
@@ -373,7 +374,7 @@ class PaymentController extends Controller
         $order->total_amount = getAmount($subtotal + ($shippingMethod->charge ?? 0) - $couponAmount);
         $order->save();
 
-        $this->saveOrderDetails($cartData, $order->id);
+        $this->saveOrderDetails($cartData, $order->id, $coupon, $subtotal);
 
         return $order;
     }
@@ -416,17 +417,42 @@ class PaymentController extends Controller
         ];
     }
 
-    private function saveOrderDetails($cartData, $orderId)
+    private function saveOrderDetails($cartData, $orderId, $coupon = null, $subtotal = 0)
     {
+        $couponAmount = 0;
+        if ($coupon && isset($coupon->discount_amount)) {
+            $couponAmount = $coupon->discount_amount > $subtotal ? $subtotal : $coupon->discount_amount;
+        }
+
+        // Calculate total quantity for proportional distribution
+        $totalQuantity = 0;
+        foreach ($cartData as $cartItem) {
+            $totalQuantity += $cartItem->quantity;
+        }
+
+        // Distribute coupon discount proportionally
+        $couponPercentage = $totalQuantity > 0 ? ($couponAmount / ($subtotal ?: 1)) : 0;
+
         foreach ($cartData as $cartItem) {
             $prices = $cartItem->product->prices($cartItem->productVariant);
+            $itemSubtotal = $prices->sale_price * $cartItem->quantity;
+            
+            // Calculate product discount (regular - sale price)
+            $productDiscount = ($prices->regular_price - $prices->sale_price) * $cartItem->quantity;
+            
+            // Calculate coupon discount for this item
+            $itemCouponDiscount = $itemSubtotal * $couponPercentage;
+            
+            // Total discount is product discount + coupon discount
+            $totalDiscount = $productDiscount + $itemCouponDiscount;
+
             $orderDetail = new OrderDetail();
             $orderDetail->order_id = $orderId;
             $orderDetail->product_id = $cartItem->product_id;
             $orderDetail->product_variant_id = $cartItem->product_variant_id ?? 0;
             $orderDetail->quantity = $cartItem->quantity;
             $orderDetail->price = $prices->sale_price;
-            $orderDetail->discount = $prices->regular_price - $prices->sale_price;
+            $orderDetail->discount = $totalDiscount;
             $orderDetail->save();
             $this->updateStock($cartItem, $orderId);
         }

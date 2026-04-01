@@ -84,10 +84,10 @@
                                     </div>
 
                                     <div class="col-md-6">
-                                        <div class="form-group">
+                                        <div class="form-group" style="display: none;">
                                             <label class="form-label">@lang('Division') <span
                                                     class="text-danger">*</span></label>
-                                            <select name="division_id" id="divisionSelect" class="form-control" required>
+                                            <select name="division_id" id="divisionSelect" class="form-control">
                                                 <option value="">@lang('Select Division')</option>
                                                 @foreach ($locations['divisions'] as $division)
                                                     <option value="{{ $division['id'] }}">{{ $division['name'] }}</option>
@@ -97,17 +97,17 @@
                                     </div>
 
                                     <div class="col-md-6">
-                                        <div class="form-group">
+                                        <div class="form-group" style="display: none;">
                                             <label class="form-label">@lang('District') <span
                                                     class="text-danger">*</span></label>
-                                            <select name="district_id" id="districtSelect" class="form-control" required>
+                                            <select name="district_id" id="districtSelect" class="form-control">
                                                 <option value="">@lang('Select District')</option>
                                             </select>
                                         </div>
                                     </div>
 
                                     <div class="col-md-6">
-                                        <div class="form-group">
+                                        <div class="form-group" style="display: none;">
                                             <label class="form-label">@lang('Area/Upazila')</label>
                                             <select name="area_name" id="areaSelect" class="form-control">
                                                 <option value="">@lang('Select Area')</option>
@@ -116,10 +116,9 @@
                                     </div>
 
                                     <div class="col-md-6">
-                                        <div class="form-group">
+                                        <div class="form-group" style="display: none;">
                                             <label class="form-label">@lang('Postcode')</label>
-                                            <input type="text" name="postcode" id="postcodeInput" class="form-control"
-                                                readonly>
+                                            <input type="text" name="postcode" id="postcodeInput" class="form-control">
                                         </div>
                                     </div>
                                 </div>
@@ -188,6 +187,15 @@
                             <h5 class="title">@lang('Order Summary')</h5>
                         </div>
                         <div class="checkout-card-body">
+                            <!-- Coupon Section (NOT a form - prevents nesting issues) -->
+                            <div class="mb-3 pb-3" style="border-bottom: 1px solid #f0f0f0;">
+                                <div id="couponForm" class="d-flex gap-2">
+                                    <input type="text" id="couponCodeInput" class="form-control form-control-sm" placeholder="@lang('Coupon code')">
+                                    <button type="button" class="btn btn-primary btn-sm" id="applyCouponBtn">@lang('Apply')</button>
+                                </div>
+                                <div id="couponMessage" class="mt-2 small"></div>
+                            </div>
+
                             <div class="order-summary">
                                 <div class="summary-item">
                                     <span>@lang('Subtotal')</span>
@@ -324,12 +332,57 @@
             const shippingMethods = document.querySelectorAll('input[name="shipping_method_id"]');
             const paymentMethods = document.querySelectorAll('input[name="gateway"]');
 
+            // Auto-select first shipping and payment method if available
+            if (shippingMethods.length > 0 && !Array.from(shippingMethods).some(m => m.checked)) {
+                shippingMethods[0].checked = true;
+                shippingMethods[0].dispatchEvent(new Event('change', { bubbles: true }));
+            }
+
+            if (paymentMethods.length > 0 && !Array.from(paymentMethods).some(m => m.checked)) {
+                paymentMethods[0].checked = true;
+                paymentMethods[0].dispatchEvent(new Event('change', { bubbles: true }));
+            }
+
             // Validate on form submission
             orderForm.addEventListener('submit', function(e) {
                 e.preventDefault();
 
+                console.log('Form validation triggered...');
+
                 if (validateForm()) {
+                    // Double-check that payment method is selected
+                    const selectedGateway = document.querySelector('input[name="gateway"]:checked');
+                    if (!selectedGateway) {
+                        alert('Please select a payment method before confirming');
+                        return;
+                    }
+
+                    // Disable button and show processing
+                    const submitBtn = this.querySelector('.checkout-btn');
+                    if (submitBtn) {
+                        submitBtn.disabled = true;
+                        submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>@lang("Processing...")';
+                    }
+                    
+                    console.log('Form validation passed. Final totals:', {
+                        subtotal: window.subtotal,
+                        shipping: window.currentShippingCharge,
+                        discount: window.couponAmount,
+                        total: (window.subtotal + window.currentShippingCharge - window.couponAmount),
+                        gateway: selectedGateway.value,
+                        currency: document.getElementById('currencyField').value
+                    });
+                    
+                    // Submit the form immediately - no delay needed
                     this.submit();
+                } else {
+                    console.warn('Form validation failed - check above errors');
+                    // Re-enable button if validation fails
+                    const submitBtn = this.querySelector('.checkout-btn');
+                    if (submitBtn && submitBtn.disabled) {
+                        submitBtn.disabled = false;
+                        submitBtn.innerHTML = '@lang("Complete Order")';
+                    }
                 }
             });
 
@@ -344,21 +397,21 @@
                 const phone = document.querySelector('input[name="phone"]');
                 const address = document.querySelector('textarea[name="address"]');
 
-                if (!name.value.trim()) {
-                    showError(name, 'Full name is required');
+                if (!name || !name.value.trim()) {
+                    if (name) showError(name, 'Full name is required');
                     isValid = false;
                 }
 
-                if (!phone.value.trim()) {
-                    showError(phone, 'Phone number is required');
+                if (!phone || !phone.value.trim()) {
+                    if (phone) showError(phone, 'Phone number is required');
                     isValid = false;
                 } else if (!/^[0-9]{11,15}$/.test(phone.value)) {
-                    showError(phone, 'Please enter a valid phone number');
+                    if (phone) showError(phone, 'Please enter a valid phone number');
                     isValid = false;
                 }
 
-                if (!address.value.trim()) {
-                    showError(address, 'Delivery address is required');
+                if (!address || !address.value.trim()) {
+                    if (address) showError(address, 'Delivery address is required');
                     isValid = false;
                 }
 
@@ -370,7 +423,9 @@
 
                 if (!shippingSelected) {
                     const shippingContainer = document.querySelector('.shipping-methods');
-                    showError(shippingContainer, 'Please select a shipping method');
+                    if (shippingContainer) {
+                        showError(shippingContainer, 'Please select a shipping method');
+                    }
                     isValid = false;
                 }
 
@@ -382,9 +437,21 @@
 
                 if (!paymentSelected) {
                     const paymentContainer = document.querySelector('.payment-methods');
-                    showError(paymentContainer, 'Please select a payment method');
+                    if (paymentContainer) {
+                        showError(paymentContainer, 'Please select a payment method');
+                    }
                     isValid = false;
                 }
+
+                // Debug info
+                console.log('Order Form Validation:', {
+                    name: name ? name.value.trim() : '',
+                    phone: phone ? phone.value.trim() : '',
+                    address: address ? address.value.trim().substring(0, 20) : '',
+                    shippingSelected: shippingSelected,
+                    paymentSelected: paymentSelected,
+                    overallValid: isValid
+                });
 
                 return isValid;
             }
@@ -420,26 +487,36 @@
                 });
             }
 
-            // Real-time validation for fields
-            document.querySelector('input[name="name"]').addEventListener('blur', function() {
-                if (!this.value.trim()) {
-                    showError(this, 'Full name is required');
-                }
-            });
+            // Real-time validation for fields - with safety checks
+            let nameInput = document.querySelector('input[name="name"]');
+            let phoneInput = document.querySelector('input[name="phone"]');
+            let addressInput = document.querySelector('textarea[name="address"]');
+            
+            if (nameInput) {
+                nameInput.addEventListener('blur', function() {
+                    if (!this.value.trim()) {
+                        showError(this, 'Full name is required');
+                    }
+                });
+            }
 
-            document.querySelector('input[name="phone"]').addEventListener('blur', function() {
-                if (!this.value.trim()) {
-                    showError(this, 'Phone number is required');
-                } else if (!/^[0-9]{11,15}$/.test(this.value)) {
-                    showError(this, 'Please enter a valid phone number');
-                }
-            });
+            if (phoneInput) {
+                phoneInput.addEventListener('blur', function() {
+                    if (!this.value.trim()) {
+                        showError(this, 'Phone number is required');
+                    } else if (!/^[0-9]{11,15}$/.test(this.value)) {
+                        showError(this, 'Please enter a valid phone number');
+                    }
+                });
+            }
 
-            document.querySelector('textarea[name="address"]').addEventListener('blur', function() {
-                if (!this.value.trim()) {
-                    showError(this, 'Delivery address is required');
-                }
-            });
+            if (addressInput) {
+                addressInput.addEventListener('blur', function() {
+                    if (!this.value.trim()) {
+                        showError(this, 'Delivery address is required');
+                    }
+                });
+            }
 
             // Shipping method selection validation
             shippingMethods.forEach(method => {
@@ -461,92 +538,257 @@
         });
 
         function handleGetCharge(charge) {
-
-            const subtotal = document.getElementById('subtotal').innerText;
-            const finalAmount = parseInt(subtotal) + parseInt(charge);
-            const total = document.getElementById('total');
-            const deleveryCharge = document.getElementById('delivery-fee');
-            deleveryCharge.innerText = charge;
-            total.innerText = finalAmount;
-
-            console.log(charge)
+            // This function is deprecated - using jQuery event handler instead
+            // But keeping it for backward compatibility with inline onclick
+            const chargeValue = parseFloat(charge) || 0;
+            window.currentShippingCharge = chargeValue;
+            
+            // Trigger the jQuery handler to recalculate totals properly
+            $('[name="shipping_method_id"]:checked').trigger('change');
         }
     </script>
 
     <script>
+        // Declare variables at global scope
+        window.subtotal = parseFloat("{{ $subtotal }}") || 0;
+        window.couponAmount = parseFloat("{{ $couponAmount }}") || 0;
+        window.currentShippingCharge = parseFloat("{{ $shippingMethods->first()->charge ?? 0 }}") || 0;
+        window.defaultCurrency = "{{ gs('cur_text') }}";
+
+        // Global function to calculate and update totals
+        window.updateTotals = function() {
+            // Ensure we have valid values
+            let subtotal = parseFloat(window.subtotal) || 0;
+            let shipping = parseFloat(window.currentShippingCharge) || 0;
+            let discount = parseFloat(window.couponAmount) || 0;
+            
+            // Calculate new total: subtotal + shipping - discount
+            let newTotal = subtotal + shipping - discount;
+            
+            // Safety check - ensure total is not negative
+            if (newTotal < 0) {
+                newTotal = 0;
+            }
+
+            // Update displays with proper formatting
+            $('.delivery-fee').text(shipping.toFixed(2));
+            $('#total').text(newTotal.toFixed(2));
+            $('.final-amount').text(newTotal.toFixed(2));
+            
+            // Also update the processing fee calculation if payment gateway is selected
+            console.log('Totals Updated:', {
+                subtotal: subtotal,
+                shipping: shipping,
+                discount: discount,
+                total: newTotal
+            });
+
+            return newTotal;
+        };
+
         (function($) {
             "use strict";
 
-            // Initialize tooltips
-            $('[data-bs-toggle="tooltip"]').tooltip();
-
-            // Initialize amounts with proper parsing
-            let subtotal = parseFloat("{{ $subtotal }}") || 0;
-            let couponAmount = parseFloat("{{ $couponAmount }}") || 0;
-            let currentShippingCharge = parseFloat("{{ $shippingMethods->first()->charge ?? 0 }}") || 0;
+            // Initialize tooltips (with safety check)
+            if (typeof $ !== 'undefined' && $.fn.tooltip) {
+                $('[data-bs-toggle="tooltip"]').tooltip();
+            }
 
             // Set default currency
-            let defaultCurrency = "{{ gs('cur_text') }}";
-            $('#currencyField').val(defaultCurrency);
-
-            // Function to calculate and update totals
-            function updateTotals() {
-                // Calculate new total
-                let newTotal = subtotal + currentShippingCharge - couponAmount;
-
-                // Update displays
-                $('.delivery-fee').text(currentShippingCharge.toFixed(2));
-                $('#total').text(newTotal.toFixed(2));
-                $('.final-amount').text(newTotal.toFixed(2));
-
-                return newTotal;
-            }
+            $('#currencyField').val(window.defaultCurrency);
 
             // Listen for cart updates from other scripts (e.g., global cart handler)
             document.addEventListener('cart:updated', function(e) {
                 const amount = parseFloat(e?.detail?.subtotal) || 0;
-                subtotal = amount;
+                window.subtotal = amount;
 
                 // Debug: show cart update event in console
-                console.debug('cart:updated event received:', subtotal);
+                console.debug('cart:updated event received:', {
+                    new_subtotal: window.subtotal,
+                    shipping: window.currentShippingCharge,
+                    coupon: window.couponAmount
+                });
 
                 // Update visible fields
-                $('#subtotal').text(subtotal.toFixed(2));
-                $('#cartSubtotal').text(subtotal.toFixed(2));
-                $('.cartSubtotal').text(Math.abs(subtotal).toFixed(2));
+                $('#subtotal').text(window.subtotal.toFixed(2));
+                $('#cartSubtotal').text(window.subtotal.toFixed(2));
+                $('.cartSubtotal').text(Math.abs(window.subtotal).toFixed(2));
 
                 // Recalculate totals and payment fees
-                updateTotals();
+                let newTotal = window.updateTotals();
                 if ($('[name="gateway"]:checked').length) {
-                    calculation($('[name="gateway"]:checked').data('gateway'), updateTotals());
+                    window.calculation($('[name="gateway"]:checked').data('gateway'), newTotal);
                 }
             });
 
-            // Shipping method change handler - FIXED
-
-
-
+            // Shipping method change handler
+            $('[name="shipping_method_id"]').on('change', function() {
+                // Get the charge from the shipping method price text
+                let charge = parseFloat($(this).closest('.shipping-method-item').find('.shipping-method-price').text().replace(/[^0-9.]/g, '')) || 0;
+                
+                // Update global shipping charge
+                window.currentShippingCharge = charge;
+                
+                // Update the display
+                $('.delivery-fee').text(charge.toFixed(2));
+                
+                // Recalculate totals
+                let newTotal = window.updateTotals();
+                
+                // Log for debugging
+                console.log('Shipping method changed:', {
+                    charge: charge,
+                    new_total: newTotal,
+                    coupon_discount: window.couponAmount
+                });
+                
+                // Recalculate payment fees
+                if ($('[name="gateway"]:checked').length) {
+                    window.calculation($('[name="gateway"]:checked').data('gateway'), newTotal);
+                }
+            });
 
             // Payment method change handler
             $('[name="gateway"]').on('change', function() {
                 let gateway = $(this).data('gateway');
-                let currency = gateway == 'cod' ? defaultCurrency : gateway.currency;
+                let currency = gateway == 'cod' ? window.defaultCurrency : gateway.currency;
                 $('#currencyField').val(currency);
 
                 // Toggle processing fee display
                 $('.processing-fee-item').toggleClass('d-none', gateway == 'cod');
 
-                calculation(gateway, updateTotals());
+                // Get current total and calculate with fees
+                let currentTotal = window.subtotal + window.currentShippingCharge - window.couponAmount;
+                
+                console.log('Payment method changed:', {
+                    gateway_type: gateway == 'cod' ? 'COD' : 'Online',
+                    base_amount: currentTotal,
+                    currency: currency
+                });
+                
+                window.calculation(gateway, currentTotal);
             });
 
-            // Calculate payment processing fees
-            function calculation(gateway, amount) {
+            // Coupon handler - Click listener (not form submit to avoid conflicts)
+            $('#applyCouponBtn').on('click', function(e) {
+                e.preventDefault();
+                e.stopPropagation();
+                
+                let couponCode = $('#couponCodeInput').val().trim();
+                
+                if (!couponCode) {
+                    showCouponMessage('Please enter a coupon code', 'error');
+                    return;
+                }
+
+                // Disable button during processing
+                $('#applyCouponBtn').prop('disabled', true).text('@lang("Applying...")');
+                
+                // Get current subtotal from the page
+                let subtotalAmount = window.subtotal || 0;
+                console.log('🎟️ Applying coupon:', {
+                    code: couponCode,
+                    subtotal: subtotalAmount
+                });
+
+                $.ajax({
+                    url: '{{ route("user.coupon.apply") }}',
+                    type: 'POST',
+                    data: {
+                        _token: '{{ csrf_token() }}',
+                        code: couponCode,
+                        subtotal: subtotalAmount
+                    },
+                    success: function(response) {
+                        if (response.success) {
+                            // Parse discount amount properly
+                            let discountAmount = parseFloat(response.discount_amount) || 0;
+                            
+                            // Update global coupon amount 
+                            window.couponAmount = discountAmount;
+                            
+                            console.log('✅ Coupon Applied:', {
+                                code: response.coupon_code,
+                                discount: discountAmount
+                            });
+                            
+                            showCouponMessage(response.message, 'success');
+                            $('#couponCodeInput').prop('disabled', true);
+                            $('#applyCouponBtn').text('✓ @lang("Applied")').prop('disabled', true);
+                            
+                            // Find or create coupon row in order summary - LIVE UPDATE
+                            let $couponRow = $('.order-summary').find('.summary-item.text-success');
+                            
+                            if ($couponRow.length > 0) {
+                                // Update existing coupon discount amount LIVE
+                                $couponRow.find('#couponAmount').text(discountAmount.toFixed(2));
+                            } else {
+                                // Create and insert new coupon discount row
+                                let couponLabel = '@lang("Coupon Discount")';
+                                let newCouponRow = '<div class="summary-item text-success">' +
+                                    '<span>' + couponLabel + ' <small>(' + response.coupon_code + ')</small></span>' +
+                                    '<span>-<span id="couponAmount">' + discountAmount.toFixed(2) + '</span></span>' +
+                                    '</div>';
+                                
+                                // Insert after subtotal row
+                                $('.order-summary').find('.summary-item').first().after(newCouponRow);
+                            }
+                            
+                            // Recalculate totals - CRITICAL STEP
+                            let finalTotal = window.updateTotals();
+                            
+                            // Recalculate payment fees if gateway selected
+                            let $selectedGateway = $('[name="gateway"]:checked');
+                            if ($selectedGateway.length > 0) {
+                                let gatewayData = $selectedGateway.data('gateway');
+                                window.calculation(gatewayData, finalTotal);
+                            }
+                        } else {
+                            showCouponMessage(response.message || 'Coupon code is not valid', 'error');
+                        }
+                    },
+                    error: function(xhr) {
+                        let errorMsg = 'Error applying coupon';
+                        if (xhr.responseJSON && xhr.responseJSON.message) {
+                            errorMsg = xhr.responseJSON.message;
+                        } else if (xhr.status === 400) {
+                            errorMsg = 'Invalid coupon code';
+                        } else if (xhr.status === 422) {
+                            errorMsg = 'Coupon validation failed';
+                        }
+                        
+                        showCouponMessage(errorMsg, 'error');
+                    },
+                    complete: function() {
+                        $('#applyCouponBtn').prop('disabled', false).text('@lang("Apply")');
+                    }
+                });
+            });
+
+            function showCouponMessage(message, type) {
+                let htmlClass = type === 'success' ? 'alert-success' : 'alert-danger';
+                $('#couponMessage').html('<div class="alert ' + htmlClass + ' mb-0">' + message + '</div>');
+                
+                if (type === 'success') {
+                    setTimeout(function() {
+                        $('#couponMessage').fadeOut();
+                    }, 3000);
+                }
+            }
+
+            // Calculate payment processing fees - exposed globally
+            window.calculation = function(gateway, amount) {
+                // Ensure amount is valid
+                if (typeof amount !== 'number' || amount < 0) {
+                    amount = window.subtotal + window.currentShippingCharge - window.couponAmount;
+                }
+
                 // Handle COD case
                 if (gateway == 'cod') {
                     gateway = {
                         percent_charge: 0,
                         fixed_charge: 0,
-                        currency: defaultCurrency,
+                        currency: window.defaultCurrency,
                         method: {
                             crypto: ''
                         },
@@ -564,42 +806,99 @@
                 let totalCharge = totalPercentCharge + fixedCharge;
                 let totalAmount = amount + totalCharge;
 
+                // Ensure totalAmount is valid
+                if (totalAmount < 0) {
+                    totalAmount = amount;
+                }
+
                 // Update displays
                 $(".final-amount").text(totalAmount.toFixed(2));
                 $(".processing-fee").text(totalCharge.toFixed(2));
                 $(".gateway-currency").text(gateway.currency);
 
                 // Handle currency conversion display
-                if (gateway.currency != defaultCurrency && gateway.method.crypto != 1) {
+                if (gateway.currency != window.defaultCurrency && gateway.method.crypto != 1) {
                     $(".conversion-notice").removeClass('d-none');
                     $('.in-currency').text((totalAmount * gateway.rate).toFixed(2));
                 } else {
                     $(".conversion-notice").addClass('d-none');
                 }
 
-                // Enable/disable checkout button based on limits
-                $(".checkout-btn").prop('disabled',
-                    gateway != 'cod' &&
-                    (amount < parseFloat(gateway.min_amount) ||
-                        amount > parseFloat(gateway.max_amount))
-                );
-            }
+                // Check payment gateway limits
+                let shouldDisable = false;
+                if (gateway != 'cod') {
+                    let minAmount = parseFloat(gateway.min_amount) || 0;
+                    let maxAmount = parseFloat(gateway.max_amount) || Infinity;
+                    shouldDisable = amount < minAmount || amount > maxAmount;
+                }
+                
+                $(".checkout-btn").prop('disabled', shouldDisable);
+                
+                // Show warning message if amount is outside limits
+                if (shouldDisable && gateway != 'cod') {
+                    let warningMsg = 'Amount ' + amount.toFixed(2) + ' is outside payment gateway limits. Please use another payment method.';
+                    console.warn(warningMsg);
+                }
+                
+                console.log('Payment Calculation:', {
+                    gateway_type: (gateway == 'cod' ? 'COD' : 'Online'),
+                    gateway_currency: gateway.currency,
+                    base_amount: amount,
+                    percent_charge: percentCharge,
+                    fixed_charge: fixedCharge,
+                    total_charge: totalCharge,
+                    final_amount: totalAmount,
+                    button_disabled: shouldDisable
+                });
+            };
 
             // Initialize on page load
             $(document).ready(function() {
-                updateTotals();
+                console.log('Initializing checkout page totals:', {
+                    subtotal: window.subtotal,
+                    shipping: window.currentShippingCharge,
+                    discount: window.couponAmount,
+                    default_currency: window.defaultCurrency
+                });
+                
+                // First, recalculate all totals
+                window.updateTotals();
+                
+                // Then, ensure payment gateway is selected and properly configured
                 if ($('[name="gateway"]:checked').length) {
-                    calculation($('[name="gateway"]:checked').data('gateway'), updateTotals());
+                    let selectedGateway = $('[name="gateway"]:checked');
+                    let gatewayData = selectedGateway.data('gateway');
+                    let currency = (gatewayData == 'cod') ? window.defaultCurrency : gatewayData.currency;
+                    
+                    // Set currency field explicitly
+                    $('#currencyField').val(currency);
+                    
+                    // Calculate fees
+                    let totalAmount = window.updateTotals();
+                    window.calculation(gatewayData, totalAmount);
+                    
+                    console.log('Payment gateway initialized:', {
+                        gateway: selectedGateway.val(),
+                        currency: currency,
+                        total: totalAmount
+                    });
+                } else {
+                    // Auto-select first payment method if none selected
+                    let $firstPayment = $('[name="gateway"]').first();
+                    if ($firstPayment.length) {
+                        $firstPayment.prop('checked', true);
+                        let gatewayData = $firstPayment.data('gateway');
+                        let currency = (gatewayData == 'cod') ? window.defaultCurrency : gatewayData.currency;
+                        $('#currencyField').val(currency);
+                        
+                        let totalAmount = window.updateTotals();
+                        window.calculation(gatewayData, totalAmount);
+                    }
                 }
             });
 
-            // Form submission handler
-            $('#orderForm').on('submit', function() {
-                $('.checkout-btn')
-                    .prop('disabled', true)
-                    .find('.btn-text')
-                    .text('Processing...');
-            });
+            // Already handled by vanilla JS addEventListener above
+            // No need for duplicate jQuery handler
 
         })(jQuery);
     </script>
@@ -731,7 +1030,8 @@ $('#areaSelect').on('change', function () {
                                 setCartSubtotal(response.cartSubtotal);
                             }
 
-                            $('#searchResults').empty();
+                            // Clear search box and results completely
+                            $('#searchResults').empty().html('');
                             $('#productSearchInput').val('');
 
                             // Update mini cart / sidebar (existing helper)
@@ -744,7 +1044,12 @@ $('#areaSelect').on('change', function () {
                                 // Replace cart items if the response contains them
                                 if (response.partialCartData) {
                                     const $partial = $('<div>').html(response.partialCartData);
-                                    const itemsHtml = $partial.find('.cart-items-wrapper').html();
+                                    // Fix: Look for cart items in the partial response
+                                    let itemsHtml = $partial.find('.cart-items').html() || $partial.find('[data-cart-items]').html();
+                                    if (!itemsHtml) {
+                                        // If no wrapper found, use the whole partial as items
+                                        itemsHtml = response.partialCartData;
+                                    }
                                     if (itemsHtml && $('.cart-items').length) {
                                         $('.cart-items').html(itemsHtml);
                                         // Re-run lazy loader for newly injected images
@@ -755,20 +1060,20 @@ $('#areaSelect').on('change', function () {
                                 // Update subtotal and related totals
                                 let newSubtotal = parseFloat(response.cartSubtotal) || 0;
 
-                                // Update JS subtotal variable used by updateTotals()
-                                subtotal = newSubtotal;
+                                // Update global subtotal variable
+                                window.subtotal = newSubtotal;
 
                                 // Update visible elements
-                                $('#subtotal').text(newSubtotal.toFixed(2));
-                                $('#cartSubtotal').text(newSubtotal.toFixed(2));
-                                $('.cartSubtotal').text(Math.abs(newSubtotal).toFixed(2));
+                                $('#subtotal').text(window.subtotal.toFixed(2));
+                                $('#cartSubtotal').text(window.subtotal.toFixed(2));
+                                $('.cartSubtotal').text(Math.abs(window.subtotal).toFixed(2));
 
-                                // Recalculate totals (uses subtotal, currentShippingCharge, couponAmount)
-                                if (typeof updateTotals === 'function') {
-                                    updateTotals();
+                                // Recalculate totals (uses window.subtotal, window.currentShippingCharge, window.couponAmount)
+                                if (typeof window.updateTotals === 'function') {
+                                    window.updateTotals();
                                     // Also recalc payment processing if a gateway is checked
                                     if ($('[name="gateway"]:checked').length) {
-                                        calculation($('[name="gateway"]:checked').data('gateway'), updateTotals());
+                                        window.calculation($('[name="gateway"]:checked').data('gateway'), window.updateTotals());
                                     }
                                 }
 

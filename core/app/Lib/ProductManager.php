@@ -8,7 +8,7 @@ use App\Models\DigitalFile;
 use App\Models\Product;
 
 use App\Models\ProductBatch;   //  ← add this
-use App\Models\Purchaser; 
+use App\Models\Purchaser;
 
 use App\Models\ProductVariant;
 use App\Models\StockLog;
@@ -104,6 +104,7 @@ class ProductManager
 
         $product->regular_price             = $request->regular_price ?? null;
         $product->sale_price                = $request->sale_price ?? null;
+        $product->wholesale_price           = $request->wholesale_price ?? null;
         $product->sale_starts_from          = $request->sale_starts_from;
         $product->sale_ends_at              = $request->sale_ends_at;
 
@@ -299,7 +300,7 @@ class ProductManager
 
     public function receiveStock(Product $product, ?ProductVariant $variant, array $data): ProductBatch
     {
-        Log::debug('receiveStock called', $data); 
+        Log::debug('receiveStock called', $data);
         $batch = ProductBatch::firstOrCreate(
             [
                 'product_id' => $product->id,

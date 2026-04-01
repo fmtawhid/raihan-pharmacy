@@ -133,6 +133,11 @@ class FileInfo {
             'size'      => '460x230',
         ];
 
+        $data['popupBanner'] = [
+            'path'      => 'assets/images/popup_banner',
+            'size'      => '600x400',
+        ];
+
         return $data;
     }
 }

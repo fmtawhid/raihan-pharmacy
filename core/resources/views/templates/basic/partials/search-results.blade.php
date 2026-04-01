@@ -7,7 +7,13 @@
                 <img src="{{ $product->thumbnail ?? route('placeholder.image', ['size' => '80x80']) }}" alt="{{ $product->name }}" style="width:50px;height:50px;object-fit:cover;" class="me-2">
                 <div>
                     <a href="{{ route('product.detail', $product->slug) }}" class="fw-semibold">{{ $product->name }}</a>
-                    <div class="small text-muted">@lang('Price'): {{ showAmount($product->sale_price ?? $product->price ?? 0) }}</div>
+                    <div class="small text-muted">@lang('Price'): 
+                        @if($product->sale_price && $product->sale_price > 0)
+                            {{ showAmount($product->sale_price) }}
+                        @else
+                            {{ showAmount($product->price ?? 0) }}
+                        @endif
+                    </div>
                 </div>
             </div>
             <div>

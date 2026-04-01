@@ -182,6 +182,11 @@ class SiteController extends Controller
         Cookie::queue('gdpr_cookie', gs('site_name'), 43200);
     }
 
+    public function popupBannerDismiss()
+    {
+        Cookie::queue('popup_banner_dismissed', 1, 1440); // 1 day (1440 minutes)
+    }
+
     public function cookiePolicy()
     {
         $cookieContent = Frontend::where('data_keys', 'cookie.data')->first();

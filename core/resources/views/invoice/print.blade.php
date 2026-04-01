@@ -2,199 +2,203 @@
 <html lang="en">
 
 <head>
-    <title>{{ $order->order_number }}</title>
-    <meta name="csrf-token" content="{{ csrf_token() }}">
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta http-equiv="X-UA-Compatible" content="ie=edge">
-
-    <link rel='stylesheet' href='https://fonts.googleapis.com/css?family=Poppins:100,200,300,400,500,600,700,800,900' type='text/css'>
-    <link rel="shortcut icon" href="{{ getImage('assets/images/logoIcon/favicon.png', '128x128') }}" type="image/x-icon">
-
-    <link href="{{ asset('assets/global/css/bootstrap.min.css') }}" rel="stylesheet">
-
-    <link rel="stylesheet" href="{{ asset($activeTemplateTrue . 'css/fontawesome.all.min.css') }}">
-    <link rel="stylesheet" href="{{ asset($activeTemplateTrue . 'css/main.css') }}">
-    <link rel="stylesheet" href="{{ asset('assets/global/css/invoice.css') }}">
-    <link href="{{ asset($activeTemplateTrue . 'css/color.php?color=' . gs('base_color')) }}" rel="stylesheet">
-
+    <title>{{ $order->order_number }}</title>
 </head>
 
 <body onload="window.print()">
-    <!-- Container -->
-    <div class="container-fluid invoice-container">
-        <div class="container-fluid p-0">
-            <div class="card border-0">
-                <div class="card-body">
-                    <!-- Main content -->
-                    <div class="invoice">
-                        <!-- title row -->
-                        <div class="row">
-                            <div class="col-12">
-                                <div class="list--row">
-                                    <div class="logo-invoice float-left">
-                                        <img src="{{ siteLogo('dark') }}" alt="@lang('logo')">
-                                    </div>
-                                    <ul class="m-0  float-right">
-                                        <b>@lang('Order ID'):</b> {{ $order->order_number }}<br>
-                                        <b>@lang('Order Date'):</b> {{ showDateTime($order->created_at, 'd/m/Y') }} <br>
-                                        <b>@lang('Total Amount'):</b> {{ showAmount($order->total_amount) }}
-                                    </ul>
-                                </div>
-                            </div>
-                        </div>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        html, body {
+            font-family: 'Courier New', Courier, monospace;
+            font-size: 12px;
+            color: #000;
+            width: 80mm;
+            margin: 0;
+            padding: 0;
+        }
+        body {
+            padding: 6px 8px;
+        }
+        .receipt-container {
+            max-width: 80mm;
+            margin: 0 auto;
+        }
+        .text-center { text-align: center; }
+        .store-name {
+            font-size: 16px;
+            font-weight: bold;
+            margin-bottom: 4px;
+        }
+        .divider {
+            border-top: 1px dashed #000;
+            margin: 6px 0;
+        }
+        .invoice-header {
+            font-size: 11px;
+            margin-bottom: 8px;
+            line-height: 1.5;
+        }
+        .invoice-header p {
+            margin: 2px 0;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 8px 0;
+        }
+        table thead th {
+            font-size: 10px;
+            font-weight: bold;
+            text-align: left;
+            padding: 3px 2px;
+            border-bottom: 1px solid #000;
+        }
+        table tbody td {
+            font-size: 10px;
+            padding: 2px 2px;
+            border-bottom: 1px dotted #ccc;
+        }
+        table tbody tr:last-child td {
+            border-bottom: 1px solid #000;
+        }
+        .summary-section {
+            font-size: 11px;
+            margin: 8px 0;
+            line-height: 1.6;
+        }
+        .summary-row {
+            display: flex;
+            justify-content: space-between;
+        }
+        .summary-total {
+            font-weight: bold;
+            border-top: 1px solid #000;
+            border-bottom: 1px solid #000;
+            padding: 3px 0;
+            margin: 4px 0;
+        }
+        .footer-section {
+            text-align: center;
+            font-size: 9px;
+            margin-top: 8px;
+            line-height: 1.5;
+        }
+        .thanks {
+            font-weight: bold;
+            font-size: 10px;
+            margin: 6px 0;
+        }
+    </style>
 
-                        <hr>
-                        <div class="row invoice-info">
-                            <div class="col-12">
-                                <div class="list--row">
-                                    <div class="float-left">
-                                        <h5 class="mb-2">@lang('User Details')</h5>
-                                        <address>
-                                            <ul>
-                                                <li>@lang('Name'): <strong>{{ @$order->user->fullname }}</strong>
-                                                </li>
-                                                <li>@lang('Address'): {{ @$order->user->address->address }}</li>
-                                                <li>@lang('State'): {{ @$order->user->address->state }}</li>
-                                                <li>@lang('City'): {{ @$order->user->address->city }}</li>
-                                                <li>@lang('Zip'): {{ @$order->user->address->zip }}</li>
-                                                <li>@lang('Country'): {{ @$order->user->address->country }}</li>
-                                            </ul>
-                                        </address>
-                                    </div><!-- /.col -->
-                                    @php
-                                        $shippingAddress = json_decode($order->shipping_address);
-                                    @endphp
+    <div class="receipt-container">
+        <!-- Store Header -->
+        <div class="text-center">
+            <div class="store-name">{{ gs('site_name') ?? 'Store' }}</div>
+        </div>
 
-                                    @if ($shippingAddress)
-                                        <div class="float-right">
-                                            <h5 class="mb-2">@lang('Shipping Address')</h5>
+        <div class="divider"></div>
 
-                                            <address>
-                                                <ul>
-                                                    <li>@lang('Name'): <strong>{{ $order->user->firstname }}
-                                                            {{ $order->user->lastname }}</strong>
-                                                    </li>
-                                                    <li>@lang('Address'): {{ $shippingAddress->address }}</li>
-                                                    <li>@lang('State'): {{ $shippingAddress->phone }}</li>
-                                                </ul>
-                                            </address>
-                                        </div>
-                                    @endif
-                                </div>
-                            </div>
-                        </div><!-- /.row -->
-                        <!-- Table row -->
+        <!-- Invoice Details -->
+        <div class="invoice-header">
+            <p><strong>Invoice No:</strong> {{ $order->order_number }}</p>
+            <p><strong>Date:</strong> {{ showDateTime($order->created_at, 'd-m-Y H:i:s') }}</p>
+            <p><strong>Customer:</strong> {{ $order->user->fullname ?? 'Walk-in Customer' }}</p>
+        </div>
 
-                        <div class="row">
-                            <div class="col-12 table-responsive">
-                                <table class="table print-table table-bordered">
-                                    <thead>
-                                        <tr>
-                                            <th>@lang('Product')</th>
-                                            <th class="text-end">@lang('Price')</th>
-                                            <th class="text-end">@lang('Quantity')</th>
-                                            <th class="text-end">@lang('Total Price')</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        @php
-                                            $subtotal = $order->orderDetail->sum(function ($detail) {
-                                                return $detail->price * $detail->quantity;
-                                            });
+        <div class="divider"></div>
 
-                                            $totalDiscount = $order->orderDetail->sum('discount');
-                                            $hasVariant = false;
-                                        @endphp
+        <!-- Items Table -->
+        <table>
+            <thead>
+                <tr>
+                    <th style="width: 8%;">S.L</th>
+                    <th style="width: 45%;">Item</th>
+                    <th style="width: 12%; text-align: center;">Qty</th>
+                    <th style="width: 18%; text-align: right;">MRP</th>
+                    <th style="width: 17%; text-align: right;">Total</th>
+                </tr>
+            </thead>
+            <tbody>
+                @php
+                    $subtotal = 0;
+                    $totalQty = 0;
+                    $totalDiscount = 0;
+                @endphp
+                @foreach ($order->orderDetail as $index => $data)
+                    @php
+                        $itemTotal = $data->price * $data->quantity;
+                        $subtotal += $itemTotal;
+                        $totalQty += $data->quantity;
+                        $totalDiscount += $data->discount;
+                    @endphp
+                    <tr>
+                        <td>{{ $index + 1 }}</td>
+                        <td>{{ $data->product->name }}</td>
+                        <td style="text-align: center;">{{ $data->quantity }}</td>
+                        <td style="text-align: right;">{{ showAmount($data->price) }}</td>
+                        <td style="text-align: right;">{{ showAmount($itemTotal) }}</td>
+                    </tr>
+                @endforeach
+            </tbody>
+        </table>
 
-                                        @foreach ($order->orderDetail as $data)
-                                            @php
-                                                $hasVariant = $hasVariant ?? ($data->hasVariant ? true : false);
-                                            @endphp
-                                            <tr>
-                                                <td>
-                                                   <span class="me-2 fw-bold">{{ $loop->iteration }}.</span>
-                                                    {{ @$data->product->name }}
-                                                    @if ($data->productVariant)
-                                                        - {{ @$data->productVariant->name }}
-                                                    @endif
-                                                </td>
-                                                <td class="text-end">{{ showAmount($data->price) }}</td>
-                                                <td class="text-end">{{ $data->quantity }}</td></td>
-                                                <td class="text-end">{{ showAmount($data->price * $data->quantity) }}</td>
-                                            </tr>
-                                        @endforeach
+        <div class="divider"></div>
 
-                                    </tbody>
-                                </table>
-                            </div><!-- /.col -->
-                        </div><!-- /.row -->
+        <!-- Summary Section -->
+        <div class="summary-section">
+            <div class="summary-row">
+                <span>Subtotal:</span>
+                <span>{{ showAmount($subtotal) }}</span>
+            </div>
 
-                        <div class="row mt-4">
-                            <!-- accepted payments column -->
-                            <div class="col-lg-6">
-                                @if (isset($order->deposit) && $order->deposit->status != Status::PAYMENT_INITIATE)
-                                    <div class="table-responsive">
-                                        <table class="table print-payment-table border-0">
-                                            <tbody>
-                                                <tr>
-                                                    <td width="50%">@lang('Payment Method')</td>
-                                                    <td width="50%" class="text-end">
-                                                        @if ($order->deposit->method_code == 0)
-                                                            <span data-bs-toggle="tooltip" title="@lang('Cash On Delivery')">@lang('COD')</span>
-                                                        @else
-                                                            <span data-bs-toggle="tooltip" title="{{ __(@$order->deposit->gateway->name) }}">{{ __(@$order->deposit->gateway->name) }}</span>
-                                                        @endif
-                                                    </td>
-                                                </tr>
-
-                                                <tr>
-                                                    <td>@lang('Payment Charge')</td>
-                                                    <td class="text-end">
-                                                        {{ $charge = getAmount(@$order->deposit->charge) }}</td>
-                                                </tr>
-                                                <tr>
-                                                    <td>@lang('Total Payment Amount') </td>
-                                                    <td class="text-end">
-                                                        {{ getAmount($order->deposit->amount + $charge) }}</td>
-                                                </tr>
-                                            </tbody>
-                                        </table>
-                                    </div>
-                                @endif
-
-                            </div><!-- /.col -->
-                            <div class="col-lg-6 subtotal-container">
-                                <div class="table-responsive">
-                                    <table class="table print-payment-table border-0">
-                                        <tbody>
-                                            <tr>
-                                                <td class="fw-bold">@lang('Subtotal')</td>
-                                                <td class="text-end" width="50%">{{ showAmount($subtotal) }}</td>
-                                            </tr>
-                                            @if ($order->appliedCoupon)
-                                                <tr>
-                                                    <td>(-) @lang('Coupon')
-                                                        ({{ $order->appliedCoupon->coupon->coupon_code }})</td>
-                                                    <td class="text-end">{{ showAmount($order->appliedCoupon->amount) }}</td>
-                                                </tr>
-                                            @endif
-                                            <tr>
-                                                <td>(+) @lang('Shipping')</td>
-                                                <td class="text-end">{{ showAmount($order->shipping_charge) }}</td>
-                                            </tr>
-                                            <tr>
-                                                <td class="fw-bold">@lang('Total')</td>
-                                                <td class="text-end fw-bold">{{ showAmount($order->total_amount) }}</td>
-                                            </tr>
-                                        </tbody>
-                                    </table>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
+            <div class="summary-total">
+                <div class="summary-row">
+                    <span>Net Total:</span>
+                    <span>{{ showAmount($subtotal - $totalDiscount) }}</span>
                 </div>
             </div>
+
+            <div class="summary-row">
+                <span>Total Qty:</span>
+                <span>{{ $totalQty }} Item</span>
+            </div>
+
+            <div class="summary-row">
+                <span>Paid Amount:</span>
+                <span>{{ showAmount($order->total_amount) }}</span>
+            </div>
+
+            <div class="summary-row">
+                <span>Change Amount:</span>
+                <span>৳0.00</span>
+            </div>
+
+            <div class="summary-row">
+                <span>Due Amount:</span>
+                <span>৳0.00</span>
+            </div>
+
+            <div class="summary-row">
+                <span>Mode of Payment:</span>
+                <span>
+                    @if (isset($order->deposit) && $order->deposit->method_code == 0)
+                        cash_payment
+                    @else
+                        {{ $order->deposit->gateway->name ?? 'cash_payment' }}
+                    @endif
+                </span>
+            </div>
+        </div>
+
+        <div class="divider"></div>
+
+        <!-- Footer -->
+        <div class="footer-section">
+            <p style="font-size: 8px;">Note: Physical damage, burn case, sticker<br>remove are not valid for warranty</p>
+            <p class="thanks">*** Thanks For Shopping With Us ***</p>
+            <p style="font-size: 9px;">Sold by: {{ auth()->user()->username ?? 'Super Admin' }} {{ showDateTime($order->created_at, 'd-m-Y H:i:s') }}</p>
         </div>
     </div>
 </body>

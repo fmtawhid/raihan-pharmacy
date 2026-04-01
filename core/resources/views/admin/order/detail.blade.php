@@ -35,6 +35,7 @@
                                 <th>@lang('Price')</th>
                                 <th>@lang('Quantity')</th>
                                 <th>@lang('Total Price')</th>
+                                <th>@lang('Discount')</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -42,6 +43,7 @@
                                 $subtotal = $order->orderDetail->sum(function ($detail) {
                                     return $detail->price * $detail->quantity;
                                 });
+                                $totalDiscount = $order->orderDetail->sum('discount');
                             @endphp
 
                             @foreach ($order->orderDetail as $data)
@@ -81,6 +83,13 @@
                                     </td>
                                     <td>{{ $data->quantity }}</td>
                                     <td class="text-end">{{ showAmount($data->price * $data->quantity) }}</td>
+                                    <td class="text-end">
+                                        @if ($data->discount > 0)
+                                            <span style="color:#f59e0b;font-weight:600;">-{{ showAmount($data->discount) }}</span>
+                                        @else
+                                            <span style="color:#cbd5e1;">-</span>
+                                        @endif
+                                    </td>
                                 </tr>
                             @endforeach
                         </tbody>
@@ -97,6 +106,12 @@
                                 <span>@lang('Subtotal')</span>
                                 <span class="fw-semibold">{{ showAmount($subtotal, 2) }}</span>
                             </li>
+                            @if ($totalDiscount > 0)
+                                <li>
+                                    <span>(<i class="la la-minus"></i>) @lang('Discount')</span>
+                                    <span style="color:#f59e0b;font-weight:600;">{{ showAmount($totalDiscount, 2) }}</span>
+                                </li>
+                            @endif
                             @if ($order->appliedCoupon)
                                 <li>
                                     <span>(<i class="la la-minus"></i>) @lang('Coupon')

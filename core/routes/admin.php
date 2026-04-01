@@ -96,19 +96,23 @@ Route::middleware('admin')->group(function () {
     });
 
 
-    Route::controller(PosController::class)->group(function(){
-        Route::get('pos', 'Pos')->name('pos.index');
-        Route::get('pos/search', 'searchProducts')->name('pos.searchProducts');
-        Route::get('pos/customers/search', 'searchCustomers')->name('pos.searchCustomers');
-        Route::post('pos/customers/create', 'createCustomer')->name('pos.createCustomer');
-        Route::post('pos/customers/select', 'selectCustomer')->name('pos.selectCustomer');
-        Route::get('pos/customer', 'getSelectedCustomer')->name('pos.getCustomer');
-        Route::post('pos/customer/clear', 'clearSelectedCustomer')->name('pos.clearCustomer');
-        Route::post('pos/add-to-cart', 'addToCart')->name('pos.addToCart');
-        Route::post('pos/remove-from-cart', 'removeFromCart')->name('pos.removeFromCart');
-        Route::post('pos/clear-cart', 'clearCart')->name('pos.clearCart');
-        Route::get('pos/cart', 'getCart')->name('pos.getCart');
-        Route::post('pos/confirm', 'confirmOrder')->name('pos.confirmOrder');
+    Route::controller(PosController::class)->prefix('pos')->name('pos.')->group(function(){
+        Route::get('/', 'Pos')->name('index');
+        Route::get('debug', 'debugData')->name('debug');
+        Route::get('products', 'getProducts')->name('getProducts');
+        Route::get('search', 'searchProducts')->name('searchProducts');
+        Route::get('customers/search', 'searchCustomers')->name('searchCustomers');
+        Route::post('customers/create', 'createCustomer')->name('createCustomer');
+        Route::post('customers/select', 'selectCustomer')->name('selectCustomer');
+        Route::get('customer', 'getSelectedCustomer')->name('getCustomer');
+        Route::post('customer/clear', 'clearSelectedCustomer')->name('clearCustomer');
+        Route::post('add-to-cart', 'addToCart')->name('addToCart');
+        Route::post('remove-from-cart', 'removeFromCart')->name('removeFromCart');
+        Route::post('update-qty', 'updateQty')->name('updateQty');
+        Route::post('update-qty-direct', 'updateQtyDirect')->name('updateQtyDirect');
+        Route::post('clear-cart', 'clearCart')->name('clearCart');
+        Route::get('cart', 'getCart')->name('getCart');
+        Route::post('confirm', 'confirmOrder')->name('confirmOrder');
     });
 
 
@@ -503,6 +507,10 @@ Route::middleware('admin')->group(function () {
         //Cookie
         Route::get('cookie', 'cookie')->name('setting.cookie');
         Route::post('cookie', 'cookieSubmit');
+
+        //Popup Banner
+        Route::get('popup-banner', 'popupBanner')->name('setting.popup.banner');
+        Route::post('popup-banner', 'popupBannerSubmit');
 
         //maintenance_mode
         Route::get('maintenance-mode', 'maintenanceMode')->name('maintenance.mode');

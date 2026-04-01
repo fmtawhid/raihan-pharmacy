@@ -49,10 +49,6 @@ class RegisterController extends Controller
             'password' => ['required', 'confirmed', $passwordValidation],
             'captcha' => 'sometimes|required',
             'agree' => $agree,
-            'division_id'  => 'required|integer',
-            'district_id'  => 'required|integer',
-            'area_name'    => 'required|string|max:255',
-            'postcode'     => 'required|string|max:20',
         ], [
             'firstname.required' => 'The first name field is required',
             'lastname.required' => 'The last name field is required'

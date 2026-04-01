@@ -88,6 +88,13 @@ Route::middleware('auth')->name('user.')->group(function () {
 
 
 
+            // Prescription Upload
+            Route::controller('PrescriptionController')->prefix('prescription')->name('prescription.')->group(function () {
+                Route::get('/', 'index')->name('index');
+                Route::post('/', 'store')->name('store');
+                Route::delete('{id}', 'destroy')->name('destroy');
+            });
+
             Route::controller('OrderController')->group(function () {
                 Route::get('orders/{type}', 'orders')->name('orders');
                 Route::get('order/{order_number}', 'orderDetails')->name('order');
@@ -141,5 +148,10 @@ Route::middleware('checkout.access')->name('user.')->group(function () {
 
             Route::post('complete-checkout', 'completeCheckout')->name('complete');
         });
+
+        Route::post('apply-coupon', 'User\CheckoutController@applyCoupon')->name('coupon.apply');
     });
+
+    // Coupon routes outside checkout.name() prefix
+    Route::post('apply-coupon', 'User\CheckoutController@applyCoupon')->name('coupon.apply');
 });

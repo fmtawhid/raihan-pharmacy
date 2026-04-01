@@ -37,7 +37,12 @@
                                         <a href="{{ route('admin.collection.index') }}" class="btn btn--light btn-sm"><i class="las la-cog me-0"></i></a>
                                     </div>
                                 </div>
-
+                                <div class="col-md-3">
+                                    <div class="frontend-section-card">
+                                        <h6>@lang('Popup Banner')</h6>
+                                        <a href="{{ route('admin.setting.popup.banner') }}" class="btn btn--light btn-sm"><i class="las la-cog me-0"></i></a>
+                                    </div>
+                                </div>
                             @endif
                         </div>
                     </div>

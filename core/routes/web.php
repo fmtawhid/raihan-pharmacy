@@ -84,6 +84,7 @@ Route::controller('SiteController')->group(function () {
     Route::get('/change/{lang?}', 'changeLanguage')->name('lang');
     Route::get('cookie-policy', 'cookiePolicy')->name('cookie.policy');
     Route::get('/cookie/accept', 'cookieAccept')->name('cookie.accept');
+    Route::get('/popup-banner/dismiss', 'popupBannerDismiss')->name('popup.banner.dismiss');
     Route::get('policy/{slug}', 'policyPages')->name('policy.pages');
 
     Route::get('placeholder-image/{size}', 'placeholderImage')->withoutMiddleware('maintenance')->name('placeholder.image');

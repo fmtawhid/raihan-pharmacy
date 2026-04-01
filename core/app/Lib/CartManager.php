@@ -147,15 +147,18 @@ class CartManager
         $couponCategories  = $coupon->categories->pluck('id')->toArray();
         $couponProducts    = $coupon->products->pluck('id')->toArray();
 
-        $cartProducts      = $cartsData->pluck('product_id')->unique()->toArray();
-        $missingProducts   = array_diff($cartProducts, $couponProducts);
-        $missingProducts   = Product::with('categories')->whereIn('id', $missingProducts)->get();
+        // Only validate category/product restrictions if the coupon has them defined
+        if (!empty($couponCategories) || !empty($couponProducts)) {
+            $cartProducts      = $cartsData->pluck('product_id')->unique()->toArray();
+            $missingProducts   = array_diff($cartProducts, $couponProducts);
+            $missingProducts   = Product::with('categories')->whereIn('id', $missingProducts)->get();
 
-        if ($missingProducts) {
-            foreach ($missingProducts as $product) {
-                $categories = $product->categories->pluck('id')->toArray();
-                if (!array_intersect($categories, $couponCategories)) {
-                    return ['error' => 'The coupon is not available for some products on your cart'];
+            if ($missingProducts) {
+                foreach ($missingProducts as $product) {
+                    $categories = $product->categories->pluck('id')->toArray();
+                    if (!array_intersect($categories, $couponCategories)) {
+                        return ['error' => 'The coupon is not available for some products on your cart'];
+                    }
                 }
             }
         }

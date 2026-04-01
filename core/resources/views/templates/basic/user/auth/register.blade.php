@@ -70,29 +70,29 @@
                                     name="password_confirmation" required>
                             </div>
 
-                            <div class="form-group">
+                            {{-- <div class="form-group">
                                 <label class="form--label">@lang('Division')</label>
                                 <select name="division_id" id="division" class="form-control form--control"
-                                    required></select>
+                                    style="display: none;"></select>
                             </div>
 
                             <div class="form-group">
                                 <label class="form--label">@lang('District')</label>
                                 <select name="district_id" id="district" class="form-control form--control"
-                                    required></select>
+                                    style="display: none;"></select>
                             </div>
 
                             <div class="form-group">
                                 <label class="form--label">@lang('Area')</label>
                                 <select name="area_name" id="area" class="form-control form--control"
-                                    required></select>
+                                    style="display: none;"></select>
                             </div>
 
                             <div class="form-group">
                                 <label class="form--label">@lang('Postcode')</label>
                                 <input type="text" name="postcode" id="postcode" class="form-control form--control"
-                                    readonly required>
-                            </div>
+                                    readonly style="display: none;">
+                            </div> --}}
 
 
                             <x-captcha />

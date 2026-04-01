@@ -150,6 +150,20 @@
 
             </div>
 
+            <div class="form-group row">
+                <div class="col-md-3 col-sm-4">
+                    <label>@lang('Wholesale Price')</label>
+                </div>
+
+                <div class="col-md-9">
+                    <div class="input-group">
+                        <span class="input-group-text">{{ gs('cur_sym') }}</span>
+                        <input type="number" step="any" class="form-control wholesale_price-field" name="wholesale_price"
+                            value="{{ old('wholesale_price', @$product->wholesale_price) }}">
+                    </div>
+                </div>
+            </div>
+
 
 
 

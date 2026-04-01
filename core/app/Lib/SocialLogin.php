@@ -37,8 +37,8 @@ class SocialLogin
         $provider = $this->fromApi && $provider == 'linkedin' ? 'linkedin-openid' : $provider;
 
         Config::set('services.' . $provider, [
-            'client_id'     => "453814658743-c1qlb59c9vv5daailvr7dm2vb4eodccg.apps.googleusercontent.com",
-            'client_secret' => "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",
+            'client_id'     => $configuration->client_id,
+            'client_secret' => $configuration->client_secret,
             'redirect'      => route('user.social.login.callback', $provider),
         ]);
     }

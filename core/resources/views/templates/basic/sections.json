@@ -4,53 +4,21 @@
         "builder": true,
         "no_selection": true,
         "name": "Banner Section",
-        "content": {
-            "images": {
-                "fixed_banner": {
-                    "size": "300x510"
-                }
-            },
-            "fixed_banner_link": "text"
-        },
-        "elements_title": "Sliding Banners",
+        
         "element": {
             "images": {
                 "slider": {
-                    "size": "500x300"
+                    "size": "800x200"
                 }
             },
-            "link": "text",
+            "link": {
+                "text": "text",
+                "required": false
+            },
             "modal": true
         }
     },
-    "banner1": {
-        "page": "home",
-        "builder": true,
-        "name": "Banner Section 1",
-        "content": {
-            "images": {
-                "banner_image": {
-                    "size": "400x240"
-                }
-            },
-            "banner_heading": "text",
-            "link": "text"
-        }
-    },
-    "banner2": {
-        "page": "home",
-        "builder": true,
-        "name": "Banner Section 2",
-        "content": {
-            "images": {
-                "banner_image": {
-                    "size": "400x240"
-                }
-            },
-            "banner_heading": "text",
-            "link": "text"
-        }
-    },
+    
     "notices": {
         "page": "home",
         "builder": true,
@@ -67,6 +35,20 @@
         "name": "Top Selling Products Section",
         "content": {
             "title": "text"
+        }
+    },
+    "how_to_order": {
+        "page": "home",
+        "builder": true,
+        "name": "How to Order Section",
+        "content": {
+            "heading": "text",
+            "video_url": "text"
+        },
+        "elements_title": "Order Steps",
+        "element": {
+            "step_text": "textarea",
+            "modal": true
         }
     },
     "featured_categories": {
