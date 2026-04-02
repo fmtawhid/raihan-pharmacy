@@ -1087,61 +1087,43 @@ $(document).ready(function() {
     }, 300);
   });
 
-  // ── ADD TO CART (Instant - No Backend Call) ────────
+  // ── ADD TO CART (Fetch from Backend by ID) ────────
   $(document).on('click', '.product-item', function() {
     let $item = $(this),
       id = $item.data('id');
-    let productName = $item.find('.product-item-name').text();
     let $btn = $item.find('.product-item-btn');
     
-    // Get product data from grid (quick lookup)
-    let productData = {
-      id: id,
-      name: productName,
-      price: parseFloat($item.find('.product-item-price').text().replace(/[^0-9.]/g, '')) || 0,
-      wholesale_price: null,
-      stock: parseInt($item.data('stock')) || 0 // Get stock from data attribute
-    };
-
-    // Add to local cart instantly
+    // If already in cart, just increment
     if (cart[id]) {
       cart[id].quantity++;
-    } else {
-      // Fetch product details for wholesale price and stock
-      $.get('{{ route("admin.pos.getProducts") }}?search=' + productName, function(res) {
-        if (res.products && res.products.length > 0) {
-          let fullProduct = res.products[0];
-          cart[id] = {
-            name: fullProduct.name,
-            price: fullProduct.sale_price ?? fullProduct.regular_price ?? 0,
-            wholesale_price: fullProduct.wholesale_price ?? null,
-            stock: fullProduct.stock ?? 0,
-            quantity: 1
-          };
-        } else {
-          cart[id] = productData;
-        }
-        renderCart(cart, selectedPriceType);
-      }).fail(() => {
-        cart[id] = productData;
-        renderCart(cart, selectedPriceType);
-      });
-      
-      // Render immediately with basic data
-      cart[id] = {
-        name: productName,
-        price: productData.price,
-        wholesale_price: null,
-        stock: productData.stock,
-        quantity: 1
-      };
+      renderCart(cart, selectedPriceType);
+      toastr.success('Quantity increased!');
+      return;
     }
 
-    // Render instantly (milliseconds)
-    renderCart(cart, selectedPriceType);
+    // Fetch complete product data by ID (not by name!)
+    $.get('{{ route("admin.pos.getProductById", "") }}/' + id, function(res) {
+      if (res.product) {
+        let p = res.product;
+        cart[id] = {
+          id: id,
+          name: p.name,
+          price: p.sale_price ?? p.regular_price ?? 0,
+          wholesale_price: p.wholesale_price ?? null,
+          stock: p.stock ?? 0,
+          quantity: 1
+        };
+        renderCart(cart, selectedPriceType);
+        toastr.success(`"${p.name}" added to cart!`);
+      } else {
+        toastr.error('Product not found!');
+      }
+    }).fail(() => {
+      toastr.error('Failed to add product to cart');
+    });
+    
     $('#product-search').val(''); // Clear search bar after adding
     loadProducts(); // Reload default products
-    toastr.success(`"${productName.trim()}" added to cart!`);
     
     // Disable button briefly for UX feedback
     $btn.prop('disabled', true);

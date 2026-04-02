@@ -100,6 +100,7 @@ Route::middleware('admin')->group(function () {
         Route::get('/', 'Pos')->name('index');
         Route::get('debug', 'debugData')->name('debug');
         Route::get('products', 'getProducts')->name('getProducts');
+        Route::get('product/{id}', 'getProductById')->name('getProductById');
         Route::get('search', 'searchProducts')->name('searchProducts');
         Route::get('customers/search', 'searchCustomers')->name('searchCustomers');
         Route::post('customers/create', 'createCustomer')->name('createCustomer');

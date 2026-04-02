@@ -99,6 +99,27 @@ class PosController extends Controller
         return response()->json($products);
     }
 
+    // AJAX: Get single product by ID
+    public function getProductById($id)
+    {
+        $product = Product::find($id);
+        
+        if (!$product) {
+            return response()->json(['error' => 'Product not found'], 404);
+        }
+
+        return response()->json([
+            'product' => [
+                'id' => $product->id,
+                'name' => $product->name,
+                'regular_price' => $product->regular_price ?? null,
+                'sale_price' => $product->sale_price ?? null,
+                'wholesale_price' => $product->wholesale_price ?? null,
+                'stock' => $product->stock ?? 0
+            ]
+        ]);
+    }
+
     // AJAX: Add product to cart session
     public function addToCart(Request $request)
     {

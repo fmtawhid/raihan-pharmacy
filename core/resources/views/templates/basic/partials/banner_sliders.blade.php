@@ -15,7 +15,7 @@ $sliders2 = getContent('banner2.content');
                     @foreach ($sliders as $slider)
                     <div class="slide-item">
                         <a href="{{ @$slider->data_values->link }}" class="d-block w-100 h-100">
-                            <img src="{{ frontendImage('banner', @$slider->data_values->slider, '800x200') }}"
+                        <img src="{{ frontendImage('banner', @$slider->data_values->slider, '800x300') }}"
                                 alt="slider-image" class="img-fluid w-100 h-100 banner-img">
                         </a>
                     </div>
@@ -74,7 +74,7 @@ $sliders2 = getContent('banner2.content');
 .banner-img {
     object-fit: cover !important;
     object-position: center !important;
-    aspect-ratio: 800/200;
+    aspect-ratio: 800/300;
 }
 
 .slide-item {
@@ -87,14 +87,14 @@ $sliders2 = getContent('banner2.content');
 @media (max-width: 991px) {
     .slider-wrapper {
         height: auto !important;
-        aspect-ratio: 800/200;
+        aspect-ratio: 800/300;
     }
 }
 
 @media (min-width: 992px) {
     .slider-wrapper {
         height: auto !important;
-        aspect-ratio: 800/200;
+        aspect-ratio: 800/300;
     }
 
     .banner-item {
