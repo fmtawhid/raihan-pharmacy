@@ -70,6 +70,38 @@ class PosController extends Controller
         ]);
     }
 
+    // AJAX: Get product by ID
+    public function getProductById($id)
+    {
+        try {
+            $product = Product::find($id);
+            if (!$product) {
+                return response()->json([
+                    'status' => 'error',
+                    'message' => 'Product not found'
+                ], 404);
+            }
+
+            return response()->json([
+                'status' => 'success',
+                'product' => [
+                    'id'    => $product->id,
+                    'name'  => $product->name,
+                    'regular_price' => $product->regular_price ?? null,
+                    'sale_price' => $product->sale_price ?? null,
+                    'wholesale_price' => $product->wholesale_price ?? null,
+                    'in_stock' => $product->in_stock ?? 0,
+                ]
+            ]);
+        } catch (\Throwable $e) {
+            \Log::error('getProductById error: ' . $e->getMessage());
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Error fetching product: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
     // AJAX: Search products
     public function searchProducts(Request $request)
     {
@@ -97,27 +129,6 @@ class PosController extends Controller
             });
 
         return response()->json($products);
-    }
-
-    // AJAX: Get single product by ID
-    public function getProductById($id)
-    {
-        $product = Product::find($id);
-        
-        if (!$product) {
-            return response()->json(['error' => 'Product not found'], 404);
-        }
-
-        return response()->json([
-            'product' => [
-                'id' => $product->id,
-                'name' => $product->name,
-                'regular_price' => $product->regular_price ?? null,
-                'sale_price' => $product->sale_price ?? null,
-                'wholesale_price' => $product->wholesale_price ?? null,
-                'stock' => $product->stock ?? 0
-            ]
-        ]);
     }
 
     // AJAX: Add product to cart session
@@ -382,6 +393,12 @@ class PosController extends Controller
     // AJAX: Confirm order (uses cart from frontend)
     public function confirmOrder(Request $request)
     {
+        \Log::info('POS confirmOrder called', [
+            'method' => $request->method(),
+            'content_type' => $request->header('Content-Type'),
+            'all_input' => $request->all()
+        ]);
+
         // Get cart from frontend request (not from session)
         $cartData = $request->input('cart', []);
         
@@ -390,11 +407,14 @@ class PosController extends Controller
             $cartData = session()->get('pos_cart', []);
         }
         
+        \Log::info('Cart data received:', ['cart' => $cartData]);
+        
         if (empty($cartData)) {
+            \Log::warning('POS order failed: empty cart');
             return response()->json([
                 'status' => 'error',
                 'message' => 'Cart is empty'
-            ]);
+            ], 400);
         }
 
         // Normalize cart data (convert from frontend format if needed)
@@ -410,11 +430,14 @@ class PosController extends Controller
             }
         }
 
+        \Log::info('Normalized cart:', ['cart' => $cart]);
+        
         if (empty($cart)) {
+            \Log::warning('POS order failed: no valid items in cart');
             return response()->json([
                 'status' => 'error',
                 'message' => 'No valid items in cart'
-            ]);
+            ], 400);
         }
 
         // Snapshot cart items + customer
@@ -438,18 +461,21 @@ class PosController extends Controller
         $discountType = $request->input('discount_type'); // 'percentage' or 'fixed'
         $discountAmount = floatval($request->input('discount_amount', 0));
 
-        DB::transaction(function () use ($cart, &$order, $priceType, $discountType, $discountAmount) {
-            $subtotal = 0;
-            foreach ($cart as $item) {
-                $useWholesale = ($priceType === 'wholesale') && !empty($item['wholesale_price']);
-                $unitPrice    = $useWholesale ? (float)$item['wholesale_price'] : (float)$item['price'];
-                $subtotal += $unitPrice * $item['quantity'];
-            }
+        $order = null;
+        
+        try {
+            DB::transaction(function () use ($cart, &$order, $priceType, $discountType, $discountAmount) {
+                $subtotal = 0;
+                foreach ($cart as $item) {
+                    $useWholesale = ($priceType === 'wholesale') && !empty($item['wholesale_price']);
+                    $unitPrice    = $useWholesale ? (float)$item['wholesale_price'] : (float)$item['price'];
+                    $subtotal += $unitPrice * $item['quantity'];
+                }
 
-            // Calculate discount
-            $actualDiscount = 0;
-            if ($discountType === 'percentage' && $discountAmount > 0) {
-                $actualDiscount = ($subtotal * $discountAmount) / 100;
+                // Calculate discount
+                $actualDiscount = 0;
+                if ($discountType === 'percentage' && $discountAmount > 0) {
+                    $actualDiscount = ($subtotal * $discountAmount) / 100;
             } elseif ($discountType === 'fixed' && $discountAmount > 0) {
                 $actualDiscount = min($discountAmount, $subtotal);
             }
@@ -521,7 +547,30 @@ class PosController extends Controller
             // Clear cart + selected customer
             session()->forget('pos_cart');
             session()->forget('pos_customer');
-        });
+            });
+        } catch (\Throwable $e) {
+            \Log::error('POS order creation failed: ' . $e->getMessage(), [
+                'trace' => $e->getTraceAsString(),
+                'cart' => $cart,
+                'price_type' => $priceType,
+                'discount_type' => $discountType,
+                'discount_amount' => $discountAmount
+            ]);
+            
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Failed to create order: ' . $e->getMessage()
+            ], 500);
+        }
+        
+        // If order was not created, return error
+        if (!$order) {
+            \Log::error('POS order creation failed: order object is null');
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Order creation failed - unknown error'
+            ], 500);
+        }
 
         // Build invoice items array
         $invoiceItems = [];
@@ -548,6 +597,14 @@ class PosController extends Controller
         } elseif ($discountType === 'fixed' && $discountAmount > 0) {
             $displayDiscount = min($discountAmount, $subtotal);
         }
+
+        \Log::info('POS order created successfully', [
+            'order_id' => $order->id,
+            'order_number' => $order->order_number,
+            'subtotal' => $subtotal,
+            'discount' => $displayDiscount,
+            'total' => $order->total_amount
+        ]);
 
         return response()->json([
             'status'  => 'success',

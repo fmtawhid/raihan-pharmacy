@@ -990,6 +990,7 @@ $(document).ready(function() {
   // ═══ INSTANT FRONTEND CART (Session-free) ═══
   // Cart stored in memory, updated instantly, saved only on confirm
   let cart = {}; // Local cart object
+  let productCache = {}; // Cache all products for instant access
   let selectedPriceType = null;
   let discountType = null;
   let discountAmount = 0;
@@ -1051,43 +1052,74 @@ $(document).ready(function() {
       page: 1,
       per_page: 18
     }).done(function(res) {
+      // Cache all product data for instant access on add-to-cart
+      res.products.forEach(function(p) {
+        productCache[p.id] = p;
+      });
       renderProductsGrid(res.products);
     }).fail(function() {
       toastr.error('Failed to load products');
     });
   }
 
-  // ── Product search (debounced) ──────────────────
+  // ── Product search (instant client-side + live backend) ──────────────────
   let searchTimer;
   $('#product-search').on('input', function() {
     clearTimeout(searchTimer);
-    let query = $(this).val().trim();
-    if (!query || query.length < 2) {
-      loadProducts(); // Load default 20 products
+    let query = $(this).val().trim().toLowerCase();
+    
+    // Show default products if search is empty
+    if (!query) {
+      loadProducts();
       $('#search-placeholder').hide();
       return;
     }
 
-    searchTimer = setTimeout(function() {
-      $.get('{{ route("admin.pos.searchProducts") }}', {
-          query
-        })
-        .done(function(data) {
-          if (!data || data.length === 0) {
-            $('#products-container').html('<div style="text-align:center;padding:20px;color:#94a3b8;grid-column:1/-1"><i class="la la-search" style="font-size:28px;margin-bottom:8px;display:block"></i>No products found</div>');
-          } else {
-            renderProductsGrid(data);
-          }
-          $('#search-placeholder').hide();
-        })
-        .fail(function() {
-          toastr.error('Failed to search products');
-          $('#products-container').html('<div style="text-align:center;padding:20px;color:#dc2626;grid-column:1/-1"><i class="la la-warning" style="font-size:28px;margin-bottom:8px;display:block"></i>Search error</div>');
-        });
-    }, 300);
+    // ─ INSTANT CLIENT-SIDE SEARCH (milliseconds) ─
+    if (query.length >= 1) {
+      let resultProducts = [];
+      
+      // Search from cached products instantly
+      Object.values(productCache).forEach(function(p) {
+        if (p.name.toLowerCase().includes(query)) {
+          resultProducts.push(p);
+        }
+      });
+      
+      // Show results instantly (0ms delay)
+      if (resultProducts.length > 0) {
+        renderProductsGrid(resultProducts);
+      } else {
+        $('#products-container').html('<div style="text-align:center;padding:20px;color:#94a3b8;grid-column:1/-1"><i class="la la-search" style="font-size:28px;margin-bottom:8px;display:block"></i>Searching…</div>');
+      }
+      
+      // ─ THEN DO BACKEND SEARCH (50ms delay for backend freshness) ─
+      searchTimer = setTimeout(function() {
+        $.get('{{ route("admin.pos.searchProducts") }}', {
+            query
+          })
+          .done(function(data) {
+            // Cache searched products
+            data.forEach(function(p) {
+              productCache[p.id] = p;
+            });
+            
+            if (!data || data.length === 0) {
+              $('#products-container').html('<div style="text-align:center;padding:20px;color:#94a3b8;grid-column:1/-1"><i class="la la-search" style="font-size:28px;margin-bottom:8px;display:block"></i>No products found</div>');
+            } else {
+              renderProductsGrid(data);
+            }
+            $('#search-placeholder').hide();
+          })
+          .fail(function() {
+            toastr.error('Failed to search products');
+            $('#products-container').html('<div style="text-align:center;padding:20px;color:#dc2626;grid-column:1/-1"><i class="la la-warning" style="font-size:28px;margin-bottom:8px;display:block"></i>Search error</div>');
+          });
+      }, 50);
+    }
   });
 
-  // ── ADD TO CART (Fetch from Backend by ID) ────────
+  // ── ADD TO CART (Instant - Uses Cached Frontend Data) ────────
   $(document).on('click', '.product-item', function() {
     let $item = $(this),
       id = $item.data('id');
@@ -1101,26 +1133,22 @@ $(document).ready(function() {
       return;
     }
 
-    // Fetch complete product data by ID (not by name!)
-    $.get('{{ route("admin.pos.getProductById", "") }}/' + id, function(res) {
-      if (res.product) {
-        let p = res.product;
-        cart[id] = {
-          id: id,
-          name: p.name,
-          price: p.sale_price ?? p.regular_price ?? 0,
-          wholesale_price: p.wholesale_price ?? null,
-          stock: p.stock ?? 0,
-          quantity: 1
-        };
-        renderCart(cart, selectedPriceType);
-        toastr.success(`"${p.name}" added to cart!`);
-      } else {
-        toastr.error('Product not found!');
-      }
-    }).fail(() => {
-      toastr.error('Failed to add product to cart');
-    });
+    // Use cached product data (instant - no backend call)
+    if (productCache[id]) {
+      let p = productCache[id];
+      cart[id] = {
+        id: id,
+        name: p.name,
+        price: p.sale_price ?? p.regular_price ?? 0,
+        wholesale_price: p.wholesale_price ?? null,
+        stock: p.in_stock ?? 0,
+        quantity: 1
+      };
+      renderCart(cart, selectedPriceType);
+      toastr.success(`"${p.name}" added to cart!`);
+    } else {
+      toastr.error('Product not found in cache');
+    }
     
     $('#product-search').val(''); // Clear search bar after adding
     loadProducts(); // Reload default products
@@ -1203,16 +1231,22 @@ $(document).ready(function() {
     }
   });
 
+  // ── Calculate subtotal from cart object ─────────
+  function calculateCartSubtotal() {
+    let subtotal = 0;
+    for (let id in cart) {
+      let item = cart[id];
+      let useWholesale = (selectedPriceType === 'wholesale') && item.wholesale_price;
+      let unitPrice = useWholesale ? Number(item.wholesale_price) : Number(item.price);
+      let itemTotal = unitPrice * item.quantity;
+      subtotal += itemTotal;
+    }
+    return subtotal;
+  }
+
   // ── Update cart total only (no full re-render) ──
   function updateCartTotalOnly() {
-    let cartSubtotal = 0;
-    $('#cart-table tbody tr').each(function () {
-      let $tds = $(this).find('td');
-      if ($tds.length > 4) {
-        let totalCell = $tds.eq(4).text().replace(/[^0-9.]/g, '');
-        cartSubtotal += parseFloat(totalCell) || 0;
-      }
-    });
+    let cartSubtotal = calculateCartSubtotal();
     
     let actualDiscount = 0;
     if (discountType === 'percentage' && discountAmount > 0) {
@@ -1228,7 +1262,7 @@ $(document).ready(function() {
 
   // ── Update discount display ────────────────────
   function updateDiscountDisplay() {
-    let cartTotal = getCartTotal();
+    let cartTotal = calculateCartSubtotal();
     let actualDiscount = 0;
     
     if (discountType === 'percentage' && discountAmount > 0) {
@@ -1243,7 +1277,7 @@ $(document).ready(function() {
 
   // ── Update cart total with discount ─────────────
   function updateCartTotal() {
-    let cartSubtotal = getCartTotal();
+    let cartSubtotal = calculateCartSubtotal();
     let actualDiscount = 0;
     
     if (discountType === 'percentage' && discountAmount > 0) {
@@ -1257,17 +1291,9 @@ $(document).ready(function() {
     $('#cart-total').html('<span class="tl">Order Total' + label + '</span><span class="tv">৳' + finalTotal.toFixed(2) + '</span>');
   }
 
-  // ── Get current cart total ──────────────────────
+  // ── Get current cart total (from cart object, not DOM) ──
   function getCartTotal() {
-    let total = 0;
-    $('#cart-table tbody tr').each(function () {
-      let $tds = $(this).find('td');
-      if ($tds.length > 4) {
-        let totalCell = $tds.eq(4).text().replace(/[^0-9.]/g, '');
-        total += parseFloat(totalCell) || 0;
-      }
-    });
-    return total;
+    return calculateCartSubtotal();
   }
 
   // ── CLEAR CART (Instant) ────────────────────────
@@ -1350,14 +1376,29 @@ $(document).ready(function() {
         $btn.html('<i class="la la-spinner fa-spin"></i> Processing...');
 
         // Send complete cart to backend
-        $.post('{{ route("admin.pos.confirmOrder") }}', {
-          _token: '{{ csrf_token() }}',
-          cart: cart, // Send local cart object
+        console.log('Sending order to backend:', {
+          cart: cart,
           price_type: selectedPriceType,
-          discount_type: discountType || null,
-          discount_amount: discountAmount || 0
-        }, function(res) {
-          if (res.status === 'success') {
+          discount_type: discountType,
+          discount_amount: discountAmount
+        });
+        
+        $.ajax({
+          url: '{{ route("admin.pos.confirmOrder") }}',
+          type: 'POST',
+          contentType: 'application/json',
+          data: JSON.stringify({
+            _token: '{{ csrf_token() }}',
+            cart: cart,
+            price_type: selectedPriceType,
+            discount_type: discountType || null,
+            discount_amount: discountAmount || 0
+          }),
+          dataType: 'json',
+          success: function(res) {
+            console.log('Order response received:', res);
+            
+            if (res.status === 'success') {
             printPosInvoice(res.invoice);
 
             Swal.fire({
@@ -1397,20 +1438,45 @@ $(document).ready(function() {
               loadProducts();
               toastr.success('Order completed successfully!');
             });
+          } else {
+            // Handle error response from backend
+            console.error('Order failed with status:', res.status, res.message);
+            Swal.fire({
+              title: 'Order Failed!',
+              text: res.message || 'Failed to process order',
+              icon: 'error',
+              confirmButtonColor: '#dc2626'
+            });
+            toastr.error(res.message || 'Order failed');
+            $btn.prop('disabled', false);
+            $btn.html('<i class="la la-check-circle"></i> Confirm & Complete Order');
           }
-        }).fail(function(xhr) {
-          let errorMsg = xhr.responseJSON?.message || 'Failed to process order';
-          Swal.fire({
-            title: 'Error!',
-            text: errorMsg,
-            icon: 'error',
-            confirmButtonColor: '#dc2626'
-          });
-          toastr.error(errorMsg);
-        }).always(() => {
-          $btn.prop('disabled', false);
-          $btn.html('<i class="la la-check-circle"></i> Confirm & Complete Order');
+          },
+          error: function(xhr) {
+            console.error('Order confirmation error:', xhr);
+            let errorMsg = 'Failed to process order';
+            
+            // Try to extract error message from response
+            if (xhr.responseJSON && xhr.responseJSON.message) {
+              errorMsg = xhr.responseJSON.message;
+            } else if (xhr.statusText) {
+              errorMsg = xhr.statusText;
+            } else if (xhr.status === 0) {
+              errorMsg = 'Network error - check server connection';
+            }
+            
+            Swal.fire({
+              title: 'Error!',
+              text: errorMsg,
+              icon: 'error',
+              confirmButtonColor: '#dc2626'
+            });
+            toastr.error(errorMsg);
+            $btn.prop('disabled', false);
+            $btn.html('<i class="la la-check-circle"></i> Confirm & Complete Order');
+          }
         });
+
       }
     });
   });
