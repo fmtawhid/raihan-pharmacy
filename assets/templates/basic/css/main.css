@@ -1771,7 +1771,7 @@ a.dropdown-menu__item:last-child {
 
 .header-middle {
   position: relative;
-  padding: 15px 0px;
+  padding: 2px 0px;
   z-index: 9;
   border-bottom: 1px solid #f5f5f5;
 }

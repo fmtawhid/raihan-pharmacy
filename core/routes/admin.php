@@ -74,6 +74,7 @@ Route::middleware('admin')->group(function () {
     
     Route::controller('AdminController')->group(function () {
         Route::get('dashboard', 'dashboard')->name('dashboard');
+        Route::get('summary-data', 'summaryData')->name('summary.data');
         Route::get('sales-chart', 'salesChart')->name('chart.sales');
         Route::get('profile', 'profile')->name('profile');
         Route::post('profile', 'profileUpdate')->name('profile.update');
@@ -250,6 +251,15 @@ Route::middleware('admin')->group(function () {
         });
 
         Route::controller('ProductStockController')->group(function () {
+            Route::get('add-stock', 'addStock')->name('add.stock');
+            Route::get('get-products-stock', 'getProductsStock')->name('get.products.stock');
+            Route::post('save-stock-purchase', 'saveStockPurchase')->name('save.stock.purchase');
+            Route::get('stock-log-list', 'stockLogList')->name('stock.log.list');
+            Route::get('purchases-list', 'purchasesList')->name('purchases.list');
+            Route::get('batch/{batch}/details', 'batchDetails')->name('batch.details');
+            Route::get('batch/{batch}/edit', 'editBatch')->name('batch.edit');
+            Route::put('batch/{batch}', 'updateBatch')->name('batch.update');
+            Route::delete('batch/{batch}', 'deleteBatch')->name('batch.delete');
             Route::get('stock-log/{id}', 'stockLogByProduct')->name('stock.log');
             Route::get('variant/stock-log/{id}', 'stockLogByVariant')->name('stock.log.variant');
         });
@@ -323,6 +333,15 @@ Route::middleware('admin')->group(function () {
         Route::get('returned', 'returned')->name('returned');
         Route::get('cod', 'codOrders')->name('cod');
         Route::get('order-details/{id}', 'orderDetails')->name('details');
+
+        // Return management
+        Route::get('add-return', 'addReturn')->name('add_return');
+        Route::get('search-return', 'searchOrdersForReturn')->name('search');
+        Route::get('return-details', 'getReturnDetails')->name('return.details');
+        Route::post('save-return', 'saveReturn')->name('save.return');
+        Route::get('returns-list', 'returnsList')->name('returns.list');
+        Route::get('returns-export', 'exportsReturns')->name('returns.export');
+        Route::post('return-delete/{id}', 'deleteReturn')->name('return.delete');
 
         Route::post('return/{id}', 'return')->name('return');
         Route::post('delete/{id}', [OrderController::class, 'delete'])->name('delete');
@@ -631,14 +650,15 @@ Route::middleware('admin')->group(function () {
     Route::post('stock/receive', [StockController::class, 'receive'])
         ->name('stock.receive');
 
-    Route::post(
-        'purchasers/store',        //  POST  admin/purchasers/store
-        [\App\Http\Controllers\Admin\PurchaserController::class, 'store']
-    )->name('purchasers.store');
-
-    // routes/admin.php
-    Route::get('purchasers/search', [PurchaserController::class, 'select2'])
-        ->name('purchasers.search');
+    // Purchaser/Supplier Management
+    Route::controller(PurchaserController::class)->prefix('purchasers')->name('purchasers.')->group(function(){
+        Route::get('/', 'index')->name('index');
+        Route::post('/', 'store')->name('store');
+        Route::get('{purchaser}/edit', 'edit')->name('edit');
+        Route::put('{purchaser}', 'update')->name('update');
+        Route::delete('{purchaser}', 'destroy')->name('destroy');
+        Route::get('search', 'select2')->name('search'); // Select2 AJAX
+    });
 });
 
 

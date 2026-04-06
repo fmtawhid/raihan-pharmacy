@@ -7,6 +7,7 @@ use App\Http\Controllers\Controller;
 use App\Lib\ProductManager;
 use App\Models\DigitalFile;
 use App\Models\Order;
+use App\Models\ProductReturn;
 use App\Models\UserNotification;
 use App\Rules\FileTypeValidate;
 use Illuminate\Http\Request;
@@ -306,6 +307,161 @@ class OrderController extends Controller
         return back()->withNotify($notify);
     }
 
+    public function addReturn()
+    {
+        $pageTitle = 'Add Return Order';
+        return view('admin.order.add_return', compact('pageTitle'));
+    }
+
+    // ── SEARCH ORDERS FOR RETURN ────────────────────
+    public function searchOrdersForReturn(Request $request)
+    {
+        $query = $request->input('query', '');
+        
+        if (strlen($query) < 2) {
+            return response()->json(['orders' => []]);
+        }
+
+        $orders = Order::where(function($q) use ($query) {
+                    $q->where('order_number', 'like', "%{$query}%")
+                      ->orWhereHas('user', fn($u) => $u->where('username', 'like', "%{$query}%"));
+                })
+                ->with('user')
+                ->limit(10)
+                ->get()
+                ->map(function($order) {
+                    return [
+                        'id' => $order->id,
+                        'order_number' => $order->order_number,
+                        'user_name' => $order->user ? $order->user->name : 'Guest',
+                        'total_amount' => $order->total_amount,
+                        'status_text' => $order->statusText() ?? 'Completed',
+                    ];
+                });
+
+        return response()->json(['orders' => $orders]);
+    }
+
+    // ── GET ORDER DETAILS FOR RETURN ────────────────
+    public function getReturnDetails(Request $request)
+    {
+        try {
+            $orderId = $request->input('order_id');
+            $order = Order::isValidOrder()->with('orderDetail.product', 'user')->findOrFail($orderId);
+
+            // Prepare items with return tracking
+            $items = $order->orderDetail->map(function($detail) {
+                return [
+                    'id' => $detail->id,
+                    'product_id' => $detail->product_id,
+                    'product_name' => $detail->product->name,
+                    'quantity' => $detail->quantity,
+                    'unit_price' => $detail->price,
+                    'already_returned' => $this->getAlreadyReturnedQty($detail->id),
+                ];
+            });
+
+            return response()->json([
+                'status' => 'success',
+                'order' => [
+                    'id' => $order->id,
+                    'order_number' => $order->order_number,
+                    'user_name' => $order->user ? $order->user->name : 'Guest',
+                    'total_amount' => $order->total_amount,
+                    'created_at' => $order->created_at->format('d M Y'),
+                    'items' => $items,
+                ]
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Order not found'
+            ], 404);
+        }
+    }
+
+    // ── GET ALREADY RETURNED QUANTITY ───────────────
+    private function getAlreadyReturnedQty($orderDetailId)
+    {
+        $totalReturned = ProductReturn::where('order_detail_id', $orderDetailId)->sum('quantity_returned');
+        return $totalReturned ?? 0;
+    }
+
+    // ── SAVE RETURN ─────────────────────────────────
+    public function saveReturn(Request $request)
+    {
+        try {
+            $orderId = $request->input('order_id');
+            $items = $request->input('items', []);
+            $totalRefund = $request->input('total_refund', 0);
+
+            if (empty($items)) {
+                return response()->json([
+                    'status' => 'error',
+                    'message' => 'No items to return'
+                ], 422);
+            }
+
+            $order = Order::isValidOrder()->with('orderDetail.product', 'orderDetail.productVariant')->findOrFail($orderId);
+            $productManager = new ProductManager();
+            $totalQtyReturned = 0;
+
+            // Process each return item
+            foreach ($items as $item) {
+                $orderDetail = $order->orderDetail()->find($item['order_detail_id']);
+                if (!$orderDetail) {
+                    continue;
+                }
+
+                $returnQty = (int) $item['return_qty'];
+                $refundAmount = (float) $item['refund_amount'];
+
+                // 1. Update stock - ADD BACK to inventory
+                $product = $orderDetail->product;
+                $productVariant = $orderDetail->productVariant;
+
+                if ($productVariant && $productVariant->manage_stock && $productVariant->track_inventory) {
+                    $productVariant->in_stock += $returnQty;
+                    $productVariant->save();
+                } elseif ($product->track_inventory) {
+                    $product->in_stock += $returnQty;
+                    $product->save();
+                }
+
+                // 2. Create stock log for return
+                $description = "Return: $returnQty " . Str::plural('unit',  $returnQty) . " from Order #" . $order->order_number;
+                $productManager->createStockLog($product, $returnQty, $description, $productVariant, '+');
+
+                // 3. Save return record to returns table
+                ProductReturn::create([
+                    'order_id' => $orderId,
+                    'order_detail_id' => $orderDetail->id,
+                    'product_id' => $product->id,
+                    'quantity_returned' => $returnQty,
+                    'refund_amount' => $refundAmount,
+                ]);
+
+                $totalQtyReturned += $returnQty;
+            }
+
+            return response()->json([
+                'status' => 'success',
+                'message' => 'Return processed successfully',
+                'data' => [
+                    'total_items' => count($items),
+                    'total_qty' => $totalQtyReturned,
+                    'total_refund' => $totalRefund,
+                ]
+            ]);
+        } catch (\Exception $e) {
+            \Log::error('Return processing error: ' . $e->getMessage());
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Failed to process return: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
     public function return($id)
     {
         $order = Order::isValidOrder()->dispatched()->with('orderDetail', 'orderDetail.product', 'orderDetail.productVariant')->findOrFail($id);
@@ -442,6 +598,77 @@ class OrderController extends Controller
             );
         }
     }
+    // ── RETURNS LIST ─────────────────────────────────
+    public function returnsList(Request $request)
+    {
+        $pageTitle = 'Returned Products';
+        
+        $query = ProductReturn::with('order', 'product');
+
+        // Search by order number or product name
+        if ($keyword = $request->input('search')) {
+            $query->whereHas('order', fn($q) => $q->where('order_number', 'like', "%{$keyword}%"))
+                  ->orWhereHas('product', fn($q) => $q->where('name', 'like', "%{$keyword}%"));
+        }
+
+        // Date range filtering
+        if ($request->filled('start_date') && $request->filled('end_date')) {
+            $startDate = $request->input('start_date') . ' 00:00:00';
+            $endDate = $request->input('end_date') . ' 23:59:59';
+            $query->whereBetween('created_at', [$startDate, $endDate]);
+        }
+
+        $returns = $query->orderByDesc('id')->paginate(getPaginate());
+
+        return view('admin.order.returns_list', compact('returns', 'pageTitle'));
+    }
+
+    // ── EXPORT RETURNS ───────────────────────────────
+    public function exportsReturns(Request $request)
+    {
+        $returns = ProductReturn::with('order', 'product')->get();
+
+        $fileName = 'returns_' . date('Y-m-d_H-i-s') . '.csv';
+        
+        return response()->streamDownload(function () use ($returns) {
+            $handle = fopen('php://output', 'w');
+            
+            // CSV Headers
+            fputcsv($handle, [
+                'Return ID',
+                'Order Number',
+                'Product Name',
+                'Quantity Returned',
+                'Refund Amount',
+                'Return Date'
+            ]);
+
+            // CSV Data
+            foreach ($returns as $return) {
+                fputcsv($handle, [
+                    $return->id,
+                    optional($return->order)->order_number,
+                    optional($return->product)->name,
+                    $return->quantity_returned,
+                    $return->refund_amount,
+                    $return->created_at->format('d M Y'),
+                ]);
+            }
+
+            fclose($handle);
+        }, $fileName);
+    }
+
+    // ── DELETE RETURN ────────────────────────────────
+    public function deleteReturn($id)
+    {
+        $return = ProductReturn::findOrFail($id);
+        $return->delete();
+
+        $notify[] = ['success', 'Return record deleted successfully'];
+        return back()->withNotify($notify);
+    }
+
     // Add this method in App\Http\Controllers\Admin\OrderController
     public function delete($id)
     {

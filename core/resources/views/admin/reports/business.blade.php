@@ -236,7 +236,7 @@
     <script>
         function printDiv(divId) {
             const content = document.getElementById(divId).innerHTML;
-            const printWindow = window.open('', '', 'height=600,width=800');
+            const printWindow = window.open('', '', 'height=600,width=900');
 
             const today = new Date();
             const generatedDate = today.toLocaleDateString('en-GB', {
@@ -248,31 +248,50 @@
             const dateRange = `{{ request()->date ? e(request()->date) : 'All Time' }}`;
 
             printWindow.document.write('<html><head><title>Business Report</title>');
+            printWindow.document.write('<meta charset="UTF-8">');
+            printWindow.document.write('<meta name="viewport" content="width=device-width, initial-scale=1.0">');
             printWindow.document.write('<style>');
-            printWindow.document.write('body{font-family:Arial, sans-serif; padding:20px;}');
-            printWindow.document.write('table{width:100%;border-collapse:collapse;margin-top:20px;}');
-            printWindow.document.write('th,td{padding:8px;border:1px solid #ddd;text-align:left;font-size:12px;}');
-            printWindow.document.write('h2,h4,p{text-align:center;margin:0;}');
-            printWindow.document.write('hr{margin:10px 0;}');
+            printWindow.document.write(`
+                * { margin: 0; padding: 0; box-sizing: border-box; }
+                body { font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif; padding: 20px; }
+                .print-header { text-align: center; margin-bottom: 20px; border-bottom: 2px solid #333; padding-bottom: 10px; }
+                .print-header h2 { font-size: 24px; font-weight: bold; margin: 5px 0; }
+                .print-header h4 { font-size: 18px; margin: 5px 0; color: #666; }
+                .print-header p { font-size: 14px; color: #999; margin: 5px 0; }
+                table { width: 100%; border-collapse: collapse; margin-top: 20px; font-size: 12px; }
+                th { background-color: #f0f0f0; padding: 10px; border: 1px solid #ddd; text-align: left; font-weight: 600; }
+                td { padding: 8px 10px; border: 1px solid #ddd; }
+                img { max-width: 40px; height: auto; }
+                tr:nth-child(even) { background-color: #fafafa; }
+                .print-footer { margin-top: 20px; padding-top: 10px; border-top: 1px solid #ddd; font-size: 12px; text-align: right; color: #999; }
+                tfoot tr { background-color: #f0f0f0; font-weight: 600; }
+                @media print {
+                    body { padding: 0; }
+                    table { page-break-inside: avoid; }
+                }
+            `);
             printWindow.document.write('</style>');
             printWindow.document.write('</head><body>');
 
-            printWindow.document.write('<h2>Rayhan Pharmacy</h2>');
+            printWindow.document.write('<div class="print-header">');
+            printWindow.document.write('<h2>Raihan Pharmacy</h2>');
             printWindow.document.write('<h4>Business Report</h4>');
-            printWindow.document.write(`<p>Date Range: ${dateRange}</p>`);
-            printWindow.document.write('<hr>');
+            printWindow.document.write(`<p>Date Range: <strong>${dateRange}</strong></p>`);
+            printWindow.document.write('</div>');
 
             printWindow.document.write(content);
 
-            printWindow.document.write('<hr>');
-            printWindow.document.write(
-                `<p style="text-align:right;font-size:12px;">Print Generated on: ${generatedDate}</p>`);
+            printWindow.document.write('<div class="print-footer">');
+            printWindow.document.write(`<p>Report Generated on: ${generatedDate}</p>`);
+            printWindow.document.write('</div>');
 
             printWindow.document.write('</body></html>');
             printWindow.document.close();
-            printWindow.focus();
-            printWindow.print();
-            printWindow.close();
+            
+            setTimeout(() => {
+                printWindow.focus();
+                printWindow.print();
+            }, 250);
         }
     </script>
 @endpush

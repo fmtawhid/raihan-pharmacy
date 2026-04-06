@@ -39,7 +39,7 @@
         "menu_active": "admin.pos.index"
     },
     "manage_users": {
-        "title": "Customers",
+        "title": "People",
         "icon": "las la-users",
         "counters": [
             "bannedUsersCount",
@@ -63,35 +63,9 @@
                 "menu_active": "admin.users.active",
                 "permission": "active_customers"
             },
-            {
-                "keyword": [
-                    "banned customers",
-                    "Manage Customers",
-                    "Customer management",
-                    "Account bans",
-                    "Customer activity"
-                ],
-                "title": "Banned Customers",
-                "route_name": "admin.users.banned",
-                "menu_active": "admin.users.banned",
-                "counter": "bannedUsersCount",
-                "permission": "banned_customers"
-            },
             
-            {
-                "keyword": [
-                    "Profile Completed customers",
-                    "Manage Customers",
-                    "Customer management",
-                    "Customer control",
-                    "Customer activity",
-                    "Customer analytics"
-                ],
-                "title": "Profile Completed",
-                "route_name": "admin.users.profile.completed",
-                "menu_active": "admin.users.profile.completed",
-                "permission": "profile_completed_customers"
-            },
+            
+            
             {
                 "keyword": [
                     "all customers",
@@ -106,6 +80,19 @@
                 "menu_active": "admin.users.all",
                 "permission": "all_customers"
             },
+            {
+                "keyword": [
+                    "purchaser",
+                    "supplier",
+                    "vendor",
+                    "distributor"
+                ],
+                "title": "Suppliers",
+                "route_name": "admin.purchasers.index",
+                "menu_active": "admin.purchasers*",
+                "permission": "all_products"
+            },
+          
             {
                 "keyword": [
                     "send notification customers",
@@ -199,12 +186,33 @@
             },
             {
                 "keyword": [
+                    "Add Stock",
+                    "Products"
+                ],
+                "title": "Add Stock",
+                "route_name": "admin.products.add.stock",
+                "menu_active": "admin.products.add.stock"
+            },
+            {
+                "keyword": [
                     "All Products",
                     "Products"
                 ],
                 "title": "All Products",
                 "route_name": "admin.products.all",
                 "menu_active": "admin.products.all",
+                "permission": "all_products"
+            },
+            {
+                "keyword": [
+                    "All Purchases",
+                    "Stock List",
+                    "Product Stock",
+                    "Purchase History"
+                ],
+                "title": "All Purchases",
+                "route_name": "admin.products.purchases.list",
+                "menu_active": "admin.products.purchases.list",
                 "permission": "all_products"
             },
             {
@@ -237,17 +245,6 @@
                 "menu_active": "admin.products.low.stock",
                 "counter": "lowStockProductsCount",
                 "permission": "low_stock_products"
-            },
-            {
-                "keyword": [
-                    "Out of Stock Products",
-                    "Products"
-                ],
-                "title": "Out of Stock Products",
-                "route_name": "admin.products.out.of.stock",
-                "menu_active": "admin.products.out.of.stock",
-                "counter": "outOfStockProductsCount",
-                "permission": "out_stock_products"
             },
             {
                 "keyword": [
@@ -366,68 +363,29 @@
                 "counter": "pendingOrdersCount",
                 "permission": "pending_orders"
             },
+            
             {
                 "keyword": [
-                    "Processing Orders",
-                    "Orders"
+                    "Add Return",
+                    "Orders",
+                    "Return management"
                 ],
-                "title": "Processing Orders",
-                "route_name": "admin.order.processing",
-                "menu_active": "admin.order.processing",
-                "counter": "processingOrdersCount",
-                "permission": "processing_orders"
+                "title": "Add Return Orders",
+                "route_name": "admin.order.add_return",
+                "menu_active": "admin.order.add_return"
             },
             {
                 "keyword": [
-                    "Dispatched Orders",
-                    "Orders"
+                    "Return Products",
+                    "Return List",
+                    "Orders",
+                    "Return management"
                 ],
-                "title": "Dispatched Orders",
-                "route_name": "admin.order.dispatched",
-                "menu_active": "admin.order.dispatched",
-                "counter": "dispatchedOrdersCount",
-                "permission": "dispatched_orders"
-            },
-            {
-                "keyword": [
-                    "Delivered Orders",
-                    "Orders"
-                ],
-                "title": "Delivered Orders",
-                "route_name": "admin.order.delivered",
-                "menu_active": "admin.order.delivered",
-                "permission": "delivered_orders"
-            },
-            {
-                "keyword": [
-                    "Canceled Orders",
-                    "Orders"
-                ],
-                "title": "Canceled Orders",
-                "route_name": "admin.order.canceled",
-                "menu_active": "admin.order.canceled",
-                "permission": "canceled_orders"
-            },
-            {
-                "keyword": [
-                    "Returned Orders",
-                    "Orders"
-                ],
-                "title": "Returned Orders",
-                "route_name": "admin.order.returned",
-                "menu_active": "admin.order.returned",
-                "permission": "returned_orders"
-            },
-            {
-                "keyword": [
-                    "COD Orders",
-                    "Orders"
-                ],
-                "title": "COD Orders",
-                "route_name": "admin.order.cod",
-                "menu_active": "admin.order.cod",
-                "permission": "cod_orders"
+                "title": "Return Products List",
+                "route_name": "admin.order.returns.list",
+                "menu_active": "admin.order.returns.list"
             }
+            
         ]
     },
     "deposits": {
@@ -744,25 +702,7 @@
                     "admin.report.login.ipHistory"
                 ]
             },
-            {
-                "keyword": [
-                    "Notification History",
-                    "Report",
-                    "Notification report",
-                    "Notification history",
-                    "Notification activity",
-                    "email log",
-                    "email history",
-                    "sms log",
-                    "sms history",
-                    "push notification log",
-                    "push notification history"
-                ],
-                "title": "Notification History",
-                "route_name": "admin.report.notification.history",
-                "menu_active": "admin.report.notification.history",
-                "permission": "notification_history_reports"
-            },
+            
             {
                 "keyword": [
                     "Sales History",
@@ -772,17 +712,8 @@
                 "route_name": "admin.report.sales",
                 "menu_active": "admin.report.sales",
                 "permission": "view_sales_reports"
-            },
-            {
-                "keyword": [
-                    "Sales History",
-                    "Sales Report"
-                ],
-                "title": "Business Report",
-                "route_name": "admin.report.business",
-                "menu_active": "admin.report.business",
-                "permission": "view_business_reports"
             }
+            
         ]
     },
     "extra": {

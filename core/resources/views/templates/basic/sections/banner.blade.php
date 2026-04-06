@@ -2,7 +2,7 @@
 $content = getContent('banner.content', true);
 @endphp
 
-<div class="banner-container @if (gs('homepage_layout') == 'full_width_banner') single-banner @endif">
+<div class="banner-container @if (gs('homepage_layout') == 'full_width_banner') single-banner @endif"  style="margin-top:-19px;">
     <div class="hero-section mb-60">
         @if (gs('homepage_layout') == 'sidebar_menu')
         @include('Template::partials.left_category_menu', ['limit' => 13])

@@ -5,35 +5,53 @@
         <div class="col-12">
             <div class="card summary-card">
                 <div class="card-body">
-                    <h5 class="card-title">@lang('Summary')</h5>
+                    <div class="d-flex flex-wrap justify-content-between align-items-center gap-3">
+                        <h5 class="card-title mb-0">@lang('Summary')</h5>
+                        <div class="btn-group" role="group">
+                            <button type="button" class="btn btn-sm filter-btn {{ $dateFilter == 'today' ? 'btn-primary' : 'btn-outline-primary' }}" data-filter="today">
+                                @lang('Today')
+                            </button>
+                            <button type="button" class="btn btn-sm filter-btn {{ $dateFilter == 'last_7_days' ? 'btn-primary' : 'btn-outline-primary' }}" data-filter="last_7_days">
+                                @lang('Last 7 Days')
+                            </button>
+                            <button type="button" class="btn btn-sm filter-btn {{ $dateFilter == 'last_30_days' ? 'btn-primary' : 'btn-outline-primary' }}" data-filter="last_30_days">
+                                @lang('Last 30 Days')
+                            </button>
+                            <button type="button" class="btn btn-sm filter-btn {{ $dateFilter == 'this_year' ? 'btn-primary' : 'btn-outline-primary' }}" data-filter="this_year">
+                                @lang('This Year')
+                            </button>
+                        </div>
+                    </div>
+                    <hr>
                     <div class="row g-0">
                         <div class="col-xl-3 col-sm-6">
                             <div class="p-3 border-card h-100">
                                 <small class="text-muted">@lang('Total Sales')</small>
-                                <h6>{{ showAmount($deposit['total_deposit_amount']) }}</h6>
+                                <h6 class="summary-sales">{{ showAmount($deposit['total_deposit_amount']) }}</h6>
                             </div>
                         </div>
 
                         <div class="col-xl-3 col-sm-6">
                             <div class="p-3 border-card h-100">
-                                <small class="text-muted">@lang('Payment Pending')</small>
-                                <h6>{{ showAmount($deposit['total_deposit_pending']) }}</h6>
+                                <small class="text-muted">@lang('Total Purchases')</small>
+                                <h6 class="summary-purchases">{{ showAmount($deposit['total_deposit_rejected']) }}</h6>
                             </div>
                         </div>
 
                         <div class="col-xl-3 col-sm-6">
                             <div class="p-3 border-card h-100">
-                                <small class="text-muted">@lang('Rejected Payment')</small>
-                                <h6>{{ $deposit['total_deposit_rejected'] }}</h6>
+                                <small class="text-muted">@lang('Total Returns')</small>
+                                <h5 class="summary-returns">{{ showAmount($deposit['total_deposit_charge']) }}</h5>
                             </div>
                         </div>
 
                         <div class="col-xl-3 col-sm-6">
                             <div class="p-3 border-card h-100">
-                                <small class="text-muted">@lang('Payment Charge')</small>
-                                <h5>{{ showAmount($deposit['total_deposit_charge']) }}</h5>
+                                <small class="text-muted">@lang('Total Profit')</small>
+                                <h6 class="summary-profit {{ $deposit['total_deposit_pending'] >= 0 ? 'text-success' : 'text-danger' }}">{{ showAmount($deposit['total_deposit_pending']) }}</h6>
                             </div>
                         </div>
+
                     </div>
                 </div>
             </div>
@@ -430,8 +448,51 @@
             @json(@$chart['user_country_counter']->keys()),
             @json(@$chart['user_country_counter']->flatten())
         );
+
+        // Filter button handling
+        document.querySelectorAll('.filter-btn').forEach(btn => {
+            btn.addEventListener('click', function() {
+                const filter = this.getAttribute('data-filter');
+                
+                // Update button styles
+                document.querySelectorAll('.filter-btn').forEach(b => {
+                    b.classList.remove('btn-primary');
+                    b.classList.add('btn-outline-primary');
+                });
+                this.classList.remove('btn-outline-primary');
+                this.classList.add('btn-primary');
+                
+                // Fetch summary data
+                $.ajax({
+                    url: @json(route('admin.summary.data')),
+                    method: 'GET',
+                    data: { date_filter: filter },
+                    dataType: 'json',
+                    success: function(response) {
+                        if (response.status == 'success') {
+                            const data = response.data;
+                            document.querySelector('.summary-sales').textContent = data.total_sales_formatted;
+                            document.querySelector('.summary-purchases').textContent = data.total_purchases_formatted;
+                            document.querySelector('.summary-returns').textContent = data.total_returns_formatted;
+                            
+                            const profitEl = document.querySelector('.summary-profit');
+                            profitEl.textContent = data.total_profit_formatted;
+                            
+                            if (data.total_profit >= 0) {
+                                profitEl.classList.remove('text-danger');
+                                profitEl.classList.add('text-success');
+                            } else {
+                                profitEl.classList.remove('text-success');
+                                profitEl.classList.add('text-danger');
+                            }
+                        }
+                    }
+                });
+            });
+        });
     </script>
 @endpush
+
 @push('style')
     <style>
         .apexcharts-menu {

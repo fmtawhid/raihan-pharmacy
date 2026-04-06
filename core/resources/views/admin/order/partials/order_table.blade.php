@@ -36,7 +36,18 @@
             </td>
 
             {{-- Amount --}}
-            <td><b>{{ showAmount($order->total_amount) }}</b></td>
+            <td>
+                <b>{{ showAmount($order->total_amount) }}</b>
+                @php
+                    $totalReturned = \App\Models\ProductReturn::where('order_id', $order->id)->sum('refund_amount');
+                @endphp
+                @if($totalReturned > 0)
+                    <br>
+                    <small style="color: #dc2626; font-weight: 600;">
+                        <i class="la la-undo"></i> -{{ showAmount($totalReturned) }}
+                    </small>
+                @endif
+            </td>
 
             {{-- Payment + order status badges --}}
             <td>{!! $order->paymentBadge() !!}</td>

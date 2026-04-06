@@ -45,7 +45,7 @@ class ReportController extends Controller
     public function  salesReport()
     {
         $pageTitle = 'Sales Report';
-        $logs = Order::isValidOrder()->delivered()->orderBy('id', 'desc')->searchable(['user:username'])->dateFilter()->withSum('orderDetail as total_product', 'quantity')->with('user')->paginate(getPaginate());
+        $logs = Order::isValidOrder()->delivered()->orderBy('id', 'desc')->searchable(['order_number', 'user:username'])->dateFilter()->withSum('orderDetail as total_product', 'quantity')->with('user')->paginate(getPaginate());
 
         $totalSalesProduct = OrderDetail::whereHas('order', function ($query) {
             $query->where('status', Status::ORDER_DELIVERED);
@@ -136,28 +136,30 @@ class ReportController extends Controller
                     $q->whereBetween('created_at', [$start, $end]);
                 }
             })
-            ->whereHas('orderDetail', function ($q) use ($request) {
-                $q->when($request->sku, function ($q) use ($request) {
-                    $q->whereHas(
-                        'productVariant',
-                        fn($v) =>
-                        $v->where('sku', 'like', '%' . $request->sku . '%')
-                    )->orWhereHas(
-                        'product',
-                        fn($p) =>
-                        $p->where('sku', 'like', '%' . $request->sku . '%')
+            ->when($request->sku || $request->product, function ($q) use ($request) {
+                $q->whereHas('orderDetail', function ($sq) use ($request) {
+                    $sq->when($request->sku, function ($sq) use ($request) {
+                        $sq->whereHas(
+                            'productVariant',
+                            fn($v) =>
+                            $v->where('sku', 'like', '%' . $request->sku . '%')
+                        )->orWhereHas(
+                            'product',
+                            fn($p) =>
+                            $p->where('sku', 'like', '%' . $request->sku . '%')
+                        );
+                    });
+
+                    $sq->when(
+                        $request->product,
+                        fn($sq) =>
+                        $sq->whereHas(
+                            'product',
+                            fn($p) =>
+                            $p->where('name', 'like', '%' . $request->product . '%')
+                        )
                     );
                 });
-
-                $q->when(
-                    $request->product,
-                    fn($q) =>
-                    $q->whereHas(
-                        'product',
-                        fn($p) =>
-                        $p->where('name', 'like', '%' . $request->product . '%')
-                    )
-                );
             });
 
         // Clone query before pagination for summary
@@ -230,12 +232,14 @@ class ReportController extends Controller
                     $q->whereBetween('created_at', [trim($dateRange[0]), trim($dateRange[1])]);
                 }
             })
-            ->whereHas('orderDetail', function ($q) use ($request) {
-                $q->when($request->sku, function ($q) use ($request) {
-                    $q->whereHas('productVariant', fn($v) => $v->where('sku', 'like', '%' . $request->sku . '%'))
-                        ->orWhereHas('product', fn($p) => $p->where('sku', 'like', '%' . $request->sku . '%'));
+            ->when($request->sku || $request->product, function ($q) use ($request) {
+                $q->whereHas('orderDetail', function ($sq) use ($request) {
+                    $sq->when($request->sku, function ($sq) use ($request) {
+                        $sq->whereHas('productVariant', fn($v) => $v->where('sku', 'like', '%' . $request->sku . '%'))
+                            ->orWhereHas('product', fn($p) => $p->where('sku', 'like', '%' . $request->sku . '%'));
+                    });
+                    $sq->when($request->product, fn($sq) => $sq->whereHas('product', fn($p) => $p->where('name', 'like', '%' . $request->product . '%')));
                 });
-                $q->when($request->product, fn($q) => $q->whereHas('product', fn($p) => $p->where('name', 'like', '%' . $request->product . '%')));
             })
             ->with(['orderDetail.product', 'orderDetail.productVariant'])
             ->latest()
@@ -281,7 +285,7 @@ class ReportController extends Controller
     {
         $orders = Order::isValidOrder()
             ->delivered()
-            ->searchable(['user:username'])
+            ->searchable(['order_number', 'user:username'])
             ->dateFilter()
             ->withSum('orderDetail as total_product', 'quantity')
             ->with('user')

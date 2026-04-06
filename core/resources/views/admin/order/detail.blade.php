@@ -238,6 +238,74 @@
                     @endif
                 </div>
             </div>
+
+            <!-- RETURNED PRODUCTS SECTION -->
+            @php
+                $returnedProducts = \App\Models\ProductReturn::where('order_id', $order->id)->with('product')->get();
+            @endphp
+
+            @if($returnedProducts->count() > 0)
+            <div class="row mt-4">
+                <div class="col-12">
+                    <div class="card">
+                        <div class="card-header">
+                            <h6 class="mb-0">
+                                <i class="la la-undo" style="color: #dc2626;"></i>
+                                Returned Products ({{ $returnedProducts->count() }})
+                            </h6>
+                        </div>
+                        <div class="card-body p-0">
+                            <div class="table-responsive--sm table-responsive">
+                                <table class="table table--light style--two mb-0">
+                                    <thead>
+                                        <tr>
+                                            <th>@lang('Product')</th>
+                                            <th style="text-align:center;">@lang('Quantity Returned')</th>
+                                            <th style="text-align:right;">@lang('Unit Price')</th>
+                                            <th style="text-align:right;">@lang('Refund Amount')</th>
+                                            <th style="text-align:center;">@lang('Return Date')</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        @php $totalReturnedAmount = 0; @endphp
+                                        @foreach($returnedProducts as $returnedProduct)
+                                            @php $totalReturnedAmount += $returnedProduct->refund_amount; @endphp
+                                            <tr>
+                                                <td>
+                                                    <strong>{{ optional($returnedProduct->product)->name ?? 'N/A' }}</strong>
+                                                </td>
+                                                <td style="text-align:center;">
+                                                    <span class="badge badge--warning">{{ $returnedProduct->quantity_returned }}</span>
+                                                </td>
+                                                <td style="text-align:right;">
+                                                    {{ showAmount($returnedProduct->refund_amount / $returnedProduct->quantity_returned) }}
+                                                </td>
+                                                <td style="text-align:right; color: #dc2626; font-weight: 600;">
+                                                    {{ showAmount($returnedProduct->refund_amount) }}
+                                                </td>
+                                                <td style="text-align:center; font-size: 0.875rem;">
+                                                    {{ $returnedProduct->created_at->format('d M Y') }}
+                                                </td>
+                                            </tr>
+                                        @endforeach
+                                    </tbody>
+                                    <tfoot>
+                                        <tr style="background: #f8f9fa; font-weight: 600;">
+                                            <td colspan="3" style="text-align:right;">@lang('Total Refunded Amount'):</td>
+                                            <td style="text-align:right; color: #dc2626;">
+                                                {{ showAmount($totalReturnedAmount) }}
+                                            </td>
+                                            <td></td>
+                                        </tr>
+                                    </tfoot>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            @endif
+
             <div class="text-end mt-3">
                 <a href="{{ route('admin.print.invoice', $order->id) }}" target=blank class="btn btn-dark m-1"> <i
                         class="fa fa-print"></i>@lang('Print')</a>

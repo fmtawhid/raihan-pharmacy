@@ -106,7 +106,7 @@ $allCategories = \App\Models\Category::orderBy('name','ASC')->get();
                                     
                                     @endif
                                     @endforeach
-                                    <li style="color: #fff; font-size: 20px;padding: 8px; font-weight:900;">
+                                    <li class="total-product-item">
                                         <span class="total-product-badge">
                                             <i class="fas fa-box me-1"></i>
                                             Items: {{ \App\Models\Product::count() }}
@@ -275,6 +275,8 @@ document.addEventListener('DOMContentLoaded', function() {
     margin: 0;
     display: flex;
     flex-wrap: wrap;
+    align-items: center;
+    width: 100%;
 }
 
 .main-menu .menu-item {
@@ -292,6 +294,23 @@ document.addEventListener('DOMContentLoaded', function() {
     transition: background 0.3s;
     background-color: #557DBF;
     /* Main menu background - blue */
+}
+
+.total-product-badge {
+    margin-left: auto;
+    color: #fff;
+    font-size: 16px;
+    padding: 8px 18px;
+    background-color: #557DBF;
+    font-weight: 900;
+    white-space: nowrap;
+}
+
+.total-product-item {
+    margin-left: auto !important;
+    position: relative;
+    display: flex;
+    align-items: center;
 }
 
 
@@ -351,11 +370,22 @@ document.addEventListener('DOMContentLoaded', function() {
         flex-direction: column;
         background-color: #557DBF;
         /* Mobile background - blue */
+        width: 100%;
     }
 
     .main-menu .menu-item>a {
         color: #fff;
         padding: 10px 16px;
+    }
+
+    .total-product-item {
+        flex-grow: 1;
+        margin-left: 0 !important;
+        width: 100%;
+    }
+
+    .total-product-badge {
+        margin-left: auto;
     }
 
     .sub-menu {

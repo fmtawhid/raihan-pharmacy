@@ -39,6 +39,7 @@
             font-size: 11px;
             margin-bottom: 8px;
             line-height: 1.5;
+            font-weight: 600;
         }
         .invoice-header p {
             margin: 2px 0;
@@ -59,6 +60,7 @@
             font-size: 10px;
             padding: 2px 2px;
             border-bottom: 1px dotted #ccc;
+            font-weight: 600;
         }
         table tbody tr:last-child td {
             border-bottom: 1px solid #000;
@@ -67,6 +69,7 @@
             font-size: 11px;
             margin: 8px 0;
             line-height: 1.6;
+            font-weight: 600;
         }
         .summary-row {
             display: flex;
@@ -84,6 +87,7 @@
             font-size: 9px;
             margin-top: 8px;
             line-height: 1.5;
+            font-weight: 600;
         }
         .thanks {
             font-weight: bold;
@@ -153,6 +157,13 @@
                 <span>{{ showAmount($subtotal) }}</span>
             </div>
 
+            @if($totalDiscount > 0)
+            <div class="summary-row">
+                <span>Discount:</span>
+                <span>-{{ showAmount($totalDiscount) }}</span>
+            </div>
+            @endif
+
             <div class="summary-total">
                 <div class="summary-row">
                     <span>Net Total:</span>
@@ -161,8 +172,8 @@
             </div>
 
             <div class="summary-row">
-                <span>Total Qty:</span>
-                <span>{{ $totalQty }} Item</span>
+                <span>Total Item:</span>
+                <span>{{ count($order->orderDetail) }} Item</span>
             </div>
 
             <div class="summary-row">
@@ -170,15 +181,6 @@
                 <span>{{ showAmount($order->total_amount) }}</span>
             </div>
 
-            <div class="summary-row">
-                <span>Change Amount:</span>
-                <span>৳0.00</span>
-            </div>
-
-            <div class="summary-row">
-                <span>Due Amount:</span>
-                <span>৳0.00</span>
-            </div>
 
             <div class="summary-row">
                 <span>Mode of Payment:</span>

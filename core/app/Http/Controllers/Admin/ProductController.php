@@ -737,4 +737,14 @@ class ProductController extends Controller
             return $request->purchaser_id;
         }
     }
+
+    public function getPurchasers(Request $request)
+    {
+        $searchTerm = $request->input('q');
+        $purchasers = Purchaser::where('name', 'LIKE', '%' . $searchTerm . '%')
+            ->orderBy('name')
+            ->get();
+
+        return response()->json($purchasers);
+    }
 }

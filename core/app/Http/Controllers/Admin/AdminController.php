@@ -9,6 +9,7 @@ use App\Models\AdminNotification;
 use App\Models\Deposit;
 use App\Models\Order;
 use App\Models\Product;
+use App\Models\ProductBatch;
 use App\Models\SupportTicket;
 use App\Models\User;
 use App\Models\UserLogin;
@@ -20,9 +21,37 @@ use Illuminate\Support\Facades\Hash;
 class AdminController extends Controller
 {
 
-    public function dashboard()
+    public function dashboard(Request $request)
     {
         $pageTitle = 'Dashboard';
+        
+        // Get date filter
+        $dateFilter = $request->input('date_filter', 'today');
+        $startDate = now()->startOfDay();
+        $endDate = now()->endOfDay();
+        
+        switch($dateFilter) {
+            case 'today':
+                $startDate = now()->startOfDay();
+                $endDate = now()->endOfDay();
+                break;
+            case 'last_7_days':
+                $startDate = now()->subDays(7)->startOfDay();
+                $endDate = now()->endOfDay();
+                break;
+            case 'last_30_days':
+                $startDate = now()->subDays(30)->startOfDay();
+                $endDate = now()->endOfDay();
+                break;
+            case 'this_year':
+                $startDate = now()->startOfYear();
+                $endDate = now()->endOfDay();
+                break;
+        }
+        
+        // Calculate proper summary data
+        $deposits = $this->getSummaryData($startDate, $endDate);
+        
         $widget['total_product']            = Product::whereHas('categories')->count();
 
         $widget['orders']['total_orders']      = ['color' => 'bg--dark', 'count' => Order::isValidOrder()->count(), 'route' => 'admin.order.index'];
@@ -59,17 +88,109 @@ class AdminController extends Controller
             return collect($item)->count();
         })->sort()->reverse()->take(5);
 
-
-        $deposit['total_deposit_amount']        = Deposit::successful()->sum('amount');
-        $deposit['total_deposit_pending']       = Deposit::pending()->count();
-        $deposit['total_deposit_rejected']      = Deposit::rejected()->count();
-        $deposit['total_deposit_charge']        = Deposit::successful()->sum('charge');
+        $deposit = $deposits;
 
         $topSellingProducts    = Product::topSales(3);
         $latestUser            = User::with('orders')->orderBy('id', 'desc')->take(6)->get();
         $recentOrders          = Order::isValidOrder()->with('user')->orderBy('id', 'desc')->take(6)->get();
 
-        return view('admin.dashboard', compact('pageTitle', 'widget', 'chart', 'deposit', 'topSellingProducts', 'latestUser', 'recentOrders'));
+        return view('admin.dashboard', compact('pageTitle', 'widget', 'chart', 'deposit', 'topSellingProducts', 'latestUser', 'recentOrders', 'dateFilter'));
+    }
+    
+    private function getSummaryData($startDate, $endDate)
+    {
+        // Total Sales - Sum of completed orders (without shipping)
+        $totalSales = Order::isValidOrder()
+            ->whereBetween('created_at', [$startDate, $endDate])
+            ->where('status', '!=', 'canceled')
+            ->selectRaw('SUM(total_amount - shipping_charge) as total')
+            ->first()
+            ?->total ?? 0;
+        
+        // Total Shipping - Sum of all shipping charges from completed orders
+        $totalShipping = Order::isValidOrder()
+            ->whereBetween('created_at', [$startDate, $endDate])
+            ->where('status', '!=', 'canceled')
+            ->selectRaw('SUM(shipping_charge) as total')
+            ->first()
+            ?->total ?? 0;
+        
+        // Total Purchases - Sum of all product batch quantities * purchase price
+        $totalPurchases = ProductBatch::whereBetween('purchased_at', [$startDate, $endDate])
+            ->selectRaw('SUM(qty_received * purchase_price) as total')
+            ->first()
+            ?->total ?? 0;
+        
+        // Total Returns - Sum of canceled orders (total_amount - shipping_charge)
+        $totalReturns = Order::isValidOrder()
+            ->whereBetween('created_at', [$startDate, $endDate])
+            ->where('status', 'canceled')
+            ->selectRaw('SUM(total_amount - shipping_charge) as total')
+            ->first()
+            ?->total ?? 0;
+        
+        // Calculate Total Profit based on product margins
+        // Join order_details with products, then with product_batches to get purchase prices
+        $totalProfit = \DB::table('order_details')
+            ->join('orders', 'order_details.order_id', '=', 'orders.id')
+            ->join('products', 'order_details.product_id', '=', 'products.id')
+            ->join('product_batches', 'products.id', '=', 'product_batches.product_id')
+            ->whereBetween('orders.created_at', [$startDate, $endDate])
+            ->where('orders.status', '!=', 'canceled')
+            ->selectRaw('SUM((order_details.price - product_batches.purchase_price) * order_details.quantity) as total')
+            ->first()
+            ?->total ?? 0;
+        
+        return [
+            'total_deposit_amount' => $totalSales + $totalShipping,
+            'total_deposit_rejected' => $totalPurchases,
+            'total_deposit_charge' => $totalReturns,
+            'total_deposit_pending' => $totalProfit
+        ];
+    }
+    
+    public function summaryData(Request $request)
+    {
+        $dateFilter = $request->input('date_filter', 'today');
+        $startDate = now()->startOfDay();
+        $endDate = now()->endOfDay();
+        
+        switch($dateFilter) {
+            case 'today':
+                $startDate = now()->startOfDay();
+                $endDate = now()->endOfDay();
+                break;
+            case 'last_7_days':
+                $startDate = now()->subDays(7)->startOfDay();
+                $endDate = now()->endOfDay();
+                break;
+            case 'last_30_days':
+                $startDate = now()->subDays(30)->startOfDay();
+                $endDate = now()->endOfDay();
+                break;
+            case 'this_year':
+                $startDate = now()->startOfYear();
+                $endDate = now()->endOfDay();
+                break;
+        }
+        
+        $depositRaw = $this->getSummaryData($startDate, $endDate);
+        
+        $deposit = [
+            'total_sales' => $depositRaw['total_deposit_amount'],
+            'total_sales_formatted' => showAmount($depositRaw['total_deposit_amount']),
+            'total_purchases' => $depositRaw['total_deposit_rejected'],
+            'total_purchases_formatted' => showAmount($depositRaw['total_deposit_rejected']),
+            'total_returns' => $depositRaw['total_deposit_charge'],
+            'total_returns_formatted' => showAmount($depositRaw['total_deposit_charge']),
+            'total_profit' => $depositRaw['total_deposit_pending'],
+            'total_profit_formatted' => showAmount($depositRaw['total_deposit_pending'])
+        ];
+        
+        return response()->json([
+            'status' => 'success',
+            'data' => $deposit
+        ]);
     }
 
 

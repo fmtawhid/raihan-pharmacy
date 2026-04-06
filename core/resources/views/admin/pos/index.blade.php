@@ -4,795 +4,271 @@
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 
 <style>
-/* ══════════════════════════════════════════════════
-   POS — Modern Professional Theme
-   ══════════════════════════════════════════════════ */
-.pos * {
-  box-sizing: border-box;
-}
+/* ═════════════════════════════════════════════════
+   POS — Bootstrap + Minimal Custom Styles
+   ════════════════════════════════════════════════= */
 
-.pos {
-  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-  /* padding: 16px 16px; */
-  background: #f4f6f9;
-  /* min-height: 100vh; */
-  color: #1e293b;
-}
-
-/* ─── HEADER ────────────────────────────────────── */
-.pos-header {
-  background: #ffffff;
-  border: 1px solid #e2e8f0;
-  border-radius: 12px;
-  padding: 14px 18px;
-  margin-bottom: 14px;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, .04);
-}
-
-.pos-header-left {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-}
-
-.pos-header-icon {
-  width: 40px;
-  height: 40px;
-  border-radius: 10px;
-  background: linear-gradient(135deg, #6366f1, #8b5cf6);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: #fff;
-  font-size: 20px;
-  flex-shrink: 0;
-}
-
-.pos-header-left h1 {
-  font-size: 18px;
-  font-weight: 700;
-  margin: 0;
-  color: #0f172a;
-}
-
-.pos-header-left p {
-  font-size: 11px;
-  color: #94a3b8;
-  margin: 1px 0 0;
-}
-
-.pos-header-right {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  font-size: 12px;
-  color: #64748b;
-}
-
-.pos-live {
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-  background: #f0fdf4;
-  color: #16a34a;
-  padding: 3px 8px;
-  border-radius: 16px;
-  font-weight: 600;
-  font-size: 10px;
-}
-
-.pos-live::before {
-  content: '';
-  width: 5px;
-  height: 5px;
-  border-radius: 50%;
-  background: #22c55e;
-  animation: pulse 1.5s ease-in-out infinite;
-  flex-shrink: 0;
-}
-
-@keyframes pulse {
-  0%, 100% {
-    opacity: 1;
-    transform: scale(1);
-  }
-  50% {
-    opacity: .4;
-    transform: scale(.7);
-  }
-}
-
-/* ─── LAYOUT GRID ───────────────────────────────── */
-.pos-grid {
-  display: grid;
-  gap: 14px;
-  grid-template-columns: 1fr 500px;
-  grid-template-rows: auto;
-}
-
-.pos-row-top {
-  display: contents;
-}
-
-@media (max-width: 1200px) {
-  .pos-grid {
-    grid-template-columns: 1fr;
-  }
-}
-
-@media (max-width: 992px) {
-  .pos-grid {
-    grid-template-columns: 1fr;
-  }
-}
-
-/* ─── CARD ──────────────────────────────────────── */
-.pos-card {
-  background: #ffffff;
-  border: 1px solid #e2e8f0;
-  border-radius: 10px;
-  overflow: hidden;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, .04);
-  display: flex;
-  flex-direction: column;
-  transition: box-shadow .25s;
-  display: flex;
-  flex-direction: column;
-}
-
-.pos-card:hover {
-  box-shadow: 0 4px 20px rgba(0, 0, 0, .06);
-}
-
-.pos-card-head {
-  padding: 12px 16px;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  border-bottom: 1px solid #f1f5f9;
-  flex-shrink: 0;
-}
-
-.pos-card-title {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  font-size: 13px;
-  font-weight: 600;
-  color: #1e293b;
-}
-
-.ct-icon {
-  width: 28px;
-  height: 28px;
-  border-radius: 8px;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 14px;
-  flex-shrink: 0;
-}
-
-.ct-icon--search {
-  background: #eef2ff;
-  color: #6366f1;
-}
-
-.ct-icon--customer {
-  background: #fefce8;
-  color: #ca8a04;
-}
-
-.ct-icon--cart {
-  background: #ecfdf5;
-  color: #059669;
-}
-
-.pos-card-badge {
-  font-size: 10px;
-  font-weight: 600;
-  padding: 3px 8px;
-  border-radius: 16px;
-  background: #f1f5f9;
-  color: #64748b;
-}
-
-.pos-card-body {
-  padding: 12px 14px;
-  flex: 1;
-  overflow-y: auto;
-  min-height: 0;
-}
-
-/* ─── SEARCH INPUT ──────────────────────────────── */
-.pos-input-wrap {
+/* Search Dropdown - Custom Only */
+.search-input-wrapper {
   position: relative;
-}
-
-.pos-input-wrap .pi-icon {
-  position: absolute;
-  left: 14px;
-  top: 50%;
-  transform: translateY(-50%);
-  font-size: 17px;
-  color: #94a3b8;
-  pointer-events: none;
-}
-
-.pos-input-wrap input {
   width: 100%;
-  padding: 8px 12px 8px 36px;
-  font-size: 12px;
-  color: #1e293b;
-  font-family: inherit;
-  background: #f8fafc;
-  border: 1.5px solid #e2e8f0;
-  border-radius: 8px;
-  outline: none;
-  transition: border .2s, box-shadow .2s;
+  z-index: 1001;
 }
 
-.pos-input-wrap input::placeholder {
-  color: #94a3b8;
-}
-
-.pos-input-wrap input:focus {
+.search-suggestions {
+  display: none;
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
   background: #fff;
-  border-color: #6366f1;
-  box-shadow: 0 0 0 3px rgba(99, 102, 241, .12);
+  border: 1px solid #dee2e6;
+  border-top: none;
+  border-radius: 0 0 0.375rem 0.375rem;
+  z-index: 1000;
+  overflow: hidden;
+  padding: 0;
+  margin: 0;
+  max-height: 450px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
 }
 
-/* ─── RESULT LISTS ──────────────────────────────── */
-.pos-results {
-  list-style: none;
-  padding: 0;
-  margin: 8px 0 0;
+.search-suggestions.show {
+  display: flex;
+  flex-direction: column;
+  animation: slideDown 0.15s ease-out;
+}
+
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.search-results-header {
+  background: #fff;
+  padding: 0.625rem 1rem;
+  border-bottom: 1px solid #dee2e6;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-shrink: 0;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: #495057;
+}
+
+.search-results-container {
   flex: 1;
   overflow-y: auto;
+  padding: 0;
   min-height: 0;
+  -webkit-overflow-scrolling: touch;
 }
 
-.pos-results::-webkit-scrollbar {
-  width: 4px;
+.suggestion-item {
+  padding: 0.75rem 1rem;
+  border-bottom: 1px solid #f1f5f9;
+  cursor: pointer;
+  transition: background 0.15s ease;
+  font-size: 0.8125rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  min-height: 55px;
+  will-change: background;
 }
 
-.pos-results::-webkit-scrollbar-thumb {
-  background: #cbd5e1;
-  border-radius: 10px;
+.suggestion-item:hover {
+  background: #f8f9fa;
 }
 
-.pos-search-table {
-  margin: 0;
-  table-layout: fixed;
+.suggestion-item-info {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.125rem;
 }
 
-.pos-search-table thead th {
-  position: sticky;
-  top: 0;
-  z-index: 1;
-  /* padding: 8px 8px; */
-  white-space: nowrap;
-  font-size: 10px;
-}
-
-.pos-search-table thead th:first-child {
-  width: 40%;
-}
-
-.pos-search-table tbody td {
-  /* padding: 8px 8px; */
-  font-size: 13px;
+.suggestion-item strong {
+  display: block;
+  color: #212529;
+  font-weight: 600;
+  margin-bottom: 0.25rem;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
-.pos-search-table tbody tr {
-  cursor: default;
-}
-
-.pos-search-table .badge-price {
-  font-size: 11px;
-  padding: 2px 7px;
-}
-
-.search-result-item {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 8px 10px;
-  border-radius: 8px;
-  margin-bottom: 1px;
-  transition: background .15s;
-}
-
-.search-result-item:hover {
-  background: #f8fafc;
-}
-
-.search-result-item strong {
-  font-size: 12px;
-  font-weight: 600;
-  color: #1e293b;
-}
-
-.search-result-item small {
-  font-size: 11px;
-  color: #64748b;
-}
-
-.badge-price {
-  display: inline-block;
-  background: #eef2ff;
-  color: #4338ca;
-  padding: 3px 10px;
-  border-radius: 6px;
-  font-size: 12px;
-  font-weight: 600;
+.suggestion-item small {
+  color: #6c757d;
+  font-size: 0.6875rem;
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
   white-space: nowrap;
 }
 
-/* ─── BUTTONS ───────────────────────────────────── */
-.pos-btn {
+.suggestion-item-price {
+  flex-shrink: 0;
+  background: linear-gradient(135deg, #e7f4f1, #d1f2e3);
+  color: #0d6d42;
+  padding: 0.5rem 0.75rem;
+  border-radius: 0.375rem;
+  font-weight: 700;
+  font-size: 0.8125rem;
+  white-space: nowrap;
+  text-align: center;
+  min-width: 50px;
+}
+
+.search-no-results {
+  text-align: center;
+  padding: 3.75rem 1.25rem;
+  color: #6c757d;
+  font-size: 0.875rem;
+}
+
+.search-no-results i {
+  font-size: 3rem;
+  display: block;
+  margin-bottom: 0.75rem;
+  opacity: 0.35;
+}
+
+.search-no-results p {
+  font-size: 0.875rem;
+  font-weight: 500;
+  margin: 0;
+}
+
+/* Icons in headers */
+.ct-icon {
+  width: 28px;
+  height: 28px;
+  border-radius: 0.5rem;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: 4px;
-  font-family: inherit;
-  font-size: 11px;
-  font-weight: 600;
-  padding: 6px 10px;
-  border-radius: 6px;
-  border: none;
-  cursor: pointer;
-  transition: all .2s;
-  text-decoration: none;
+  font-size: 0.875rem;
+  flex-shrink: 0;
 }
 
-.pos-btn i {
-  font-size: 13px;
+.ct-icon--search {
+  background: #e7f4f1;
+  color: #0d6d42;
 }
 
-.pos-btn--primary {
-  background: #6366f1;
-  color: #fff;
+.ct-icon--customer {
+  background: #fef3c7;
+  color: #ca8a04;
 }
 
-.pos-btn--primary:hover {
-  background: #4f46e5;
-  box-shadow: 0 2px 8px rgba(99, 102, 241, .3);
-  color: #fff;
+.ct-icon--cart {
+  background: #dcfce7;
+  color: #16a34a;
 }
 
-.pos-btn--success {
-  background: #059669;
-  color: #fff;
-}
-
-.pos-btn--success:hover {
-  background: #047857;
-  box-shadow: 0 2px 8px rgba(5, 150, 105, .3);
-  color: #fff;
-}
-
-.pos-btn--danger {
-  background: #fef2f2;
-  color: #dc2626;
-}
-
-.pos-btn--danger:hover {
-  background: #fee2e2;
-  color: #b91c1c;
-}
-
-.pos-btn--ghost {
-  background: transparent;
-  color: #64748b;
-  border: 1.5px solid #e2e8f0;
-}
-
-.pos-btn--ghost:hover {
-  background: #f1f5f9;
-  color: #334155;
-  border-color: #cbd5e1;
-}
-
-.pos-btn--lg {
-  font-size: 12px;
-  padding: 10px 16px;
-  border-radius: 8px;
-  width: 100%;
-}
-
-/* ─── RESPONSIVE ────────────────────────────────── */
-@media (max-width: 1400px) {
-  .pos-grid {
-    grid-template-columns: 1fr 1fr;
-  }
-}
-
-@media (max-width: 992px) {
-  .pos-grid {
-    grid-template-columns: 1fr;
-  }
-}
-
-@media (max-width: 768px) {
-  .pos {
-    padding: 8px 8px;
-  }
-  
-  .pos-header-left h1 {
-    font-size: 16px;
-  }
-  
-  .pos-header-right {
-    font-size: 11px;
-  }
-  
-  .pos-card-title {
-    font-size: 12px;
-  }
-  
-  .pos-table {
-    font-size: 11px;
-  }
-}
-
-/* ─── SELECTED CUSTOMER ─────────────────────────── */
-.selected-customer-box {
-  background: linear-gradient(135deg, #6366f1, #8b5cf6);
-  color: #fff;
-  border-radius: 8px;
-  padding: 12px 14px;
-  margin-top: 10px;
-  position: relative;
-  overflow: hidden;
-}
-
-.selected-customer-box::after {
-  content: '';
-  position: absolute;
-  top: -18px;
-  right: -18px;
-  width: 72px;
-  height: 72px;
-  border-radius: 50%;
-  background: rgba(255, 255, 255, .08);
-}
-
-.selected-customer-box .sc-label {
-  font-size: 9px;
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: .5px;
-  opacity: .7;
-  margin-bottom: 4px;
-}
-
-.selected-customer-box .sc-name {
-  font-size: 14px;
-  font-weight: 700;
-  margin-bottom: 3px;
-  line-height: 1.2;
-}
-
-.selected-customer-box .sc-info {
-  font-size: 11px;
-  opacity: .85;
-  display: block;
-  margin-bottom: 1px;
-  line-height: 1.3;
-}
-
-.selected-customer-box .sc-actions {
-  margin-top: 8px;
-}
-
-.selected-customer-box .sc-actions button {
-  background: rgba(255, 255, 255, .14);
-  border: 1px solid rgba(255, 255, 255, .28);
-  color: #fff;
-  font-size: 10px;
-  font-weight: 500;
-  padding: 4px 10px;
-  border-radius: 6px;
-  cursor: pointer;
-  transition: background .2s;
-  font-family: inherit;
-}
-
-.selected-customer-box .sc-actions button:hover {
-  background: rgba(255, 255, 255, .25);
-}
-
-/* ─── CART TABLE ────────────────────────────────── */
-.pos-cart-scroll {
-  flex: 1;
-  overflow-y: auto;
-  padding: 8px;
-  min-height: 0;
-}
-
-.pos-cart-scroll::-webkit-scrollbar {
-  width: 4px;
-}
-
-.pos-cart-scroll::-webkit-scrollbar-thumb {
-  background: #cbd5e1;
-  border-radius: 10px;
-}
-
-.pos-table {
-  width: 100%;
-  border-collapse: separate;
-  border-spacing: 0;
-  font-size: 12px;
-}
-
-.pos-table thead th {
-  font-size: 10px;
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: .3px;
-  color: #64748b;
-  padding: 8px 6px;
-  background: #f8fafc;
-  border-bottom: 1px solid #e2e8f0;
-}
-
-.pos-table tbody td {
-  padding: 8px 6px;
-  font-size: 12px;
-  color: #334155;
-  border-bottom: 1px solid #f1f5f9;
-  vertical-align: middle;
-}
-
-.pos-table tbody tr:last-child td {
-  border-bottom: none;
-}
-
-.pos-table tbody tr {
-  transition: background .15s;
-}
-
-.pos-table tbody tr:hover {
-  background: #f8fafc;
-}
-
+/* Quantity pill */
 .qty-pill {
   display: inline-flex;
   align-items: center;
   justify-content: center;
   min-width: 26px;
   height: 24px;
-  background: #eef2ff;
-  color: #4338ca;
-  border-radius: 6px;
-  font-size: 11px;
+  background: #e7f4f1;
+  color: #0d6d42;
+  border-radius: 0.375rem;
+  font-size: 0.6875rem;
   font-weight: 600;
 }
 
-.pos-cart-empty {
-  text-align: center;
-  padding: 50px 20px;
-  color: #94a3b8;
-}
-
-.pos-cart-empty i {
-  font-size: 42px;
-  display: block;
-  margin-bottom: 10px;
-  opacity: .35;
-}
-
-.pos-cart-empty p {
-  font-size: 14px;
-  font-weight: 500;
-  margin: 0;
-}
-
-/* ─── CART FOOTER ───────────────────────────────── */
-.pos-cart-foot {
-  padding: 12px 14px;
-  border-top: 1px solid #f1f5f9;
-  background: #fff;
-  flex-shrink: 0;
-  overflow-y: auto;
-}
-
-.pos-total-bar {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 10px 14px;
-  background: #f8fafc;
-  border-radius: 8px;
-  margin-bottom: 10px;
-}
-
-.pos-total-bar .tl {
-  font-size: 12px;
-  font-weight: 600;
-  color: #475569;
-}
-
-.pos-total-bar .tv {
-  font-size: 18px;
-  font-weight: 800;
-  color: #059669;
-  letter-spacing: -.5px;
-}
-
-/* ─── PRICE TYPE SELECTOR ──────────────────────── */
-.price-type-selector {
-  display: flex;
-  gap: 8px;
-  margin-bottom: 10px;
-}
-
-.price-type-option {
-  flex: 1;
-  position: relative;
-}
-
-.price-type-option input[type="radio"] {
-  position: absolute;
-  opacity: 0;
-  width: 0;
-  height: 0;
-}
-
-.price-type-option label {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 6px;
-  padding: 8px 12px;
-  border: 1.5px solid #e2e8f0;
-  border-radius: 8px;
-  cursor: pointer;
-  font-size: 11px;
-  font-weight: 600;
-  color: #64748b;
-  background: #f8fafc;
-  transition: all .2s;
-  user-select: none;
-}
-
-.price-type-option label:hover {
-  border-color: #cbd5e1;
-  background: #f1f5f9;
-  color: #334155;
-}
-
-.price-type-option input:checked + label {
-  border-color: #059669;
-  background: #ecfdf5;
-  color: #059669;
-  box-shadow: 0 0 0 3px rgba(5,150,105,.1);
-}
-
-.price-type-option input:checked + label .pt-icon {
-  color: #059669;
-}
-
-.pt-icon {
-  font-size: 18px;
-  line-height: 1;
-}
-
-/* ─── MISC ──────────────────────────────────────── */
-.no-data-msg {
-  text-align: center;
-  padding: 20px;
-  color: #94a3b8;
-  font-size: 13px;
-}
-
-.no-data-msg i {
-  font-size: 26px;
-  display: block;
-  margin-bottom: 6px;
-  opacity: .45;
-}
-
-.list-group-item {
-  border: none !important;
-  border-radius: 10px !important;
-  padding: 10px 12px;
-  margin-bottom: 2px;
-  transition: background .15s;
-  font-size: 13.5px;
-}
-
-.list-group-item:hover {
-  background: #f8fafc;
-}
-
-/* ─── QUANTITY BUTTONS ──────────────────────────── */
+/* Quantity buttons */
 .qty-btn {
   display: inline-flex;
   align-items: center;
   justify-content: center;
   width: 24px;
   height: 24px;
-  border-radius: 5px;
-  border: 1.5px solid #e2e8f0;
-  background: #f8fafc;
-  color: #1e293b;
-  font-size: 14px;
+  border-radius: 0.3125rem;
+  border: 1.5px solid #dee2e6;
+  background: #f8f9fa;
+  color: #212529;
+  font-size: 0.875rem;
   font-weight: 600;
   cursor: pointer;
-  transition: all .2s;
+  transition: all 0.2s;
   padding: 0;
   font-family: inherit;
 }
 
 .qty-btn:hover {
-  background: #ecfdf5;
-  border-color: #059669;
-  color: #059669;
+  background: #dcfce7;
+  border-color: #16a34a;
+  color: #16a34a;
 }
 
 .qty-btn:active {
-  transform: scale(.95);
+  transform: scale(0.95);
 }
 
 .qty-btn:disabled {
-  opacity: .5;
+  opacity: 0.5;
   cursor: not-allowed;
 }
 
-/* ─── PRODUCTS GRID ─────────────────────────── */
+/* Products grid  */
 .products-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(95px, 1fr));
-  gap: 8px;
-  margin-top: 10px;
+  gap: 0.5rem;
+  margin-top: 0.625rem;
 }
 
 .product-item {
-  background: #f8fafc;
-  border: 1.5px solid #e2e8f0;
-  border-radius: 8px;
-  padding: 8px;
+  background: #f8f9fa;
+  border: 1.5px solid #dee2e6;
+  border-radius: 0.5rem;
+  padding: 0.5rem;
   text-align: center;
   cursor: pointer;
-  transition: all .2s;
+  transition: all 0.2s;
   display: flex;
   flex-direction: column;
   align-items: center;
 }
 
 .product-item:hover {
-  border-color: #6366f1;
-  background: #eef2ff;
-  box-shadow: 0 2px 8px rgba(99, 102, 241, .12);
+  border-color: #0d6d42;
+  background: #dcfce7;
+  box-shadow: 0 2px 8px rgba(16, 185, 129, 0.12);
 }
 
 .product-item-image {
   width: 100%;
   height: 60px;
-  background: #e2e8f0;
-  border-radius: 6px;
-  margin-bottom: 6px;
+  background: #dee2e6;
+  border-radius: 0.375rem;
+  margin-bottom: 0.375rem;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 24px;
-  color: #94a3b8;
+  font-size: 1.5rem;
+  color: #6c757d;
 }
 
 .product-item-name {
-  font-size: 10px;
+  font-size: 0.625rem;
   font-weight: 600;
-  color: #1e293b;
-  margin-bottom: 4px;
+  color: #212529;
+  margin-bottom: 0.25rem;
   line-height: 1.2;
   min-height: 20px;
   overflow: hidden;
@@ -803,159 +279,220 @@
 }
 
 .product-item-price {
-  font-size: 10px;
-  color: #059669;
+  font-size: 0.625rem;
+  color: #16a34a;
   font-weight: 700;
-  margin-bottom: 6px;
+  margin-bottom: 0.375rem;
 }
 
 .product-item-btn {
   width: 100%;
-  padding: 4px 6px;
-  font-size: 9px;
+  padding: 0.25rem 0.375rem;
+  font-size: 0.5625rem;
   border: none;
-  border-radius: 4px;
-  background: #6366f1;
+  border-radius: 0.25rem;
+  background: #0d6d42;
   color: #fff;
   font-weight: 600;
   cursor: pointer;
-  transition: all .2s;
+  transition: all 0.2s;
   font-family: inherit;
 }
 
 .product-item-btn:hover {
-  background: #4f46e5;
+  background: #0a5835;
 }
 
 .product-item-btn:active {
-  transform: scale(.95);
+  transform: scale(0.95);
+}
+
+.pos-products-section {
+  display: none !important;
+}
+
+/* No data message */
+.no-data-msg {
+  text-align: center;
+  padding: 1.25rem;
+  color: #6c757d;
+  font-size: 0.8125rem;
+}
+
+.no-data-msg i {
+  font-size: 1.625rem;
+  display: block;
+  margin-bottom: 0.375rem;
+  opacity: 0.45;
 }
 </style>
 
-<div class="pos">
+<div class="p-3">
 
-  {{-- ═══ HEADER / TITLE BAR ═══ --}}
-  <!-- <div class="pos-header">
-    <div class="pos-header-left">
-      <div class="pos-header-icon"><i class="la la-store"></i></div>
-      <div>
-        <h1>Point of Sale</h1>
-        <p>Manage products, customers &amp; orders</p>
-      </div>
-    </div>
-    <div class="pos-header-right">
-      <span class="pos-live">Online</span>
-      <span><i class="la la-calendar"></i>&nbsp; {{ now()->format('D, M d Y') }}</span>
-    </div>
-  </div> -->
-
-  <div class="pos-grid">
+  {{-- ═══ MAIN LAYOUT GRID ═══ --}}
+  <div class="row g-3">
 
     {{-- ═══ LEFT: Search + Auto-loaded Products ═══ --}}
-    <div class="pos-card">
-      <div class="pos-card-head">
-        <span class="pos-card-title">
-          <span class="ct-icon ct-icon--search"><i class="la la-search"></i></span>
-          Browse Products
-        </span>
-        <span class="pos-card-badge">18</span>
-      </div>
-      <div class="pos-card-body">
-        <div class="pos-input-wrap">
-          <i class="la la-search pi-icon"></i>
-          <input type="text" id="product-search" placeholder="Search products…">
+    <div class="col-12 pos-products-section">
+      <div class="card">
+        <div class="card-header d-flex align-items-center justify-content-between py-2">
+          <span class="d-flex align-items-center gap-2 small fw-600">
+            <span class="ct-icon ct-icon--search"><i class="la la-search"></i></span>
+            Browse Products
+          </span>
+          <span class="badge bg-light text-dark">18</span>
         </div>
-        <div id="products-container" class="products-grid"></div>
-        <div id="search-placeholder" class="no-data-msg" style="display:none"><i class="la la-search"></i> No products found</div>
+        <div class="card-body p-2">
+          <div id="products-container" class="products-grid"></div>
+          <div id="search-placeholder" class="no-data-msg" style="display:none"><i class="la la-search"></i> No products found</div>
+        </div>
       </div>
     </div>
 
     {{-- ═══ RIGHT: SHOPPING CART ═══ --}}
-    <div class="pos-card" style="display: flex; flex-direction: column;">
-      <div class="pos-card-head" style="flex-wrap: wrap; gap: 8px;">
-        <span class="pos-card-title" style="flex: 1; min-width: 150px;">
-          <span class="ct-icon ct-icon--cart"><i class="la la-shopping-cart"></i></span>
-          Cart
-        </span>
-        <button id="select-customer-btn" class="pos-btn pos-btn--primary" style="padding: 6px 10px; font-size: 10px;">
-          <i class="la la-user"></i> Select
-        </button>
-        <button id="clear-cart" class="pos-btn pos-btn--ghost" style="padding: 6px 8px; font-size: 10px;">
-          <i class="la la-trash"></i>
-        </button>
-      </div>
-      <div id="selected-customer" style="padding: 8px 14px; border-bottom: 1px solid #f1f5f9; flex-shrink: 0; display: none;"></div>
-
-      <div class="pos-cart-scroll">
-        <table class="pos-table" id="cart-table">
-          <thead>
-            <tr>
-              <th>Product</th>
-              <th style="text-align:center">Qty</th>
-              <th style="text-align:center;font-size:9px">Stock</th>
-              <th style="text-align:right">Price</th>
-              <th style="text-align:right">W</th>
-              <th style="width:60px;text-align:right">Total</th>
-              <th style="text-align:center;width:50px">×</th>
-            </tr>
-          </thead>
-          <tbody></tbody>
-        </table>
-      </div>
-
-      <div class="pos-cart-foot">
-        <div class="pos-total-bar" id="cart-total">
-          <span class="tl">Total</span>
-          <span class="tv">$0.00</span>
-        </div>
-        {{-- Price Type Selector --}}
-        <div class="price-type-selector" id="price-type-selector">
-          <div class="price-type-option">
-            <input type="radio" name="price_type" id="pt_regular" value="regular">
-            <label for="pt_regular" style="font-size: 10px; padding: 6px 10px;">
-              <span class="pt-icon"><i class="la la-tag"></i></span>
-              Regular
-            </label>
+    <div class="col-12">
+      <div class="card" style="display: flex; flex-direction: column;">
+        <div class="card-header">
+          <div class="d-flex align-items-center gap-2 small fw-600 mb-2">
+            <span class="ct-icon ct-icon--cart"><i class="la la-shopping-cart"></i></span>
+            Cart
           </div>
-          <div class="price-type-option">
-            <input type="radio" name="price_type" id="pt_wholesale" value="wholesale">
-            <label for="pt_wholesale" style="font-size: 10px; padding: 6px 10px;">
-              <span class="pt-icon"><i class="la la-boxes"></i></span>
-              Wholesale
-            </label>
-          </div>
-        </div>
 
-        {{-- Discount Section --}}
-        <div style="background: #f8fafc; border-radius: 8px; padding: 8px; margin-bottom: 8px; border: 1px solid #e2e8f0;">
-          <div style="font-size: 11px; font-weight: 600; color: #1e293b; margin-bottom: 6px;">
-            <i class="la la-percent" style="margin-right: 4px;"></i>Discount
-          </div>
-          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin-bottom: 6px;">
-            <div>
-              <input type="radio" name="discount_type" id="dt_percentage" value="percentage" style="margin-right: 4px;">
-              <label for="dt_percentage" style="font-size: 10px; font-weight: 500; color: #475569; cursor: pointer;">%</label>
-            </div>
-            <div>
-              <input type="radio" name="discount_type" id="dt_fixed" value="fixed" style="margin-right: 4px;">
-              <label for="dt_fixed" style="font-size: 10px; font-weight: 500; color: #475569; cursor: pointer;">Fixed</label>
+          <div class="search-input-wrapper">
+            <i class="la la-search pi-icon" style="position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: #6c757d; pointer-events: none;"></i>
+            <input type="text" id="product-search" placeholder="Search products…" class="form-control form-control-sm" style="padding-left: 36px;">
+            <!-- Search Results Dropdown -->
+            <div id="search-suggestions" class="search-suggestions">
+              <div class="search-results-header">
+                <i class="la la-search"></i>
+                <span>Search Results</span>
+              </div>
+              <div id="search-results-container" class="search-results-container"></div>
             </div>
           </div>
-          <div style="display: flex; gap: 6px;">
-            <input type="number" id="discount-input" placeholder="0" min="0" step="0.01" style="flex: 1; padding: 6px 8px; border: 1px solid #e2e8f0; border-radius: 6px; font-size: 11px; color: #1e293b;" disabled>
-            <span id="discount-unit" style="padding: 6px 8px; background: #e2e8f0; border-radius: 6px; font-weight: 600; color: #475569; min-width: 36px; text-align: center; font-size: 10px;">%</span>
-          </div>
-          <div id="discount-info" style="font-size: 10px; color: #64748b; margin-top: 4px;">
-            <strong id="discount-display">$0.00</strong>
-          </div>
         </div>
 
-        <button id="confirm-order" class="pos-btn pos-btn--success pos-btn--lg" disabled style="opacity:.45;cursor:not-allowed;font-size:11px">
-          <i class="la la-check-circle"></i>Confirm
-        </button>
+        <div class="card-body p-2 border-bottom d-flex gap-2 flex-wrap">
+          <button id="select-customer-btn" class="btn btn-sm btn-success flex-grow-1" style="min-width: 100px;">
+            <i class="la la-user"></i> Select
+          </button>
+          <button id="create-customer-btn" class="btn btn-sm btn-info flex-grow-1" style="min-width: 100px;">
+            <i class="la la-user-plus"></i> Create
+          </button>
+          <button id="clear-cart" class="btn btn-sm btn-outline-danger flex-grow-1" style="min-width: 60px;">
+            <i class="la la-trash"></i> Clear
+          </button>
+        </div>
+        <div id="selected-customer" class="p-2 border-bottom d-none flex-shrink-0"></div>
+
+        <div class="card-body p-2 flex-grow-1" style="overflow-y: auto; min-height: 0;">
+          <table class="table table-sm table-hover mb-0" id="cart-table" style="table-layout: fixed;">
+            <thead class="table-light">
+              <tr style="font-size: 0.75rem;">
+                <th style="width: 40%;">Product</th>
+                <th style="width: 20%; text-align:center;">Qty</th>
+                <th style="width: 10%; text-align:center; font-size: 0.7rem;">Stock</th>
+                <th style="width: 12%; text-align:right;">Price</th>
+                <th style="width: 12%; text-align:right;">W</th>
+                <th style="width: 16%; text-align:right;">Total</th>
+                <th style="width: 10%; text-align:center;">×</th>
+              </tr>
+            </thead>
+            <tbody></tbody>
+          </table>
+        </div>
+
+        <div class="card-body p-2 border-top">
+          <div class="d-flex justify-content-between align-items-center p-2 bg-light rounded mb-3" id="cart-total" style="font-size: 0.875rem;">
+            <span class="fw-600">Total</span>
+            <span class="h6 mb-0" style="color: #16a34a;">৳0.00</span>
+          </div>
+          
+          {{-- Price Type Selector --}}
+          <div class="mb-3" style="background: linear-gradient(135deg, #e7f4f1, #f0fdf9); border: 1px solid #a8d5cc; border-radius: 0.5rem; padding: 1rem;">
+            <label class="form-label small fw-700 mb-2 d-block" style="color: #0d5f42; font-size: 0.8125rem; text-transform: uppercase; letter-spacing: 0.3px;">
+              <i class="la la-tag" style="margin-right: 0.375rem;"></i>Price Type
+            </label>
+            <div class="d-flex gap-2">
+              <div class="flex-grow-1">
+                <input type="radio" name="price_type" id="pt_regular" value="regular" class="form-check-input">
+                <label for="pt_regular" class="form-check-label small" style="cursor: pointer; font-weight: 500; color: #1e293b;">
+                  <i class="la la-tag" style="color: #059669;"></i> Regular
+                </label>
+              </div>
+              <div class="flex-grow-1">
+                <input type="radio" name="price_type" id="pt_wholesale" value="wholesale" class="form-check-input">
+                <label for="pt_wholesale" class="form-check-label small" style="cursor: pointer; font-weight: 500; color: #1e293b;">
+                  <i class="la la-boxes" style="color: #f0b83d;"></i> Wholesale
+                </label>
+              </div>
+            </div>
+          </div>
+
+          {{-- Discount Section --}}
+          <div class="mb-2" style="background: linear-gradient(135deg, #fef3c7, #fefce8); border: 1px solid #f0b83d; border-radius: 0.5rem; padding: 1rem;">
+            <div class="small fw-700 text-dark mb-2" style="color: #b45309; font-size: 0.8125rem; text-transform: uppercase; letter-spacing: 0.3px;">
+              <i class="la la-percent" style="margin-right: 0.375rem;"></i>Discount
+            </div>
+            <div class="d-flex gap-2 mb-2 pb-2 border-bottom" style="border-color: #f0b83d !important;">
+              <div class="form-check">
+                <input type="radio" name="discount_type" id="dt_percentage" value="percentage" class="form-check-input">
+                <label for="dt_percentage" class="form-check-label small" style="cursor: pointer; font-weight: 500; color: #1e293b;">Percentage %</label>
+              </div>
+              <div class="form-check">
+                <input type="radio" name="discount_type" id="dt_fixed" value="fixed" class="form-check-input">
+                <label for="dt_fixed" class="form-check-label small" style="cursor: pointer; font-weight: 500; color: #1e293b;">Fixed Amount</label>
+              </div>
+            </div>
+            <div class="d-flex gap-2 mb-2">
+              <input type="number" id="discount-input" placeholder="Enter amount" min="0" step="0.01" class="form-control form-control-sm" disabled style="border-color: #f0b83d; font-weight: 600;">
+              <span id="discount-unit" class="input-group-text small fw-700" style="min-width: 50px; text-align: center; background: #fef3c7; border-color: #f0b83d; color: #b45309;">%</span>
+            </div>
+            <div id="discount-info" class="d-flex justify-content-between align-items-center" style="background: rgba(244, 114, 44, 0.05); padding: 0.625rem; border-radius: 0.375rem;">
+              <span style="font-size: 0.75rem; color: #6c757d; font-weight: 500;">Discount Amount:</span>
+              <strong id="discount-display" style="color: #b45309; font-size: 0.9375rem;">৳0.00</strong>
+            </div>
+          </div>
+
+          <button id="confirm-order" class="btn btn-success w-100 btn-sm" disabled style="opacity:.45;cursor:not-allowed;font-size: 0.8rem;">
+            <i class="la la-check-circle"></i> Confirm
+          </button>
+        </div>
       </div>
     </div>
 
+  </div>
+</div>
+
+<!-- Create Customer Modal -->
+<div id="create-customer-modal" class="modal fade" tabindex="-1" role="dialog">
+  <div class="modal-dialog modal-dialog-centered" role="document">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">Create New Customer</h5>
+        <button type="button" class="btn-close" onclick="closeCreateCustomerModal()" aria-label="Close"></button>
+      </div>
+      <form id="create-customer-form">
+        <div class="modal-body">
+          <div class="mb-3">
+            <label for="cc-name" class="form-label">Full Name *</label>
+            <input type="text" class="form-control" id="cc-name" name="name" required>
+          </div>
+          <div class="mb-3">
+            <label for="cc-email" class="form-label">Email</label>
+            <input type="email" class="form-control" id="cc-email" name="email">
+          </div>
+          <div class="mb-3">
+            <label for="cc-phone" class="form-label">Phone Number (Optional)</label>
+            <input type="tel" class="form-control" id="cc-phone" name="mobile">
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary btn-sm" onclick="closeCreateCustomerModal()">Cancel</button>
+          <button type="submit" class="btn btn-primary btn-sm">Create Customer</button>
+        </div>
+      </form>
+    </div>
   </div>
 </div>
 @endsection
@@ -1018,6 +555,128 @@ $(document).ready(function() {
   initializeCart();
   loadInitialData();
 
+  // ── Helper function to add product from search ──────
+  function addToCartFromSearch(productId) {
+    // Validate product exists
+    if (!productCache[productId]) {
+      console.error('Product not found in cache:', productId);
+      toastr.error('Product not found');
+      return false;
+    }
+
+    let p = productCache[productId];
+    
+    if (cart[productId]) {
+      // Product already in cart - increment
+      cart[productId].quantity++;
+      toastr.info('Quantity increased!');
+    } else {
+      // Add new product to cart
+      cart[productId] = {
+        id: productId,
+        name: p.name,
+        price: p.sale_price ?? p.regular_price ?? 0,
+        wholesale_price: p.wholesale_price ?? null,
+        stock: p.in_stock ?? 0,
+        quantity: 1,
+        _addedAt: Date.now()
+      };
+      toastr.success(`"${p.name}" added to cart!`);
+    }
+    
+    // Re-render cart with current price type
+    renderCart(cart, selectedPriceType);
+    return true;
+  }
+
+  // ── Render search suggestions overlay ────────────
+  function renderSearchSuggestions(products) {
+    let html = '';
+    
+    if (!products || products.length === 0) {
+      html = `<div class="search-no-results" style="padding: 30px 20px; text-align: center;">
+        <i class="la la-search" style="font-size: 32px; color: #6c757d; display: block; margin-bottom: 8px; opacity: .5;"></i>
+        <p style="color: #6c757d; font-size: 13px; margin: 0;">No products found</p>
+      </div>`;
+    } else {
+      // Render all results without limiting - backend already limits to 120
+      products.forEach(function(p) {
+        let price = p.sale_price ?? p.regular_price ?? 0;
+        html += `<div class="suggestion-item" data-product-id="${p.id}" role="button" tabindex="0">
+          <div class="suggestion-item-info">
+            <strong>${p.name}</strong>
+            <small>${p.sku ? 'SKU: ' + p.sku : 'Product'}${p.in_stock ? ' • Stock: ' + p.in_stock : ''}</small>
+          </div>
+          <div class="suggestion-item-price">৳${Number(price).toFixed(0)}</div>
+        </div>`;
+      });
+      
+      // Show indicator if more results available (from backend)
+      if (products.length >= 120) {
+        html += `<div class="text-center text-muted small p-2" style="border-top: 1px solid #dee2e6; font-size: 0.75rem;">Max 120 results shown. Type more to filter.</div>`;
+      }
+    }
+    
+    $('#search-results-container').html(html);
+    $('#search-suggestions').addClass('show');
+  }
+
+  // ── Open create customer modal ────────────────────
+  function openCreateCustomerModal() {
+    let modal = new bootstrap.Modal(document.getElementById('create-customer-modal'));
+    modal.show();
+  }
+
+  // ── Close create customer modal ───────────────────
+  function closeCreateCustomerModal() {
+    let modal = bootstrap.Modal.getInstance(document.getElementById('create-customer-modal'));
+    if (modal) modal.hide();
+    $('#create-customer-form')[0].reset();
+  }
+
+  // ── Create customer button click ──────────────────
+  $('#create-customer-btn').on('click', function() {
+    openCreateCustomerModal();
+  });
+
+  // ── Handle create customer form submission ────────
+  $('#create-customer-form').on('submit', function(e) {
+    e.preventDefault();
+    let $btn = $(this).find('button[type="submit"]');
+    let originalText = $btn.html();
+    $btn.prop('disabled', true).html('<i class="la la-spinner la-spin"></i> Creating...');
+    
+    let formData = {
+      name: $('#cc-name').val(),
+      email: $('#cc-email').val() || null,
+      mobile: $('#cc-phone').val() || null
+    };
+
+    $.post('{{ route("admin.pos.createCustomer") }}', formData)
+      .done(function(res) {
+        if (res.customer) {
+          toastr.success('Customer created and selected!');
+          renderSelectedCustomer(res.customer);
+          closeCreateCustomerModal();
+          $btn.prop('disabled', false).html(originalText);
+        } else {
+          toastr.error(res.message || 'Failed to create customer');
+          $btn.prop('disabled', false).html(originalText);
+        }
+      })
+      .fail(function(xhr) {
+        let msg = 'Failed to create customer';
+        if (xhr.responseJSON && xhr.responseJSON.message) {
+          msg = xhr.responseJSON.message;
+        }
+        toastr.error(msg);
+        $btn.prop('disabled', false).html(originalText);
+      });
+  });
+
+  // ── Close modal when clicking backdrop ────────────
+  // (Bootstrap handles this automatically with data-bs-dismiss)
+
   $('input[name="price_type"]').on('change', function () {
     selectedPriceType = $(this).val();
     // Enable confirm button with dark gradient
@@ -1062,61 +721,205 @@ $(document).ready(function() {
     });
   }
 
-  // ── Product search (instant client-side + live backend) ──────────────────
-  let searchTimer;
+  // ── Product search (instant cache + backend refresh with request tracking) ────────
+  let searchRequestTimeout;
+  let lastSearchQuery = null;
+  let lastSearchRequestId = 0;
+  let searchCache = {}; // Cache search results by query
+  
+  function renderSearchWithLoading(products, showLoading = false) {
+    let html = '';
+    
+    if (showLoading) {
+      html = `<div style="padding: 20px; text-align: center; color: #6c757d;">
+        <i class="la la-spinner fa-spin" style="font-size: 20px; margin-right: 8px;"></i>
+        <span style="font-size: 12px;">Searching...</span>
+      </div>`;
+    } else if (!products || products.length === 0) {
+      html = `<div class="search-no-results" style="padding: 30px 20px; text-align: center;">
+        <i class="la la-search" style="font-size: 32px; color: #6c757d; display: block; margin-bottom: 8px; opacity: .5;"></i>
+        <p style="color: #6c757d; font-size: 13px; margin: 0;">No products found</p>
+      </div>`;
+    } else {
+      products.forEach(function(p) {
+        let price = p.sale_price ?? p.regular_price ?? 0;
+        html += `<div class="suggestion-item" data-product-id="${p.id}" role="button" tabindex="0">
+          <div class="suggestion-item-info">
+            <strong>${p.name}</strong>
+            <small>${p.sku ? 'SKU: ' + p.sku : 'Product'}${p.in_stock ? ' • Stock: ' + p.in_stock : ''}</small>
+          </div>
+          <div class="suggestion-item-price">৳${Number(price).toFixed(0)}</div>
+        </div>`;
+      });
+      
+      if (products.length >= 120) {
+        html += `<div class="text-center text-muted small p-2" style="border-top: 1px solid #dee2e6; font-size: 0.75rem;">Max 120 results shown. Type more to filter.</div>`;
+      }
+    }
+    
+    $('#search-results-container').html(html);
+    $('#search-suggestions').addClass('show');
+  }
+  
   $('#product-search').on('input', function() {
-    clearTimeout(searchTimer);
+    clearTimeout(searchRequestTimeout);
     let query = $(this).val().trim().toLowerCase();
     
-    // Show default products if search is empty
+    // Hide suggestions if search is empty
     if (!query) {
-      loadProducts();
-      $('#search-placeholder').hide();
+      $('#search-suggestions').removeClass('show');
+      lastSearchQuery = null;
       return;
     }
 
-    // ─ INSTANT CLIENT-SIDE SEARCH (milliseconds) ─
-    if (query.length >= 1) {
-      let resultProducts = [];
-      
-      // Search from cached products instantly
-      Object.values(productCache).forEach(function(p) {
-        if (p.name.toLowerCase().includes(query)) {
-          resultProducts.push(p);
-        }
-      });
-      
-      // Show results instantly (0ms delay)
-      if (resultProducts.length > 0) {
-        renderProductsGrid(resultProducts);
-      } else {
-        $('#products-container').html('<div style="text-align:center;padding:20px;color:#94a3b8;grid-column:1/-1"><i class="la la-search" style="font-size:28px;margin-bottom:8px;display:block"></i>Searching…</div>');
+    // Track this search request with unique ID
+    lastSearchQuery = query;
+    let currentRequestId = ++lastSearchRequestId;
+    
+    // ══ INSTANT RENDER FROM LOCAL CACHE (0ms - NO DEBOUNCE) ══
+    // Filter from already loaded products in real-time
+    let cachedResults = [];
+    for (let id in productCache) {
+      let p = productCache[id];
+      if (p.name.toLowerCase().includes(query) || 
+          (p.sku && p.sku.toLowerCase().includes(query))) {
+        cachedResults.push(p);
+      }
+    }
+    renderSearchWithLoading(cachedResults, false);
+    
+    // ══ CHECK SEARCH RESULT CACHE (instant return if found) ══
+    if (searchCache[query]) {
+      console.log('✓ Cache HIT for query:', query, '- Results:', searchCache[query].length, '- Time: 0ms');
+      // Render backend cached results (which are always more complete than local cache)
+      renderSearchWithLoading(searchCache[query], false);
+      return;  // ← IMPORTANT: Do NOT make backend request
+    }
+    
+    console.log('✗ Cache MISS for query:', query, '- Making backend request...');
+    
+    // ══ BACKEND SEARCH (minimal 200ms delay to batch requests) ══
+    searchRequestTimeout = setTimeout(function() {
+      // Check if this request is still valid
+      if (lastSearchQuery !== query || lastSearchRequestId !== currentRequestId) {
+        console.log('Skipping stale search request for:', query);
+        return;
       }
       
-      // ─ THEN DO BACKEND SEARCH (50ms delay for backend freshness) ─
-      searchTimer = setTimeout(function() {
-        $.get('{{ route("admin.pos.searchProducts") }}', {
-            query
-          })
-          .done(function(data) {
-            // Cache searched products
-            data.forEach(function(p) {
-              productCache[p.id] = p;
-            });
+      // Only show loading if cache results are fewer than 5 items
+      if (cachedResults.length < 5) {
+        renderSearchWithLoading([], true);
+      }
+      
+      // Get timestamp for performance tracking
+      let startTime = performance.now();
+      
+      $.get('{{ route("admin.pos.searchProducts") }}', { query })
+        .done(function(data) {
+          let endTime = performance.now();
+          let duration = (endTime - startTime).toFixed(2);
+          
+          // Only render if this is still the latest request
+          if (lastSearchRequestId === currentRequestId) {
+            // ✓ Store in cache for future searches
+            searchCache[query] = data || [];
             
-            if (!data || data.length === 0) {
-              $('#products-container').html('<div style="text-align:center;padding:20px;color:#94a3b8;grid-column:1/-1"><i class="la la-search" style="font-size:28px;margin-bottom:8px;display:block"></i>No products found</div>');
-            } else {
-              renderProductsGrid(data);
+            console.log('✓ Backend response for "' + query + '": ' + duration + 'ms - Results:', (data || []).length);
+            
+            // Cache searched products to product cache too
+            if (data && data.length > 0) {
+              data.forEach(function(p) {
+                productCache[p.id] = p;
+              });
             }
-            $('#search-placeholder').hide();
-          })
-          .fail(function() {
-            toastr.error('Failed to search products');
-            $('#products-container').html('<div style="text-align:center;padding:20px;color:#dc2626;grid-column:1/-1"><i class="la la-warning" style="font-size:28px;margin-bottom:8px;display:block"></i>Search error</div>');
-          });
-      }, 50);
+            
+            renderSearchWithLoading(data || [], false);
+          }
+        })
+        .fail(function(xhr) {
+          // Ignore errors for stale requests
+          if (lastSearchRequestId === currentRequestId) {
+            toastr.error('Search failed');
+            renderSearchWithLoading([], false);
+          }
+        });
+    }, 200); // Minimal delay to batch rapid requests
+  });
+
+  // ── Close search on escape key ──────────────────────────
+  let selectedSuggestionIndex = -1;
+  
+  $('#product-search').on('keydown', function(e) {
+    let $items = $('#search-results-container .suggestion-item');
+    
+    if (e.key === 'ArrowDown') {
+      e.preventDefault();
+      selectedSuggestionIndex = Math.min(selectedSuggestionIndex + 1, $items.length - 1);
+      highlightSuggestion();
+    } else if (e.key === 'ArrowUp') {
+      e.preventDefault();
+      selectedSuggestionIndex = Math.max(selectedSuggestionIndex - 1, -1);
+      highlightSuggestion();
+    } else if (e.key === 'Enter' && selectedSuggestionIndex >= 0) {
+      e.preventDefault();
+      $items.eq(selectedSuggestionIndex).click();
     }
+  });
+  
+  function highlightSuggestion() {
+    let $items = $('#search-results-container .suggestion-item');
+    $items.removeClass('highlighted').css('background', '');
+    
+    if (selectedSuggestionIndex >= 0 && selectedSuggestionIndex < $items.length) {
+      $items.eq(selectedSuggestionIndex)
+        .addClass('highlighted')
+        .css('background', '#f0f0f0')
+        .scrollIntoView({ block: 'nearest' });
+    }
+  }
+  
+  // Reset selection when typing new query
+  $('#product-search').on('input', function() {
+    selectedSuggestionIndex = -1;
+  });
+  
+  // ── Close search on escape key ──────────────────────────
+  $(document).on('keydown', function(e) {
+    if (e.key === 'Escape' && $('#search-suggestions').hasClass('show')) {
+      e.preventDefault();
+      $('#product-search').val('').focus();
+      $('#search-suggestions').removeClass('show');
+    }
+  });
+
+  // ── Close search overlay on outside click ────────
+  $(document).on('click', function(e) {
+    // If click is outside search wrapper, close dropdown
+    if (!$(e.target).closest('.search-input-wrapper').length && 
+        $('#search-suggestions').hasClass('show')) {
+      $('#search-suggestions').removeClass('show');
+    }
+  });
+
+  // ── Click on suggestion to add to cart ───────────────────────
+  $(document).on('click', '.suggestion-item', function(e) {
+    e.preventDefault();
+    e.stopPropagation();
+    
+    let productId = $(this).data('product-id');
+    
+    // Verify product exists in cache
+    if (!productCache[productId]) {
+      toastr.error('Product not available');
+      return;
+    }
+    
+    // Add to cart
+    addToCartFromSearch(productId);
+    
+    // Clear search immediately
+    $('#product-search').val('').focus();
+    $('#search-suggestions').removeClass('show');
   });
 
   // ── ADD TO CART (Instant - Uses Cached Frontend Data) ────────
@@ -1142,7 +945,8 @@ $(document).ready(function() {
         price: p.sale_price ?? p.regular_price ?? 0,
         wholesale_price: p.wholesale_price ?? null,
         stock: p.in_stock ?? 0,
-        quantity: 1
+        quantity: 1,
+        _addedAt: Date.now() // Track insertion order
       };
       renderCart(cart, selectedPriceType);
       toastr.success(`"${p.name}" added to cart!`);
@@ -1151,11 +955,6 @@ $(document).ready(function() {
     }
     
     $('#product-search').val(''); // Clear search bar after adding
-    loadProducts(); // Reload default products
-    
-    // Disable button briefly for UX feedback
-    $btn.prop('disabled', true);
-    setTimeout(() => $btn.prop('disabled', false), 200);
   });
 
   // ── REMOVE FROM CART (Instant) ──────────────────
@@ -1288,7 +1087,7 @@ $(document).ready(function() {
     
     let finalTotal = cartSubtotal - actualDiscount;
     let label = selectedPriceType === 'wholesale' ? ' <small style="font-size:12px;opacity:.7">(Wholesale)</small>' : '';
-    $('#cart-total').html('<span class="tl">Order Total' + label + '</span><span class="tv">৳' + finalTotal.toFixed(2) + '</span>');
+    $('#cart-total').html('<div class="d-flex justify-content-between align-items-center" style="font-size: 0.875rem;"><span class="fw-600">Order Total' + label + '</span><span class="h6 mb-0" style="color: #16a34a;">৳' + finalTotal.toFixed(2) + '</span></div>');
   }
 
   // ── Get current cart total (from cart object, not DOM) ──
@@ -1399,6 +1198,9 @@ $(document).ready(function() {
             console.log('Order response received:', res);
             
             if (res.status === 'success') {
+            // Add discount info to invoice
+            res.invoice.discount_type = discountType;
+            res.invoice.discount_amount = discountAmount;
             printPosInvoice(res.invoice);
 
             Swal.fire({
@@ -1414,6 +1216,8 @@ $(document).ready(function() {
               cancelButtonColor: '#6366f1',
             }).then((result2) => {
               if (result2.isConfirmed) {
+                res.invoice.discount_type = discountType;
+                res.invoice.discount_amount = discountAmount;
                 printPosInvoice(res.invoice);
               }
               
@@ -1524,7 +1328,7 @@ $(document).ready(function() {
             }
             .receipt-container {
                 width: 100% !important;
-                margin: 0 !important;
+                margin: 5px 0 !important;
                 padding: 10px 11px !important;
                 box-sizing: border-box;
             }
@@ -1546,7 +1350,7 @@ $(document).ready(function() {
         }
         .receipt-container {
             width: 100%;
-            margin: 0;
+            margin: 5px 0;
             padding: 10px 11px;
             box-sizing: border-box;
         }
@@ -1560,6 +1364,7 @@ $(document).ready(function() {
         }
         .store-info {
             font-size: 9px;
+            font-weight: 600;
             line-height: 1.5;
             margin: 0;
             word-break: break-word;
@@ -1574,11 +1379,13 @@ $(document).ready(function() {
         }
         .invoice-header {
             font-size: 11px;
+            font-weight: 600;
             margin-bottom: 6px;
             line-height: 1.5;
         }
         .invoice-header p {
             margin: 2px 0;
+            font-weight: 600;
             word-wrap: break-word;
             overflow-wrap: break-word;
         }
@@ -1598,6 +1405,7 @@ $(document).ready(function() {
         }
         table tbody td {
             font-size: 10px;
+            font-weight: 600;
             padding: 2px 2px;
             border-bottom: 1px dotted #ccc;
             word-break: break-word;
@@ -1621,6 +1429,7 @@ $(document).ready(function() {
         td:nth-child(5) { width: 17%; text-align: right; }
         .summary-section {
             font-size: 11px;
+            font-weight: 600;
             margin: 6px 0;
             line-height: 1.5;
         }
@@ -1629,6 +1438,7 @@ $(document).ready(function() {
             justify-content: space-between;
             margin: 3px 0;
             padding: 2px 0;
+            font-weight: 600;
         }
         .summary-row span:first-child { flex: 1; }
         .summary-row span:last-child { text-align: right; white-space: nowrap; }
@@ -1642,6 +1452,7 @@ $(document).ready(function() {
         .footer-section {
             text-align: center;
             font-size: 9px;
+            font-weight: 600;
             margin-top: 6px;
             line-height: 1.4;
         }
@@ -1693,6 +1504,10 @@ $(document).ready(function() {
                 <span>Subtotal:</span>
                 <span>৳${Number(inv.subtotal).toFixed(2)}</span>
             </div>
+            ${inv.discount_amount && inv.discount_amount > 0 ? `<div class="summary-row" style="color: #f59e0b; font-weight: 600;">
+                <span>Discount (${inv.discount_type === 'percentage' ? inv.discount_amount + '%' : '৳' + Number(inv.discount_amount).toFixed(2)}):</span>
+                <span>-৳${inv.discount_type === 'percentage' ? ((Number(inv.subtotal) * inv.discount_amount) / 100).toFixed(2) : Number(inv.discount_amount).toFixed(2)}</span>
+            </div>` : ''}
 
             <div class="summary-total">
                 <div class="summary-row">
@@ -1702,23 +1517,13 @@ $(document).ready(function() {
             </div>
 
             <div class="summary-row">
-                <span>Total Qty:</span>
-                <span>${inv.total_qty} Item</span>
+                <span>Total Item:</span>
+                <span>${inv.items.length} Item</span>
             </div>
 
             <div class="summary-row">
                 <span>Paid Amount:</span>
                 <span>৳${Number(inv.grand_total).toFixed(2)}</span>
-            </div>
-
-            <div class="summary-row">
-                <span>Change:</span>
-                <span>৳0.00</span>
-            </div>
-
-            <div class="summary-row">
-                <span>Due:</span>
-                <span>৳0.00</span>
             </div>
 
             <div class="summary-row">
@@ -1758,7 +1563,12 @@ $(document).ready(function() {
       subtotal = 0,
       hasItems = false;
     
-    for (let id in cartObj) {
+    // Sort items by insertion order (_addedAt timestamp)
+    let sortedIds = Object.keys(cartObj).sort((a, b) => {
+      return (cartObj[a]._addedAt || 0) - (cartObj[b]._addedAt || 0);
+    });
+    
+    sortedIds.forEach(id => {
       let item = cartObj[id];
       let useWholesale = (priceType === 'wholesale') && item.wholesale_price;
       let unitPrice = useWholesale ? Number(item.wholesale_price) : Number(item.price);
@@ -1768,26 +1578,43 @@ $(document).ready(function() {
       
       let stockDisplay = item.stock ? `<span style="color:#059669;font-weight:600">${item.stock}</span>` : '<span style="color:#dc2626;font-weight:600">0</span>';
       let displayName = item.name.length > 10 ? item.name.substring(0, 10) + '...' : item.name;
+      
+      // Hide W column if not wholesale
+      let wColumnClass = (priceType === 'wholesale') ? '' : 'd-none';
+      let wDisplayValue = (priceType === 'wholesale' && item.wholesale_price) ? '<span style="color:#f0b83d;font-weight:600">৳' + Number(item.wholesale_price).toFixed(0) + '</span>' : '<span style="color:#6c757d;font-size:9px">—</span>';
+      
       html += `<tr data-product-id="${id}">
-        <td><strong style="color:#28322e;overflow:hidden;text-overflow:ellipsis;max-width:100px;display:block" title="${item.name}">${displayName}</strong></td>
-        <td style="text-align:center">
+        <td style="padding: 0.5rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;"><strong title="${item.name}">${displayName}</strong></td>
+        <td style="text-align:center; padding: 0.5rem; white-space: nowrap;">
           <div style="display:flex;align-items:center;justify-content:center;gap:3px">
             <button class="qty-btn qty-minus" data-id="${id}" title="−">−</button>
-            <input type="number" class="qty-input" data-id="${id}" value="${item.quantity}" min="1" max="9999" style="width:50px;padding:4px 2px;border:1px solid #404854;border-radius:4px;font-size:11px;text-align:center;font-weight:600;color:#e4e9f1;background:#252d3d;font-family:inherit">
+            <input type="number" class="qty-input" data-id="${id}" value="${item.quantity}" min="1" max="9999" style="width:45px;padding:4px 2px;border:1px solid #dee2e6;border-radius:4px;font-size:11px;text-align:center;font-weight:600;font-family:inherit">
             <button class="qty-btn qty-plus" data-id="${id}" title="+">+</button>
           </div>
         </td>
-        <td style="text-align:center;font-size:11px">${stockDisplay}</td>
-        <td style="text-align:right;font-size:11px;color:#a8b3bf">৳${Number(item.price).toFixed(0)}</td>
-        <td style="text-align:right;font-size:11px">${item.wholesale_price ? '<span style="color:#f0b83d;font-weight:600">৳' + Number(item.wholesale_price).toFixed(0) + '</span>' : '<span style="color:#52616f;font-size:9px">—</span>'}</td>
-        <td style="text-align:right;font-size:11px"><strong style="color:#7fedd9">${useWholesale ? '<sup style="font-size:9px;background:#0d5f42;color:#f0b83d;padding:2px 4px;border-radius:2px;margin-right:2px;font-weight:700">W</sup>' : ''}৳${itemTotal.toFixed(0)}</strong></td>
-        <td style="text-align:center"><button class="pos-btn pos-btn--danger remove-from-cart" data-id="${id}" style="padding:3px 6px;font-size:10px;background:#5c2c2c;color:#ff7b7b;border:1px solid #8f4a4a" title="Remove"><i class="la la-trash"></i></button></td>
+        <td style="text-align:center;font-size:11px; padding: 0.5rem; white-space: nowrap;">${stockDisplay}</td>
+        <td style="text-align:right;font-size:11px; padding: 0.5rem; white-space: nowrap;" class="${(priceType === 'wholesale') ? 'd-none' : ''}">৳${Number(item.price).toFixed(0)}</td>
+        <td style="text-align:right;font-size:11px; padding: 0.5rem; white-space: nowrap;" class="${wColumnClass}">${wDisplayValue}</td>
+        <td style="text-align:right;font-size:11px; padding: 0.5rem; white-space: nowrap;"><strong style="color:#16a34a">${useWholesale ? '<sup style="font-size:9px;background:#0d5f42;color:#f0b83d;padding:2px 4px;border-radius:2px;margin-right:2px;font-weight:700">W</sup>' : ''}৳${itemTotal.toFixed(0)}</strong></td>
+        <td style="text-align:center; padding: 0.5rem; white-space: nowrap;"><button class="btn btn-sm btn-danger remove-from-cart" data-id="${id}" style="padding:2px 4px;font-size:10px;" title="Remove"><i class="la la-trash"></i></button></td>
       </tr>`;
-    }
+    });
+    
+    // Table header adjustment
+    let headerHtml = `<tr style="font-size: 0.75rem;">
+      <th style="width: 40%;">Product</th>
+      <th style="width: 20%; text-align:center;">Qty</th>
+      <th style="width: 10%; text-align:center; font-size: 0.7rem;">Stock</th>
+      <th style="width: 12%; text-align:right;" class="${(priceType === 'wholesale') ? 'd-none' : ''}">Price</th>
+      <th style="width: 12%; text-align:right;" class="${(priceType === 'wholesale') ? '' : 'd-none'}">W</th>
+      <th style="width: 16%; text-align:right;">Total</th>
+      <th style="width: 10%; text-align:center;">×</th>
+    </tr>`;
+    $('#cart-table thead tr').replaceWith(headerHtml);
     
     if (!hasItems) {
-      html = `<tr><td colspan="6"><div class="pos-cart-empty"><i class="la la-shopping-cart"></i><p style="font-size:12px">Cart empty</p></div></td></tr>`;
-      $('#cart-total').html('<span class="tl">Total</span><span class="tv">৳0.00</span>');
+      html = `<tr><td colspan="7"><div class="text-center py-5 text-muted"><i class="la la-shopping-cart" style="font-size:2rem;margin-bottom:0.625rem;display:block"></i><p style="font-size:12px;margin:0">Cart empty</p></div></td></tr>`;
+      $('#cart-total').html('<div class="d-flex justify-content-between align-items-center" style="font-size: 0.875rem;"><span class="fw-600">Total</span><span class="h6 mb-0" style="color: #16a34a;">৳0.00</span></div>');
     } else {
       // Calculate discount
       let actualDiscount = 0;
@@ -1798,8 +1625,8 @@ $(document).ready(function() {
       }
       
       let finalTotal = subtotal - actualDiscount;
-      let label = priceType === 'wholesale' ? ' <small style="font-size:10px;opacity:.7;color:#a8b3bf">(W)</small>' : '';
-      $('#cart-total').html('<span class="tl">Total' + label + '</span><span class="tv">৳' + finalTotal.toFixed(0) + '</span>');
+      let label = priceType === 'wholesale' ? ' <small style="font-size:10px;opacity:.7">(W)</small>' : '';
+      $('#cart-total').html('<div class="d-flex justify-content-between align-items-center" style="font-size: 0.875rem;"><span class="fw-600">Total' + label + '</span><span class="h6 mb-0" style="color: #16a34a;">৳' + finalTotal.toFixed(0) + '</span></div>');
     }
     
     $('#cart-table tbody').html(html);
@@ -1808,18 +1635,22 @@ $(document).ready(function() {
   // ── Render selected customer ────────────────────
   function renderSelectedCustomer(customer) {
     if (!customer) {
-      $('#selected-customer').hide().html('');
+      $('#selected-customer').addClass('d-none').html('');
       return;
     }
     let html = `
-      <div style="background: linear-gradient(135deg, #6366f1, #8b5cf6); color: #fff; border-radius: 8px; padding: 10px; position: relative; overflow: hidden;">
-        <div style="font-size: 9px; font-weight: 600; text-transform: uppercase; letter-spacing: .5px; opacity: .7; margin-bottom: 4px;"><i class="la la-user-check"></i> Selected</div>
-        <div style="font-size: 13px; font-weight: 700; margin-bottom: 2px; line-height: 1.2;">${customer.name || 'N/A'}</div>
-        ${customer.email ? '<span style="font-size: 10px; opacity: .85; display: block; margin-bottom: 1px;"><i class="la la-envelope"></i> ' + customer.email + '</span>' : ''}
-        ${customer.mobile ? '<span style="font-size: 10px; opacity: .85; display: block; margin-bottom: 1px;"><i class="la la-phone"></i> ' + customer.mobile + '</span>' : ''}
-        <button id="clear-customer" style="margin-top: 8px; background: rgba(255,255,255,.14); border: 1px solid rgba(255,255,255,.28); color: #fff; font-size: 9px; font-weight: 600; padding: 4px 10px; border-radius: 6px; cursor: pointer; font-family: inherit;"><i class="la la-times"></i> Change</button>
+      <div class="alert alert-primary mb-0 p-2">
+        <div class="d-flex justify-content-between align-items-start">
+          <div>
+            <small class="text-muted fw-600 d-block mb-1"><i class="la la-user-check"></i> Selected Customer</small>
+            <div class="fw-bold" style="font-size: 14px;">${customer.name || 'N/A'}</div>
+            ${customer.email ? '<small class="text-muted d-block"><i class="la la-envelope"></i> ' + customer.email + '</small>' : ''}
+            ${customer.mobile ? '<small class="text-muted d-block"><i class="la la-phone"></i> ' + customer.mobile + '</small>' : ''}
+          </div>
+          <button id="clear-customer" class="btn btn-sm btn-outline-primary" title="Change customer"><i class="la la-exchange"></i></button>
+        </div>
       </div>`;
-    $('#selected-customer').html(html).show();
+    $('#selected-customer').removeClass('d-none').html(html).show();
   }
 
   // ── Render products grid ────────────────────────

@@ -53,9 +53,12 @@ class PosController extends Controller
                 return [
                     'id'    => $p->id,
                     'name'  => $p->name,
+                    'sku'   => $p->sku,
                     'regular_price' => $p->regular_price ?? null,
                     'sale_price' => $p->sale_price ?? null,
                     'wholesale_price' => $p->wholesale_price ?? null,
+                    'in_stock' => $p->in_stock ?? 0,
+                    'stock' => $p->in_stock ?? 0, // For compatibility with frontend
                 ];
             });
 
@@ -122,9 +125,12 @@ class PosController extends Controller
                 return [
                     'id'    => $p->id,
                     'name'  => $p->name,
+                    'sku'   => $p->sku,
                     'regular_price' => $p->regular_price ?? null,
                     'sale_price' => $p->sale_price ?? null,
                     'wholesale_price' => $p->wholesale_price ?? null,
+                    'in_stock' => $p->in_stock ?? 0,
+                    'stock' => $p->in_stock ?? 0, // For compatibility with frontend
                 ];
             });
 
@@ -330,35 +336,44 @@ class PosController extends Controller
     // AJAX: Create a quick customer and select
     public function createCustomer(Request $request)
     {
-        $request->validate(['name' => 'required|string|max:255']);
+        try {
+            $request->validate(['name' => 'required|string|max:255']);
 
-        $data = [
-            'name' => $request->name,
-            'email' => $request->email ?? null,
-            'mobile' => $request->mobile ?? null,
-            'password' => bcrypt(\Illuminate\Support\Str::random(8)),
-            'status' => Status::USER_ACTIVE ?? 1,
-            'ev' => Status::VERIFIED ?? 1,
-            'sv' => Status::VERIFIED ?? 1,
-        ];
+            // Split name into firstname and lastname
+            $fullName = trim($request->name);
+            $nameParts = explode(' ', $fullName, 2);
+            $firstname = $nameParts[0] ?? '';
+            $lastname = isset($nameParts[1]) ? $nameParts[1] : '';
 
-        $user = \App\Models\User::create($data);
-        session()->put('pos_customer', $user->id);
+            $data = [
+                'firstname' => $firstname,
+                'lastname' => $lastname,
+                'email' => $request->email ?? null,
+                'mobile' => $request->mobile ?? null,
+                'password' => bcrypt(\Illuminate\Support\Str::random(8)),
+                'status' => Status::USER_ACTIVE ?? 1,
+                'ev' => Status::VERIFIED ?? 1,
+                'sv' => Status::VERIFIED ?? 1,
+            ];
 
-        $customerName = $user->name;
-        if (!$customerName && isset($user->firstname, $user->lastname)) {
-            $customerName = trim($user->firstname . ' ' . $user->lastname);
+            $user = \App\Models\User::create($data);
+            session()->put('pos_customer', $user->id);
+
+            $customerName = trim(($user->firstname ?? '') . ' ' . ($user->lastname ?? ''));
+            if (!$customerName) {
+                $customerName = $user->email ?? 'Customer';
+            }
+
+            return response()->json(['customer' => [
+                'id' => $user->id,
+                'name' => $customerName,
+                'email' => $user->email ?? null,
+                'mobile' => $user->mobile ?? null
+            ]]);
+        } catch (\Exception $e) {
+            \Log::error('POS Create Customer Error: ' . $e->getMessage());
+            return response()->json(['message' => 'Error creating customer: ' . $e->getMessage()], 422);
         }
-        if (!$customerName) {
-            $customerName = $user->email ?? 'Customer';
-        }
-
-        return response()->json(['customer' => [
-            'id' => $user->id,
-            'name' => $customerName,
-            'email' => $user->email ?? null,
-            'mobile' => $user->mobile ?? null
-        ]]);
     }
 
     // AJAX: Select customer (store in session)
