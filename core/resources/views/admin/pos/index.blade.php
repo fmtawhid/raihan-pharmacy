@@ -1505,8 +1505,8 @@ $(document).ready(function() {
                 <span>৳${Number(inv.subtotal).toFixed(2)}</span>
             </div>
             ${inv.discount_amount && inv.discount_amount > 0 ? `<div class="summary-row" style="color: #f59e0b; font-weight: 600;">
-                <span>Discount (${inv.discount_type === 'percentage' ? inv.discount_amount + '%' : '৳' + Number(inv.discount_amount).toFixed(2)}):</span>
-                <span>-৳${inv.discount_type === 'percentage' ? ((Number(inv.subtotal) * inv.discount_amount) / 100).toFixed(2) : Number(inv.discount_amount).toFixed(2)}</span>
+                <span><strong>Discount (${inv.discount_type === 'percentage' ? inv.discount_amount + '%' : '৳' + Number(inv.discount_amount).toFixed(2)}):</strong></span>
+                <span><strong>-৳${inv.discount_type === 'percentage' ? ((Number(inv.subtotal) * inv.discount_amount) / 100).toFixed(2) : Number(inv.discount_amount).toFixed(2)}</strong></span>
             </div>` : ''}
 
             <div class="summary-total">
@@ -1581,7 +1581,7 @@ $(document).ready(function() {
       
       // Hide W column if not wholesale
       let wColumnClass = (priceType === 'wholesale') ? '' : 'd-none';
-      let wDisplayValue = (priceType === 'wholesale' && item.wholesale_price) ? '<span style="color:#f0b83d;font-weight:600">৳' + Number(item.wholesale_price).toFixed(0) + '</span>' : '<span style="color:#6c757d;font-size:9px">—</span>';
+      let wDisplayValue = (priceType === 'wholesale' && item.wholesale_price) ? '<span style="color:#f0b83d;font-weight:600">৳' + Number(item.wholesale_price).toFixed(2) + '</span>' : '<span style="color:#6c757d;font-size:9px">—</span>';
       
       html += `<tr data-product-id="${id}">
         <td style="padding: 0.5rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;"><strong title="${item.name}">${displayName}</strong></td>
@@ -1593,9 +1593,9 @@ $(document).ready(function() {
           </div>
         </td>
         <td style="text-align:center;font-size:11px; padding: 0.5rem; white-space: nowrap;">${stockDisplay}</td>
-        <td style="text-align:right;font-size:11px; padding: 0.5rem; white-space: nowrap;" class="${(priceType === 'wholesale') ? 'd-none' : ''}">৳${Number(item.price).toFixed(0)}</td>
+        <td style="text-align:right;font-size:11px; padding: 0.5rem; white-space: nowrap;" class="${(priceType === 'wholesale') ? 'd-none' : ''}">৳${Number(item.price).toFixed(2)}</td>
         <td style="text-align:right;font-size:11px; padding: 0.5rem; white-space: nowrap;" class="${wColumnClass}">${wDisplayValue}</td>
-        <td style="text-align:right;font-size:11px; padding: 0.5rem; white-space: nowrap;"><strong style="color:#16a34a">${useWholesale ? '<sup style="font-size:9px;background:#0d5f42;color:#f0b83d;padding:2px 4px;border-radius:2px;margin-right:2px;font-weight:700">W</sup>' : ''}৳${itemTotal.toFixed(0)}</strong></td>
+        <td style="text-align:right;font-size:11px; padding: 0.5rem; white-space: nowrap;"><strong style="color:#16a34a">${useWholesale ? '<sup style="font-size:9px;background:#0d5f42;color:#f0b83d;padding:2px 4px;border-radius:2px;margin-right:2px;font-weight:700">W</sup>' : ''}৳${itemTotal.toFixed(2)}</strong></td>
         <td style="text-align:center; padding: 0.5rem; white-space: nowrap;"><button class="btn btn-sm btn-danger remove-from-cart" data-id="${id}" style="padding:2px 4px;font-size:10px;" title="Remove"><i class="la la-trash"></i></button></td>
       </tr>`;
     });
@@ -1661,13 +1661,13 @@ $(document).ready(function() {
     }
     let html = '';
     products.forEach(product => {
-      let price = product.sale_price ? Number(product.sale_price).toFixed(0) : Number(product.regular_price).toFixed(0);
+      let price = product.sale_price ? Number(product.sale_price).toFixed(2) : Number(product.regular_price).toFixed(2);
       let stock = product.stock || 0;
       html += `
         <div class="product-item" data-id="${product.id}" data-stock="${stock}" style="cursor:pointer">
           <div class="product-item-image"><i class="la la-box"></i></div>
           <div class="product-item-name">${product.name}</div>
-          <div class="product-item-price">৳${price}</div>
+          <div class="product-item-price">৳${Number(price).toFixed(2)}</div>
           <div style="font-size:9px;color:#94a3b8;margin-bottom:6px">Stock: <strong style="color:#059669">${stock}</strong></div>
           <button class="product-item-btn" data-id="${product.id}" style="pointer-events:none"><i class="la la-plus"></i>Add</button>
         </div>
