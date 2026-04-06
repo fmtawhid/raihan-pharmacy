@@ -480,7 +480,7 @@ $(document).ready(function() {
             <strong>${p.name}</strong>
             <small>SKU: ${p.sku} • Stock: ${p.in_stock}</small>
           </div>
-          <div class="suggestion-item-price">৳${Number(price).toFixed(0)}</div>
+          <div class="suggestion-item-price">৳${Number(price).toFixed(2)}</div>
         </div>`;
       });
       $('#search-results-container').html(html);
@@ -542,7 +542,7 @@ $(document).ready(function() {
           <input type="number" class="qty-input" data-product-id="${id}" value="${item.quantity}" min="1" style="width:50px;padding:6px;border:1px solid #dee2e6;border-radius:4px;font-size:11px;text-align:center;font-weight:600;">
         </td>
         <td style="text-align:right; padding: 0.5rem;"><input type="number" class="price-input" data-product-id="${id}" value="${item.purchase_price}" min="0" step="0.01" style="width:80px;padding:6px;border:1px solid #dee2e6;border-radius:4px;font-size:11px;text-align:right;"></td>
-        <td style="text-align:right; padding: 0.5rem; font-weight:600; color:#16a34a;">৳${cost.toFixed(0)}</td>
+        <td style="text-align:right; padding: 0.5rem; font-weight:600; color:#16a34a;">৳${cost.toFixed(2)}</td>
         <td style="text-align:center; padding: 0.5rem;"><button class="btn btn-sm btn-danger remove-item" data-product-id="${id}" style="padding:2px 4px;font-size:10px;"><i class="la la-trash"></i></button></td>
       </tr>`;
     }

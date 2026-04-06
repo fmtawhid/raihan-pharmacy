@@ -486,6 +486,13 @@
             <label for="cc-phone" class="form-label">Phone Number (Optional)</label>
             <input type="tel" class="form-control" id="cc-phone" name="mobile">
           </div>
+          <div class="mb-3">
+            <label for="cc-address" class="form-label">Address</label>
+            <textarea class="form-control" id="cc-address" name="address" rows="2" placeholder="Enter full address"></textarea>
+          </div>
+          <div class="alert alert-info small mb-0">
+            <i class="la la-info-circle"></i> <strong>Note:</strong> Login password will be set to the phone number.
+          </div>
         </div>
         <div class="modal-footer">
           <button type="button" class="btn btn-secondary btn-sm" onclick="closeCreateCustomerModal()">Cancel</button>
@@ -575,6 +582,7 @@ $(document).ready(function() {
       cart[productId] = {
         id: productId,
         name: p.name,
+        brand_name: p.brand_name ?? null,
         price: p.sale_price ?? p.regular_price ?? 0,
         wholesale_price: p.wholesale_price ?? null,
         stock: p.in_stock ?? 0,
@@ -607,7 +615,7 @@ $(document).ready(function() {
             <strong>${p.name}</strong>
             <small>${p.sku ? 'SKU: ' + p.sku : 'Product'}${p.in_stock ? ' • Stock: ' + p.in_stock : ''}</small>
           </div>
-          <div class="suggestion-item-price">৳${Number(price).toFixed(0)}</div>
+          <div class="suggestion-item-price">৳${Number(price).toFixed(2)}</div>
         </div>`;
       });
       
@@ -649,7 +657,8 @@ $(document).ready(function() {
     let formData = {
       name: $('#cc-name').val(),
       email: $('#cc-email').val() || null,
-      mobile: $('#cc-phone').val() || null
+      mobile: $('#cc-phone').val() || null,
+      address: $('#cc-address').val() || null
     };
 
     $.post('{{ route("admin.pos.createCustomer") }}', formData)
@@ -721,45 +730,11 @@ $(document).ready(function() {
     });
   }
 
-  // ── Product search (instant cache + backend refresh with request tracking) ────────
+  // ── Product search (INSTANT - Fast like add_stock) ──────────────────────────────
   let searchRequestTimeout;
   let lastSearchQuery = null;
   let lastSearchRequestId = 0;
   let searchCache = {}; // Cache search results by query
-  
-  function renderSearchWithLoading(products, showLoading = false) {
-    let html = '';
-    
-    if (showLoading) {
-      html = `<div style="padding: 20px; text-align: center; color: #6c757d;">
-        <i class="la la-spinner fa-spin" style="font-size: 20px; margin-right: 8px;"></i>
-        <span style="font-size: 12px;">Searching...</span>
-      </div>`;
-    } else if (!products || products.length === 0) {
-      html = `<div class="search-no-results" style="padding: 30px 20px; text-align: center;">
-        <i class="la la-search" style="font-size: 32px; color: #6c757d; display: block; margin-bottom: 8px; opacity: .5;"></i>
-        <p style="color: #6c757d; font-size: 13px; margin: 0;">No products found</p>
-      </div>`;
-    } else {
-      products.forEach(function(p) {
-        let price = p.sale_price ?? p.regular_price ?? 0;
-        html += `<div class="suggestion-item" data-product-id="${p.id}" role="button" tabindex="0">
-          <div class="suggestion-item-info">
-            <strong>${p.name}</strong>
-            <small>${p.sku ? 'SKU: ' + p.sku : 'Product'}${p.in_stock ? ' • Stock: ' + p.in_stock : ''}</small>
-          </div>
-          <div class="suggestion-item-price">৳${Number(price).toFixed(0)}</div>
-        </div>`;
-      });
-      
-      if (products.length >= 120) {
-        html += `<div class="text-center text-muted small p-2" style="border-top: 1px solid #dee2e6; font-size: 0.75rem;">Max 120 results shown. Type more to filter.</div>`;
-      }
-    }
-    
-    $('#search-results-container').html(html);
-    $('#search-suggestions').addClass('show');
-  }
   
   $('#product-search').on('input', function() {
     clearTimeout(searchRequestTimeout);
@@ -777,7 +752,7 @@ $(document).ready(function() {
     let currentRequestId = ++lastSearchRequestId;
     
     // ══ INSTANT RENDER FROM LOCAL CACHE (0ms - NO DEBOUNCE) ══
-    // Filter from already loaded products in real-time
+    // Filter from already loaded products in real-time (FAST)
     let cachedResults = [];
     for (let id in productCache) {
       let p = productCache[id];
@@ -786,13 +761,52 @@ $(document).ready(function() {
         cachedResults.push(p);
       }
     }
-    renderSearchWithLoading(cachedResults, false);
+    
+    // Render results instantly
+    let html = '';
+    if (cachedResults.length === 0) {
+      html = `<div class="search-no-results" style="padding: 30px 20px; text-align: center;">
+        <i class="la la-search" style="font-size: 32px; color: #6c757d; display: block; margin-bottom: 8px; opacity: .5;"></i>
+        <p style="color: #6c757d; font-size: 13px; margin: 0;">No products found</p>
+      </div>`;
+    } else {
+      cachedResults.forEach(function(p) {
+        let price = p.sale_price ?? p.regular_price ?? 0;
+        let brandDisplay = p.brand_name ? `<small>${p.brand_name}</small><br>` : '';
+        html += `<div class="suggestion-item" data-product-id="${p.id}" role="button" tabindex="0">
+          <div class="suggestion-item-info">
+            <strong>${p.name}</strong>
+            <small>${brandDisplay}SKU: ${p.sku || 'N/A'} • Stock: ${p.in_stock || 0}</small>
+          </div>
+          <div class="suggestion-item-price">৳${Number(price).toFixed(2)}</div>
+        </div>`;
+      });
+      
+      if (cachedResults.length >= 120) {
+        html += `<div class="text-center text-muted small p-2" style="border-top: 1px solid #dee2e6; font-size: 0.75rem;">Max 120 results shown. Type more to filter.</div>`;
+      }
+    }
+    
+    $('#search-results-container').html(html);
+    $('#search-suggestions').addClass('show');
     
     // ══ CHECK SEARCH RESULT CACHE (instant return if found) ══
     if (searchCache[query]) {
       console.log('✓ Cache HIT for query:', query, '- Results:', searchCache[query].length, '- Time: 0ms');
       // Render backend cached results (which are always more complete than local cache)
-      renderSearchWithLoading(searchCache[query], false);
+      html = '';
+      searchCache[query].forEach(function(p) {
+        let price = p.sale_price ?? p.regular_price ?? 0;
+        let brandDisplay = p.brand_name ? `<small>${p.brand_name}</small><br>` : '';
+        html += `<div class="suggestion-item" data-product-id="${p.id}" role="button" tabindex="0">
+          <div class="suggestion-item-info">
+            <strong>${p.name}</strong>
+            <small>${brandDisplay}SKU: ${p.sku || 'N/A'} • Stock: ${p.in_stock || 0}</small>
+          </div>
+          <div class="suggestion-item-price">৳${Number(price).toFixed(2)}</div>
+        </div>`;
+      });
+      $('#search-results-container').html(html);
       return;  // ← IMPORTANT: Do NOT make backend request
     }
     
@@ -802,29 +816,20 @@ $(document).ready(function() {
     searchRequestTimeout = setTimeout(function() {
       // Check if this request is still valid
       if (lastSearchQuery !== query || lastSearchRequestId !== currentRequestId) {
-        console.log('Skipping stale search request for:', query);
         return;
       }
       
       // Only show loading if cache results are fewer than 5 items
       if (cachedResults.length < 5) {
-        renderSearchWithLoading([], true);
+        $('#search-results-container').html(`<div style="padding: 20px; text-align: center; color: #6c757d;"><i class="la la-spinner fa-spin" style="font-size: 20px; margin-right: 8px;"></i> Searching...</div>`);
       }
-      
-      // Get timestamp for performance tracking
-      let startTime = performance.now();
       
       $.get('{{ route("admin.pos.searchProducts") }}', { query })
         .done(function(data) {
-          let endTime = performance.now();
-          let duration = (endTime - startTime).toFixed(2);
-          
           // Only render if this is still the latest request
           if (lastSearchRequestId === currentRequestId) {
             // ✓ Store in cache for future searches
             searchCache[query] = data || [];
-            
-            console.log('✓ Backend response for "' + query + '": ' + duration + 'ms - Results:', (data || []).length);
             
             // Cache searched products to product cache too
             if (data && data.length > 0) {
@@ -833,17 +838,36 @@ $(document).ready(function() {
               });
             }
             
-            renderSearchWithLoading(data || [], false);
+            // Render backend results instantly
+            let html = '';
+            if (!data || data.length === 0) {
+              html = `<div class="search-no-results" style="padding: 30px 20px; text-align: center;">
+                <i class="la la-search" style="font-size: 32px; color: #6c757d; display: block; margin-bottom: 8px; opacity: .5;"></i>
+                <p style="color: #6c757d; font-size: 13px; margin: 0;">No products found</p>
+              </div>`;
+            } else {
+              data.forEach(function(p) {
+                let price = p.sale_price ?? p.regular_price ?? 0;
+                let brandDisplay = p.brand_name ? `<small>${p.brand_name}</small><br>` : '';
+                html += `<div class="suggestion-item" data-product-id="${p.id}" role="button" tabindex="0">
+                  <div class="suggestion-item-info">
+                    <strong>${p.name}</strong>
+                    <small>${brandDisplay}SKU: ${p.sku || 'N/A'} • Stock: ${p.in_stock || 0}</small>
+                  </div>
+                  <div class="suggestion-item-price">৳${Number(price).toFixed(2)}</div>
+                </div>`;
+              });
+            }
+            $('#search-results-container').html(html);
           }
         })
         .fail(function(xhr) {
           // Ignore errors for stale requests
           if (lastSearchRequestId === currentRequestId) {
             toastr.error('Search failed');
-            renderSearchWithLoading([], false);
           }
         });
-    }, 200); // Minimal delay to batch rapid requests
+    }, 100); // Reduced to 100ms for faster response
   });
 
   // ── Close search on escape key ──────────────────────────
@@ -942,6 +966,7 @@ $(document).ready(function() {
       cart[id] = {
         id: id,
         name: p.name,
+        brand_name: p.brand_name ?? null,
         price: p.sale_price ?? p.regular_price ?? 0,
         wholesale_price: p.wholesale_price ?? null,
         stock: p.in_stock ?? 0,
@@ -976,7 +1001,8 @@ $(document).ready(function() {
     let id = $(this).data('id');
     if (cart[id]) {
       cart[id].quantity++;
-      renderCart(cart, selectedPriceType);
+      updateCartRowTotal(id);
+      updateCartTotalOnly();
     }
   });
 
@@ -986,48 +1012,85 @@ $(document).ready(function() {
     if (cart[id]) {
       if (cart[id].quantity > 1) {
         cart[id].quantity--;
+        updateCartRowTotal(id);
+        updateCartTotalOnly();
       } else {
         delete cart[id];
+        $(`tr[data-product-id="${id}"]`).fadeOut(200, function() {
+          $(this).remove();
+          updateCartTotalOnly();
+        });
       }
-      renderCart(cart, selectedPriceType);
+    }
+  });
+
+  // ── DIRECT QUANTITY INPUT (INSTANT - NO CELL RE-RENDER) ──────────────────
+  $(document).on('input', '.qty-input', function() {
+    let $input = $(this),
+      id = $input.data('id'),
+      newQty = parseInt($(this).val()) || 0;
+    
+    // Allow empty input while typing
+    if (!$(this).val() || $(this).val() === '') return;
+    
+    if (newQty < 1) return;
+    if (newQty > 9999) {
+      $(this).val(9999);
+      newQty = 9999;
+    }
+    
+    if (cart[id]) {
+      cart[id].quantity = newQty;
+      updateCartCostOnly(id); // Only update cost, NOT the qty input cell
+      updateCartTotalOnly();
+    }
+  });
+
+  // ── UPDATE ONLY COST CELL (NO QTY INPUT RE-RENDER) ──────────────────
+  function updateCartCostOnly(productId) {
+    let item = cart[productId];
+    if (!item) return;
+    
+    let useWholesale = (selectedPriceType === 'wholesale') && item.wholesale_price;
+    let unitPrice = useWholesale ? Number(item.wholesale_price) : Number(item.price);
+    let itemTotal = unitPrice * item.quantity;
+    
+    let $row = $(`tr[data-product-id="${productId}"]`);
+    let $totalCell = $row.find('td').eq(5);
+    
+    // Update ONLY total cost cell - DON'T touch qty input
+    let wholesaleLabel = useWholesale ? '<sup style="font-size:9px;background:#0d5f42;color:#f0b83d;padding:2px 4px;border-radius:2px;margin-right:2px;font-weight:700">W</sup>' : '';
+    $totalCell.html('<strong style="color:#16a34a">' + wholesaleLabel + '৳' + itemTotal.toFixed(2) + '</strong>');
+  }
+
+  // ── UPDATE CART ROW TOTAL (ONLY ON BLUR/CHANGE) ──────────────────
+  function updateCartRowTotal(productId) {
+    updateCartCostOnly(productId);
+  }
+
+  // ── DIRECT QUANTITY INPUT ON BLUR (FINAL VALIDATION) ──────────────────
+  $(document).on('blur', '.qty-input', function() {
+    let $input = $(this),
+      id = $input.data('id'),
+      newQty = parseInt($input.val()) || 1;
+    
+    // Validate on blur
+    if (newQty < 1) newQty = 1;
+    if (newQty > 9999) newQty = 9999;
+    
+    $input.val(newQty);
+    
+    if (cart[id]) {
+      cart[id].quantity = newQty;
+      updateCartCostOnly(id);
+      updateCartTotalOnly();
     }
   });
 
   // ── DIRECT QUANTITY INPUT (Display only - Update on Order Confirm) ──────────────
   $(document).on('change', '.qty-input', function() {
-    let $input = $(this),
-      id = $input.data('id'),
-      newQty = parseInt($input.val()) || 1;
-    
-    // Validate
-    if (newQty < 1) newQty = 1;
-    if (newQty > 9999) newQty = 9999;
-    
-    if (cart[id]) {
-      if (newQty < 1) {
-        delete cart[id];
-        // Remove from DOM without full re-render
-        $input.closest('tr').fadeOut(200, function() {
-          $(this).remove();
-          updateCartTotalOnly();
-        });
-      } else {
-        cart[id].quantity = newQty;
-        // Update only this row's total price without full re-render
-        let useWholesale = (selectedPriceType === 'wholesale') && cart[id].wholesale_price;
-        let unitPrice = useWholesale ? Number(cart[id].wholesale_price) : Number(cart[id].price);
-        let itemTotal = unitPrice * newQty;
-        
-        // Update only the total price cell
-        let $tr = $input.closest('tr');
-        let totalCell = $tr.find('td').eq(4);
-        let wholesaleLabel = useWholesale ? '<sup style="font-size:9px;background:#0d5f42;color:#f0b83d;padding:2px 4px;border-radius:2px;margin-right:2px;font-weight:700">W</sup>' : '';
-        totalCell.html('<strong style="color:#7fedd9">' + wholesaleLabel + '৳' + itemTotal.toFixed(0) + '</strong>');
-        
-        // Update only the cart total
-        updateCartTotalOnly();
-      }
-    }
+    // This is handled by blur event now, so just skip
+    return;
   });
 
   // ── Calculate subtotal from cart object ─────────
@@ -1056,7 +1119,7 @@ $(document).ready(function() {
     
     let finalTotal = cartSubtotal - actualDiscount;
     let label = selectedPriceType === 'wholesale' ? ' <small style="font-size:10px;opacity:.7;color:#a8b3bf">(W)</small>' : '';
-    $('#cart-total').html('<span class="tl">Order Total' + label + '</span><span class="tv">৳' + finalTotal.toFixed(0) + '</span>');
+    $('#cart-total').html('<span class="tl">Order Total' + label + '</span><span class="tv">৳' + finalTotal.toFixed(2) + '</span>');
   }
 
   // ── Update discount display ────────────────────
@@ -1577,14 +1640,16 @@ $(document).ready(function() {
       hasItems = true;
       
       let stockDisplay = item.stock ? `<span style="color:#059669;font-weight:600">${item.stock}</span>` : '<span style="color:#dc2626;font-weight:600">0</span>';
-      let displayName = item.name.length > 10 ? item.name.substring(0, 10) + '...' : item.name;
+      // Display full name (40 chars) + brand name
+      let displayName = item.name.length > 40 ? item.name.substring(0, 40) + '...' : item.name;
+      let brandDisplay = item.brand_name ? `<small style="color:#6c757d;font-size:10px;display:block;margin-top:2px">${item.brand_name}</small>` : '';
       
       // Hide W column if not wholesale
       let wColumnClass = (priceType === 'wholesale') ? '' : 'd-none';
       let wDisplayValue = (priceType === 'wholesale' && item.wholesale_price) ? '<span style="color:#f0b83d;font-weight:600">৳' + Number(item.wholesale_price).toFixed(2) + '</span>' : '<span style="color:#6c757d;font-size:9px">—</span>';
       
       html += `<tr data-product-id="${id}">
-        <td style="padding: 0.5rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;"><strong title="${item.name}">${displayName}</strong></td>
+        <td style="padding: 0.5rem; overflow: hidden; text-overflow: ellipsis;"><strong title="${item.name}">${displayName}</strong>${brandDisplay}</td>
         <td style="text-align:center; padding: 0.5rem; white-space: nowrap;">
           <div style="display:flex;align-items:center;justify-content:center;gap:3px">
             <button class="qty-btn qty-minus" data-id="${id}" title="−">−</button>
@@ -1626,7 +1691,7 @@ $(document).ready(function() {
       
       let finalTotal = subtotal - actualDiscount;
       let label = priceType === 'wholesale' ? ' <small style="font-size:10px;opacity:.7">(W)</small>' : '';
-      $('#cart-total').html('<div class="d-flex justify-content-between align-items-center" style="font-size: 0.875rem;"><span class="fw-600">Total' + label + '</span><span class="h6 mb-0" style="color: #16a34a;">৳' + finalTotal.toFixed(0) + '</span></div>');
+      $('#cart-total').html('<div class="d-flex justify-content-between align-items-center" style="font-size: 0.875rem;"><span class="fw-600">Total' + label + '</span><span class="h6 mb-0" style="color: #16a34a;">৳' + finalTotal.toFixed(2) + '</span></div>');
     }
     
     $('#cart-table tbody').html(html);

@@ -44,8 +44,9 @@ class PosController extends Controller
         $totalProducts = Product::count();
         $totalPages = ceil($totalProducts / $perPage);
 
-        // Fetch products with pagination
-        $products = Product::offset($offset)
+        // Fetch products with pagination (include brand relationship)
+        $products = Product::with('brand')
+            ->offset($offset)
             ->limit($perPage)
             ->orderBy('id', 'desc')
             ->get()
@@ -54,6 +55,7 @@ class PosController extends Controller
                     'id'    => $p->id,
                     'name'  => $p->name,
                     'sku'   => $p->sku,
+                    'brand_name' => $p->brand?->name ?? null,
                     'regular_price' => $p->regular_price ?? null,
                     'sale_price' => $p->sale_price ?? null,
                     'wholesale_price' => $p->wholesale_price ?? null,
@@ -77,7 +79,7 @@ class PosController extends Controller
     public function getProductById($id)
     {
         try {
-            $product = Product::find($id);
+            $product = Product::with('brand')->find($id);
             if (!$product) {
                 return response()->json([
                     'status' => 'error',
@@ -90,6 +92,7 @@ class PosController extends Controller
                 'product' => [
                     'id'    => $product->id,
                     'name'  => $product->name,
+                    'brand_name' => $product->brand?->name ?? null,
                     'regular_price' => $product->regular_price ?? null,
                     'sale_price' => $product->sale_price ?? null,
                     'wholesale_price' => $product->wholesale_price ?? null,
@@ -114,10 +117,11 @@ class PosController extends Controller
             return response()->json([]);
         }
 
-        $products = Product::where(function ($q) use ($query) {
-            $q->where('name', 'like', "%{$query}%")
-                ->orWhere('sku', 'like', "%{$query}%");
-        })
+        $products = Product::with('brand')
+            ->where(function ($q) use ($query) {
+                $q->where('name', 'like', "%{$query}%")
+                    ->orWhere('sku', 'like', "%{$query}%");
+            })
             ->orderBy('id', 'desc')
             ->limit(120)
             ->get()
@@ -126,6 +130,7 @@ class PosController extends Controller
                     'id'    => $p->id,
                     'name'  => $p->name,
                     'sku'   => $p->sku,
+                    'brand_name' => $p->brand?->name ?? null,
                     'regular_price' => $p->regular_price ?? null,
                     'sale_price' => $p->sale_price ?? null,
                     'wholesale_price' => $p->wholesale_price ?? null,
@@ -345,12 +350,16 @@ class PosController extends Controller
             $firstname = $nameParts[0] ?? '';
             $lastname = isset($nameParts[1]) ? $nameParts[1] : '';
 
+            // Set password: use phone number if provided, otherwise random
+            $password = $request->mobile ? bcrypt($request->mobile) : bcrypt(\Illuminate\Support\Str::random(8));
+
             $data = [
                 'firstname' => $firstname,
                 'lastname' => $lastname,
                 'email' => $request->email ?? null,
                 'mobile' => $request->mobile ?? null,
-                'password' => bcrypt(\Illuminate\Support\Str::random(8)),
+                'address' => $request->address ?? null,
+                'password' => $password,
                 'status' => Status::USER_ACTIVE ?? 1,
                 'ev' => Status::VERIFIED ?? 1,
                 'sv' => Status::VERIFIED ?? 1,
