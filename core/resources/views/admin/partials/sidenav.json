@@ -25,7 +25,7 @@
         "icon": "las la-home",
         "route_name": "admin.dashboard",
         "menu_active": "admin.dashboard",
-        "permission": "dashboard_view"
+        "permission": "view_dashboard"
     },
     "Pos": {
         "keyword": [

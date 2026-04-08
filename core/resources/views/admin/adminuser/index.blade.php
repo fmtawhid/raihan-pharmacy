@@ -1,6 +1,6 @@
 @extends('admin.layouts.app')
 @php
-    $admin = auth()->guard('admin')->user();
+    $loggedInAdmin = auth()->guard('admin')->user();
 @endphp
 @section('panel')
 <div class="row">
@@ -8,7 +8,7 @@
         <div class="card">
             <div class="card-header d-flex justify-content-between align-items-center">
                 <h5 class="mb-0">{{ $page_title }}</h5>
-                @if($admin->can('add_admin'))
+                @if($loggedInAdmin->can('add_admin'))
                 <a href="{{ route('admin.admins.create') }}" class="btn btn-sm btn-outline--primary">Create Admin</a>
                 @endif
             </div>
@@ -32,15 +32,15 @@
                                     <td>{{ $admin->username }}</td>
                                     <td>{{ $admin->email }}</td>
                                     <td>
-                                        @if ($admin->can('view_admin'))
+                                        @if ($loggedInAdmin->can('view_admin'))
                                             <a href="{{ route('admin.admins.show', $admin->id) }}" class="btn btn-sm btn-info">Details</a>
                                         
                                         @endif
-                                        @if ($admin->id != 1 && $admin->can('edit_admin'))
+                                        @if ($admin->id != 1 && $loggedInAdmin->can('edit_admin'))
                                             <a href="{{ route('admin.admins.edit', $admin->id) }}" class="btn btn-sm btn-primary">Edit</a>
                                         @endif
 
-                                        @if ($admin->id != 1 && $admin->can('delete_admin'))
+                                        @if ($admin->id != 1 && $loggedInAdmin->can('delete_admin'))
                                             <form action="{{ route('admin.admins.destroy', $admin->id) }}" method="POST" class="d-inline">
                                                 @csrf
                                                 @method('DELETE')

@@ -2,6 +2,7 @@
 
 @section('panel')
     <div class="row gy-4">
+        @can('summery_dashboard')
         <div class="col-12">
             <div class="card summary-card">
                 <div class="card-body">
@@ -56,6 +57,7 @@
                 </div>
             </div>
         </div>
+        @endcan
 
         <div class="col-xxl-3 col-sm-6">
             <div class="card h-100">
@@ -107,6 +109,64 @@
             </div>
         </div>
 
+        <div class="col-lg-6">
+            <div class="card h-100">
+                <div class="card-body">
+                    <div class="d-flex flex-wrap gap-1 justify-content-between align-items-center">
+                        <h5 class="card-title">@lang('Top Selling Products')</h5>
+                        <a href="{{ route('admin.products.top.selling') }}" class="t-link">@lang('View All')</a>
+                    </div>
+                    @foreach ($topSellingProducts as $product)
+                        @php
+                            $salePrice = $product->salePrice();
+                            $price = $product->regular_price;
+                        @endphp
+
+                        <div class="mt-3 top-selling-product">
+                            <a href="{{ $product->link() }}" target="_blank" data-bs-placement="bottom"
+                                title="@lang('View As Customer')" class="text-center top-selling-link">
+                                <img src="{{ $product->mainImage(false) }}" alt="image" class="top-selling-img">
+                            </a>
+                            <div class="description">
+                                <div class="d-flex justify-content-between flex-wap gap-1">
+                                    <a href="{{ route('admin.products.edit', $product->id) }}" title="@lang('Edit')"
+                                        class="color--blue d-inline-block mb-2">{{ __($product->name) }}</a>
+                                </div>
+                                <p>{{ $product->total . ' ' . Str::plural('sale', $product->total) }}</p>
+                                <p>{{ strLimit(__($product->summary), 120) }}</p>
+                                <p class="mt-1">
+                                    <span>@lang('Price'):</span>
+                                    @if ($price != $salePrice)
+                                        <span class="ms-1">{{ showAmount($salePrice) }}</span>
+                                        <del class="ms-2 text--danger">{{ showAmount($price) }}</del>
+                                    @else
+                                        <span class="ms-1">{{ showAmount($price) }}</span>
+                                    @endif
+                                </p>
+                            </div>
+                        </div><!-- media end-->
+                    @endforeach
+                </div>
+            </div>
+        </div>
+    </div>
+    @can('salse_report')
+    <div class="row mt-1 gy-4">
+        <div class="col-lg-6">
+            <div class="card h-100">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <h5 class="card-title">@lang('Sales Report')</h5>
+                        <div id="salesDatePicker" class="border p-1 cursor-pointer rounded">
+                            <i class="la la-calendar"></i>&nbsp;
+                            <span></span> <i class="la la-caret-down"></i>
+                        </div>
+                    </div>
+                    <div id="salesReportChart"></div>
+                </div>
+            </div>
+        </div>
+
         <div class="col-xxl-6 col-xl-12">
             <div class="card">
                 <div class="card-body">
@@ -153,66 +213,9 @@
                 </div>
             </div>
         </div>
+        
     </div>
-
-    <div class="row mt-1 gy-4">
-        <div class="col-lg-6">
-            <div class="card h-100">
-                <div class="card-body">
-                    <div class="d-flex justify-content-between align-items-center">
-                        <h5 class="card-title">@lang('Sales Report')</h5>
-                        <div id="salesDatePicker" class="border p-1 cursor-pointer rounded">
-                            <i class="la la-calendar"></i>&nbsp;
-                            <span></span> <i class="la la-caret-down"></i>
-                        </div>
-                    </div>
-                    <div id="salesReportChart"></div>
-                </div>
-            </div>
-        </div>
-
-        <div class="col-lg-6">
-            <div class="card h-100">
-                <div class="card-body">
-                    <div class="d-flex flex-wrap gap-1 justify-content-between align-items-center">
-                        <h5 class="card-title">@lang('Top Selling Products')</h5>
-                        <a href="{{ route('admin.products.top.selling') }}" class="t-link">@lang('View All')</a>
-                    </div>
-                    @foreach ($topSellingProducts as $product)
-                        @php
-                            $salePrice = $product->salePrice();
-                            $price = $product->regular_price;
-                        @endphp
-
-                        <div class="mt-3 top-selling-product">
-                            <a href="{{ $product->link() }}" target="_blank" data-bs-placement="bottom"
-                                title="@lang('View As Customer')" class="text-center top-selling-link">
-                                <img src="{{ $product->mainImage(false) }}" alt="image" class="top-selling-img">
-                            </a>
-                            <div class="description">
-                                <div class="d-flex justify-content-between flex-wap gap-1">
-                                    <a href="{{ route('admin.products.edit', $product->id) }}" title="@lang('Edit')"
-                                        class="color--blue d-inline-block mb-2">{{ __($product->name) }}</a>
-                                </div>
-                                <p>{{ $product->total . ' ' . Str::plural('sale', $product->total) }}</p>
-                                <p>{{ strLimit(__($product->summary), 120) }}</p>
-                                <p class="mt-1">
-                                    <span>@lang('Price'):</span>
-                                    @if ($price != $salePrice)
-                                        <span class="ms-1">{{ showAmount($salePrice) }}</span>
-                                        <del class="ms-2 text--danger">{{ showAmount($price) }}</del>
-                                    @else
-                                        <span class="ms-1">{{ showAmount($price) }}</span>
-                                    @endif
-                                </p>
-                            </div>
-                        </div><!-- media end-->
-                    @endforeach
-                </div>
-            </div>
-        </div>
-    </div>
-
+    @endcan
     <div class="row gy-4 mt-1">
         <div class="col-12">
             <div class="row gy-4">
