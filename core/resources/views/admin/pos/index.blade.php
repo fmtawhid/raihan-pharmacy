@@ -325,6 +325,17 @@
   margin-bottom: 0.375rem;
   opacity: 0.45;
 }
+
+/* Remove spinner arrows from number inputs */
+input[type="number"]::-webkit-outer-spin-button,
+input[type="number"]::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+input[type="number"] {
+  -moz-appearance: textfield;
+}
 </style>
 
 <div class="p-3">
@@ -1001,6 +1012,8 @@ $(document).ready(function() {
     let id = $(this).data('id');
     if (cart[id]) {
       cart[id].quantity++;
+      let $input = $(`tr[data-product-id="${id}"] .qty-input`);
+      $input.val(cart[id].quantity);
       updateCartRowTotal(id);
       updateCartTotalOnly();
     }
@@ -1012,6 +1025,8 @@ $(document).ready(function() {
     if (cart[id]) {
       if (cart[id].quantity > 1) {
         cart[id].quantity--;
+        let $input = $(`tr[data-product-id="${id}"] .qty-input`);
+        $input.val(cart[id].quantity);
         updateCartRowTotal(id);
         updateCartTotalOnly();
       } else {
@@ -1041,8 +1056,52 @@ $(document).ready(function() {
     
     if (cart[id]) {
       cart[id].quantity = newQty;
-      updateCartCostOnly(id); // Only update cost, NOT the qty input cell
+      updateCartCostOnly(id);
       updateCartTotalOnly();
+    }
+  });
+
+  // ── EDITABLE PRICE INPUT ──────────────────────
+  $(document).on('input', '.price-input', function() {
+    let $input = $(this),
+      id = $input.data('id'),
+      newPrice = parseFloat($(this).val()) || 0;
+    
+    if (newPrice < 0) return;
+    
+    if (cart[id]) {
+      cart[id].price = newPrice;
+      updateCartCostOnly(id);
+      updateCartTotalOnly();
+    }
+  });
+
+  $(document).on('change', '.price-input', function() {
+    let newPrice = parseFloat($(this).val()) || 0;
+    if (newPrice < 0) {
+      $(this).val('0');
+    }
+  });
+
+  // ── EDITABLE WHOLESALE PRICE INPUT ─────────────
+  $(document).on('input', '.wholesale-price-input', function() {
+    let $input = $(this),
+      id = $input.data('id'),
+      newPrice = parseFloat($(this).val()) || 0;
+    
+    if (newPrice < 0) return;
+    
+    if (cart[id]) {
+      cart[id].wholesale_price = newPrice;
+      updateCartCostOnly(id);
+      updateCartTotalOnly();
+    }
+  });
+
+  $(document).on('change', '.wholesale-price-input', function() {
+    let newPrice = parseFloat($(this).val()) || 0;
+    if (newPrice < 0) {
+      $(this).val('0');
     }
   });
 
@@ -1567,15 +1626,15 @@ $(document).ready(function() {
                 <span>Subtotal:</span>
                 <span>৳${Number(inv.subtotal).toFixed(2)}</span>
             </div>
-            ${inv.discount_amount && inv.discount_amount > 0 ? `<div class="summary-row" style="color: #f59e0b; font-weight: 600;">
+            ${inv.discount_amount && inv.discount_amount > 0 ? `<div class="summary-row" style="color: #000;">
                 <span><strong>Discount (${inv.discount_type === 'percentage' ? inv.discount_amount + '%' : '৳' + Number(inv.discount_amount).toFixed(2)}):</strong></span>
-                <span><strong>-৳${inv.discount_type === 'percentage' ? ((Number(inv.subtotal) * inv.discount_amount) / 100).toFixed(2) : Number(inv.discount_amount).toFixed(2)}</strong></span>
+                <span><strong style="font-weight: 900;">-৳${inv.discount_type === 'percentage' ? ((Number(inv.subtotal) * inv.discount_amount) / 100).toFixed(2) : Number(inv.discount_amount).toFixed(2)}</strong></span>
             </div>` : ''}
 
-            <div class="summary-total">
-                <div class="summary-row">
+            <div class="summary-total" style="font-size: 13px;">
+                <div class="summary-row" style="font-size: 14px; font-weight: 900; letter-spacing: 0.5px;">
                     <span>Net Total:</span>
-                    <span>৳${Number(inv.grand_total).toFixed(2)}</span>
+                    <span style="font-size: 15px; font-weight: 900; letter-spacing: 0.5px;">৳${Number(inv.grand_total).toFixed(2)}</span>
                 </div>
             </div>
 
@@ -1646,7 +1705,7 @@ $(document).ready(function() {
       
       // Hide W column if not wholesale
       let wColumnClass = (priceType === 'wholesale') ? '' : 'd-none';
-      let wDisplayValue = (priceType === 'wholesale' && item.wholesale_price) ? '<span style="color:#f0b83d;font-weight:600">৳' + Number(item.wholesale_price).toFixed(2) + '</span>' : '<span style="color:#6c757d;font-size:9px">—</span>';
+      let wDisplayValue = (priceType === 'wholesale') ? `<input type="number" class="wholesale-price-input" data-id="${id}" value="${item.wholesale_price ? Number(item.wholesale_price).toFixed(2) : 0}" step="0.01" min="0" style="width:65px;padding:3px;border:1px solid #dee2e6;border-radius:3px;font-size:10px;text-align:right;font-weight:600;font-family:inherit">` : '<span style="color:#6c757d;font-size:9px">—</span>';
       
       html += `<tr data-product-id="${id}">
         <td style="padding: 0.5rem; overflow: hidden; text-overflow: ellipsis;"><strong title="${item.name}">${displayName}</strong>${brandDisplay}</td>
@@ -1658,7 +1717,7 @@ $(document).ready(function() {
           </div>
         </td>
         <td style="text-align:center;font-size:11px; padding: 0.5rem; white-space: nowrap;">${stockDisplay}</td>
-        <td style="text-align:right;font-size:11px; padding: 0.5rem; white-space: nowrap;" class="${(priceType === 'wholesale') ? 'd-none' : ''}">৳${Number(item.price).toFixed(2)}</td>
+        <td style="text-align:right;font-size:11px; padding: 0.5rem; white-space: nowrap;" class="${(priceType === 'wholesale') ? 'd-none' : ''}"><input type="number" class="price-input" data-id="${id}" value="${Number(item.price).toFixed(2)}" step="0.01" min="0" style="width:65px;padding:3px;border:1px solid #dee2e6;border-radius:3px;font-size:10px;text-align:right;font-weight:600;font-family:inherit"></td>
         <td style="text-align:right;font-size:11px; padding: 0.5rem; white-space: nowrap;" class="${wColumnClass}">${wDisplayValue}</td>
         <td style="text-align:right;font-size:11px; padding: 0.5rem; white-space: nowrap;"><strong style="color:#16a34a">${useWholesale ? '<sup style="font-size:9px;background:#0d5f42;color:#f0b83d;padding:2px 4px;border-radius:2px;margin-right:2px;font-weight:700">W</sup>' : ''}৳${itemTotal.toFixed(2)}</strong></td>
         <td style="text-align:center; padding: 0.5rem; white-space: nowrap;"><button class="btn btn-sm btn-danger remove-from-cart" data-id="${id}" style="padding:2px 4px;font-size:10px;" title="Remove"><i class="la la-trash"></i></button></td>
@@ -1670,8 +1729,8 @@ $(document).ready(function() {
       <th style="width: 40%;">Product</th>
       <th style="width: 20%; text-align:center;">Qty</th>
       <th style="width: 10%; text-align:center; font-size: 0.7rem;">Stock</th>
-      <th style="width: 12%; text-align:right;" class="${(priceType === 'wholesale') ? 'd-none' : ''}">Price</th>
-      <th style="width: 12%; text-align:right;" class="${(priceType === 'wholesale') ? '' : 'd-none'}">W</th>
+      <th style="width: 12%; text-align:right;" class="${(priceType === 'wholesale') ? 'd-none' : ''}">Unit Price (Editable)</th>
+      <th style="width: 12%; text-align:right;" class="${(priceType === 'wholesale') ? '' : 'd-none'}">W (Editable)</th>
       <th style="width: 16%; text-align:right;">Total</th>
       <th style="width: 10%; text-align:center;">×</th>
     </tr>`;
@@ -1717,6 +1776,26 @@ $(document).ready(function() {
       </div>`;
     $('#selected-customer').removeClass('d-none').html(html).show();
   }
+
+  // ── Select customer from search result ─────────
+  window.selectCustomerFromSearch = function(userId, name) {
+    $.post('{{ route("admin.pos.selectCustomer") }}', {
+      _token: '{{ csrf_token() }}',
+      user_id: userId
+    }, function(res) {
+      if (res.customer) {
+        renderSelectedCustomer(res.customer);
+        setTimeout(function() {
+          Swal.close();
+        }, 100);
+        toastr.success('Customer selected!');
+      } else {
+        toastr.error('Failed to select customer');
+      }
+    }).fail(function() {
+      toastr.error('Error selecting customer');
+    });
+  };
 
   // ── Render products grid ────────────────────────
   function renderProductsGrid(products) {
@@ -1790,15 +1869,8 @@ $(document).ready(function() {
                   "><i class="la la-plus"></i> Create New Customer</button>`;
               } else {
                 data.forEach(c => {
-                  html += `<div style="padding:8px;border-bottom:1px solid #e2e8f0;cursor:pointer;hover:background:#f8fafc" onclick="
-                    $.post('{{ route("admin.pos.selectCustomer") }}', {
-                      _token: '{{ csrf_token() }}',
-                      user_id: ${c.id}
-                    }, function(res) {
-                      renderSelectedCustomer(res.customer);
-                      Swal.close();
-                      toastr.success('Customer selected!');
-                    });
+                  html += `<div style="padding:8px;border-bottom:1px solid #e2e8f0;cursor:pointer;background:white" onmouseover="this.style.background='#f8fafc'" onmouseout="this.style.background='white'" onclick="
+                    selectCustomerFromSearch(${c.id}, '${c.name.replace(/'/g, "\\'")}')
                   ">
                     <div style="font-weight:600;color:#1e293b;font-size:12px">${c.name || 'N/A'}</div>
                     <div style="font-size:10px;color:#94a3b8">${c.email || '—'} ${c.mobile ? '| ' + c.mobile : ''}</div>

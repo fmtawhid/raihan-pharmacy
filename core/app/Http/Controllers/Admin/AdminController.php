@@ -47,6 +47,11 @@ class AdminController extends Controller
                 $startDate = now()->startOfYear();
                 $endDate = now()->endOfDay();
                 break;
+            case 'custom':
+                // Custom date range
+                $startDate = $request->input('start_date') ? Carbon::createFromFormat('Y-m-d', $request->input('start_date'))->startOfDay() : now()->startOfDay();
+                $endDate = $request->input('end_date') ? Carbon::createFromFormat('Y-m-d', $request->input('end_date'))->endOfDay() : now()->endOfDay();
+                break;
         }
         
         // Calculate proper summary data
@@ -129,15 +134,13 @@ class AdminController extends Controller
             ->first()
             ?->total ?? 0;
         
-        // Calculate Total Profit based on product margins
-        // Join order_details with products, then with product_batches to get purchase prices
+        // Calculate Total Profit from order_details.profit (already calculated at POS time)
+        // This ensures accurate profit calculation using actual batch prices used at sale time
         $totalProfit = \DB::table('order_details')
             ->join('orders', 'order_details.order_id', '=', 'orders.id')
-            ->join('products', 'order_details.product_id', '=', 'products.id')
-            ->join('product_batches', 'products.id', '=', 'product_batches.product_id')
             ->whereBetween('orders.created_at', [$startDate, $endDate])
             ->where('orders.status', '!=', 'canceled')
-            ->selectRaw('SUM((order_details.price - product_batches.purchase_price) * order_details.quantity) as total')
+            ->selectRaw('SUM(order_details.profit) as total')
             ->first()
             ?->total ?? 0;
         
@@ -171,6 +174,11 @@ class AdminController extends Controller
             case 'this_year':
                 $startDate = now()->startOfYear();
                 $endDate = now()->endOfDay();
+                break;
+            case 'custom':
+                // Custom date range
+                $startDate = $request->input('start_date') ? Carbon::createFromFormat('Y-m-d', $request->input('start_date'))->startOfDay() : now()->startOfDay();
+                $endDate = $request->input('end_date') ? Carbon::createFromFormat('Y-m-d', $request->input('end_date'))->endOfDay() : now()->endOfDay();
                 break;
         }
         

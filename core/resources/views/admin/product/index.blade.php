@@ -69,7 +69,7 @@
 
                                         <td>
                                             <div class="fixed-height-cell">
-                                                @php echo $product->detailedStock(); @endphp
+                                                {{ $product->in_stock ?? 0 }}
                                             </div>
                                         </td>
 

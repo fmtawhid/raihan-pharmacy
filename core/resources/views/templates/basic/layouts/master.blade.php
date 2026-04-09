@@ -129,38 +129,6 @@
                 background: #0084FF;
             }
 
-            @media (max-width: 768px) {
-                .floating-contact-widget {
-                    bottom: 20px;
-                    left: 20px;
-                }
-
-                .contact-menu-btn {
-                    width: 60px;
-                    height: 60px;
-                    font-size: 28px;
-                }
-
-                .contact-item {
-                    width: 60px;
-                    height: 60px;
-                    font-size: 28px;
-                }
-
-                .contact-menu {
-                    bottom: 75px;
-                    gap: 12px;
-                }
-            }
-
-            .contact-item.whatsapp {
-                background: #25D366;
-            }
-
-            .contact-item.messenger {
-                background: #0084FF;
-            }
-
             .contact-item.phone {
                 background: #28a745;
             }
@@ -169,16 +137,53 @@
                 background: #ff6b6b;
             }
 
-            .contact-item {
-                width: 45px;
-                height: 45px;
-                display: flex;
-                align-items: center;
-                justify-content: center;
-                color: #fff;
-                border-radius: 50%;
-                margin-bottom: 8px;
-                font-size: 20px;
+            /* Mobile Responsive */
+            @media (max-width: 768px) {
+                .floating-contact-widget {
+                    bottom: 90px;
+                    left: 20px;
+                }
+
+                .contact-menu-btn {
+                    width: 55px;
+                    height: 55px;
+                    font-size: 26px;
+                }
+
+                .contact-item {
+                    width: 55px;
+                    height: 55px;
+                    font-size: 26px;
+                }
+
+                .contact-menu {
+                    bottom: 70px;
+                    gap: 12px;
+                }
+            }
+
+            @media (max-width: 480px) {
+                .floating-contact-widget {
+                    bottom: 100px;
+                    left: 15px;
+                }
+
+                .contact-menu-btn {
+                    width: 50px;
+                    height: 50px;
+                    font-size: 24px;
+                }
+
+                .contact-item {
+                    width: 50px;
+                    height: 50px;
+                    font-size: 24px;
+                }
+
+                .contact-menu {
+                    bottom: 65px;
+                    gap: 10px;
+                }
             }
         </style>
 

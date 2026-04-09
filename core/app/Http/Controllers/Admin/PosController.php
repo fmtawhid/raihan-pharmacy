@@ -7,7 +7,9 @@ use App\Http\Controllers\Controller;
 use App\Models\Product;
 use App\Models\Order;
 use App\Models\OrderDetail;
+use App\Models\ProductBatch;
 use App\Lib\ProductManager;
+use App\Lib\StockManager;
 use App\Models\Deposit;
 use Illuminate\Support\Str;
 use Illuminate\Http\Request;
@@ -31,6 +33,83 @@ class PosController extends Controller
             'sample_products' => Product::limit(3)->get(['id', 'name', 'regular_price', 'sale_price']),
             'sample_users' => \App\Models\User::limit(3)->get(['id', 'name', 'email'])
         ]);
+    }
+
+    // Debug: Get batch tracking status
+    public function debugBatchStatus()
+    {
+        $batches = ProductBatch::with('product:id,name')
+            ->select('id', 'product_id', 'batch_no', 'qty_received', 'qty_sold', 'purchase_price', 'purchased_at')
+            ->orderBy('id', 'desc')
+            ->limit(20)
+            ->get();
+
+        $stockLogs = \App\Models\StockLog::with('product:id,name')
+            ->select('id', 'product_id', 'batch_id', 'change_quantity', 'remark', 'description', 'order_id', 'created_at')
+            ->orderBy('id', 'desc')
+            ->limit(20)
+            ->get();
+
+        return response()->json([
+            'status' => 'debug',
+            'batches' => $batches,
+            'stock_logs' => $stockLogs,
+            'issues' => [
+                'batches_with_qty_sold_zero' => ProductBatch::where('qty_sold', 0)->where('qty_received', '>', 0)->count(),
+                'batches_total' => ProductBatch::count(),
+                'stock_logs_with_minus' => \App\Models\StockLog::where('remark', '-')->count(),
+                'stock_logs_total' => \App\Models\StockLog::count(),
+            ]
+        ]);
+    }
+
+    // Debug: Comprehensive stock management status
+    public function debugStockManagement()
+    {
+        try {
+            $products = Product::whereIn('id', [5183])->take(5)->get(); // Use real product IDs
+            
+            $stockSummaries = [];
+            foreach ($products as $product) {
+                /** @var Product $product */
+                $stockSummaries[] = StockManager::getStockSummary($product);
+            }
+
+            // Get recent POS orders
+            $recentOrders = Order::where('order_number', 'like', 'POS-%')
+                ->orderBy('id', 'desc')
+                ->limit(10)
+                ->with('orderDetails')
+                ->get()
+                ->map(function ($order) {
+                    return [
+                        'id' => $order->id,
+                        'order_number' => $order->order_number,
+                        'total' => $order->total_amount,
+                        'profit' => $order->profit,
+                        'items_count' => $order->orderDetails->count(),
+                        'created_at' => $order->created_at
+                    ];
+                });
+
+            return response()->json([
+                'status' => 'stock_management_debug',
+                'stock_summaries' => $stockSummaries,
+                'recent_pos_orders' => $recentOrders,
+                'system_stats' => [
+                    'total_products' => Product::count(),
+                    'total_batches' => ProductBatch::count(),
+                    'total_stock_logs' => \App\Models\StockLog::count(),
+                    'batches_with_qty_sold' => ProductBatch::where('qty_sold', '>', 0)->count(),
+                    'stock_logs_deductions' => \App\Models\StockLog::where('remark', '-')->count()
+                ]
+            ]);
+        } catch (\Throwable $e) {
+            return response()->json([
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ], 500);
+        }
     }
 
     // AJAX: Get paginated products
@@ -486,10 +565,12 @@ class PosController extends Controller
         $discountAmount = floatval($request->input('discount_amount', 0));
 
         $order = null;
+        $productManager = new ProductManager();
         
         try {
-            DB::transaction(function () use ($cart, &$order, $priceType, $discountType, $discountAmount) {
+            DB::transaction(function () use ($cart, &$order, $priceType, $discountType, $discountAmount, $productManager) {
                 $subtotal = 0;
+                $totalCost = 0;
                 foreach ($cart as $item) {
                     $useWholesale = ($priceType === 'wholesale') && !empty($item['wholesale_price']);
                     $unitPrice    = $useWholesale ? (float)$item['wholesale_price'] : (float)$item['price'];
@@ -500,77 +581,146 @@ class PosController extends Controller
                 $actualDiscount = 0;
                 if ($discountType === 'percentage' && $discountAmount > 0) {
                     $actualDiscount = ($subtotal * $discountAmount) / 100;
-            } elseif ($discountType === 'fixed' && $discountAmount > 0) {
-                $actualDiscount = min($discountAmount, $subtotal);
-            }
+                } elseif ($discountType === 'fixed' && $discountAmount > 0) {
+                    $actualDiscount = min($discountAmount, $subtotal);
+                }
 
-            $total = $subtotal - $actualDiscount;
+                $total = $subtotal - $actualDiscount;
 
-            // Attach customer if selected
-            $customerId = session('pos_customer');
+                // Attach customer if selected
+                $customerId = session('pos_customer');
 
-            // Create order (delivered by default)
-            $order = Order::create([
-                'order_number'   => 'POS-' . time(),
-                'user_id'        => $customerId ?? null,
-                'status'         => Status::ORDER_DELIVERED,
-                'total_amount'   => $total,
-                'payment_status' => Status::PAYMENT_SUCCESS,
-                'is_cod'         => true,
-            ]);
-
-            // Create order items and update stock
-            foreach ($cart as $productId => $item) {
-                $useWholesale = ($priceType === 'wholesale') && !empty($item['wholesale_price']);
-                $unitPrice    = $useWholesale ? (float)$item['wholesale_price'] : (float)$item['price'];
-
-                // Distribute discount proportionally across items
-                $itemSubtotal = $unitPrice * $item['quantity'];
-                $itemDiscount = ($itemSubtotal / $subtotal) * $actualDiscount;
-
-                OrderDetail::create([
-                    'order_id'           => $order->id,
-                    'product_id'         => $productId,
-                    'product_variant_id' => 0,
-                    'quantity'           => $item['quantity'],
-                    'price'              => $unitPrice,
-                    'discount'           => round($itemDiscount, 2),
+                // Create order (delivered by default)
+                $order = Order::create([
+                    'order_number'   => 'POS-' . time(),
+                    'user_id'        => $customerId ?? null,
+                    'status'         => Status::ORDER_DELIVERED,
+                    'total_amount'   => $total,
+                    'cost_amount'    => 0, // Will be updated after processing items
+                    'profit'         => 0, // Will be updated after processing items
+                    'payment_status' => Status::PAYMENT_SUCCESS,
+                    'is_cod'         => true,
                 ]);
 
-                // adjust stock if product tracks inventory
-                try {
+                // Create order items with batch tracking and profit calculation
+                foreach ($cart as $productId => $item) {
                     $product = Product::find($productId);
-                    if ($product && $product->track_inventory) {
-                        $product->in_stock = max(0, $product->in_stock - $item['quantity']);
-                        $product->save();
-
-                        $description = "Sold $item[quantity] " . Str::plural('product', $item['quantity']) . " (POS)";
-                        $productManager = new ProductManager();
-                        $productManager->createStockLog($product, $item['quantity'], $description, null, '-', $order->id);
+                    if (!$product) {
+                        throw new \Exception("Product not found: ID {$productId}");
                     }
-                } catch (\Throwable $e) {
-                    \Log::error('POS stock update error: ' . $e->getMessage());
+
+                    $useWholesale = ($priceType === 'wholesale') && !empty($item['wholesale_price']);
+                    $unitPrice    = $useWholesale ? (float)$item['wholesale_price'] : (float)$item['price'];
+
+                    // Distribute discount proportionally across items
+                    $itemSubtotal = $unitPrice * $item['quantity'];
+                    $itemDiscount = ($itemSubtotal / $subtotal) * $actualDiscount;
+
+                    // Get best batch for this product (FIFO)
+                    $batchData = $productManager->getBestBatchForSale($product, $item['quantity']);
+                    
+                    // If no batch found, try fallback: get ANY available batch
+                    if (!$batchData) {
+                        $anyBatch = ProductBatch::where('product_id', $productId)
+                            ->where('qty_received', '>', DB::raw('qty_sold'))
+                            ->orderBy('purchased_at', 'asc')
+                            ->orderBy('id', 'asc')
+                            ->first();
+                        
+                        if ($anyBatch) {
+                            $purchasePrice = (float)($anyBatch->purchase_price ?? $product->regular_price ?? 0);
+                            $batchId = $anyBatch->id;
+                            \Log::info("Using fallback batch {$anyBatch->batch_no} for product {$productId}");
+                        } else {
+                            // No batch at all - use product's cost reference
+                            $purchasePrice = (float)($product->regular_price ?? 0);
+                            $batchId = null;
+                            \Log::warning("No batch found for product {$productId}, using regular_price as purchase_price: {$purchasePrice}");
+                        }
+                    } else {
+                        $purchasePrice = (float)$batchData['purchase_price'];
+                        $batchId = $batchData['batch_id'];
+                    }
+
+                    // Calculate profit for this item
+                    $itemProfit = ($unitPrice - $purchasePrice) * $item['quantity'];
+
+                    // Create order detail with profit tracking
+                    $orderDetail = OrderDetail::create([
+                        'order_id'           => $order->id,
+                        'product_id'         => $productId,
+                        'product_variant_id' => 0,
+                        'quantity'           => $item['quantity'],
+                        'price'              => $unitPrice,
+                        'discount'           => round($itemDiscount, 2),
+                        'purchase_price'     => $purchasePrice,
+                        'batch_id'           => $batchId,
+                        'profit'             => round($itemProfit, 2),
+                    ]);
+
+                    // ✅ COMPREHENSIVE STOCK DEDUCTION - Always deduct from all products
+                    // This is the primary stock management point for POS sales
+                    try {
+                        $deductResult = StockManager::deductStock($product, $item['quantity'], [
+                            'batch_id' => $batchId,
+                            'order_id' => $order->id,
+                            'description' => "POS Sale - Qty: {$item['quantity']}" . ($batchId ? " (Batch ID: {$batchId})" : ""),
+                            'variant' => null
+                        ]);
+
+                        if ($deductResult['success']) {
+                            \Log::info("✅ Stock successfully deducted", [
+                                'product_id' => $product->id,
+                                'product_name' => $product->name,
+                                'quantity' => $item['quantity'],
+                                'remaining_stock' => $deductResult['remaining_stock'],
+                                'batch_id' => $batchId
+                            ]);
+                        } else {
+                            \Log::error("❌ Stock deduction encountered issue", [
+                                'product_id' => $product->id,
+                                'product_name' => $product->name,
+                                'message' => $deductResult['message'],
+                                'batch_id' => $batchId
+                            ]);
+                        }
+                    } catch (\Throwable $e) {
+                        \Log::error("❌ Stock deduction exception", [
+                            'product_id' => $product->id,
+                            'error' => $e->getMessage(),
+                            'batch_id' => $batchId
+                        ]);
+                    }
+
+                    // Track total cost for order
+                    $totalCost += $purchasePrice * $item['quantity'];
                 }
-            }
 
-            // Create a deposit record so payments show up in dashboards/reports
-            try {
-                $deposit = new Deposit();
-                $deposit->user_id = $customerId ?? null;
-                $deposit->order_id = $order->id;
-                $deposit->amount = $total;
-                $deposit->method_code = 0; // POS/manual
-                $deposit->method_currency = gs('cur_text');
-                $deposit->trx = 'POS-' . $order->id . '-' . time();
-                $deposit->status = Status::PAYMENT_SUCCESS;
-                $deposit->save();
-            } catch (\Throwable $e) {
-                \Log::error('POS deposit creation error: ' . $e->getMessage());
-            }
+                // Update order with cost and profit
+                $orderProfit = $total - $totalCost;
+                $order->update([
+                    'cost_amount' => round($totalCost, 2),
+                    'profit'      => round($orderProfit, 2),
+                ]);
 
-            // Clear cart + selected customer
-            session()->forget('pos_cart');
-            session()->forget('pos_customer');
+                // Create a deposit record so payments show up in dashboards/reports
+                try {
+                    $deposit = new Deposit();
+                    $deposit->user_id = $customerId ?? null;
+                    $deposit->order_id = $order->id;
+                    $deposit->amount = $total;
+                    $deposit->method_code = 0; // POS/manual
+                    $deposit->method_currency = gs('cur_text');
+                    $deposit->trx = 'POS-' . $order->id . '-' . time();
+                    $deposit->status = Status::PAYMENT_SUCCESS;
+                    $deposit->save();
+                } catch (\Throwable $e) {
+                    \Log::error('POS deposit creation error: ' . $e->getMessage());
+                }
+
+                // Clear cart + selected customer
+                session()->forget('pos_cart');
+                session()->forget('pos_customer');
             });
         } catch (\Throwable $e) {
             \Log::error('POS order creation failed: ' . $e->getMessage(), [
@@ -627,7 +777,9 @@ class PosController extends Controller
             'order_number' => $order->order_number,
             'subtotal' => $subtotal,
             'discount' => $displayDiscount,
-            'total' => $order->total_amount
+            'total' => $order->total_amount,
+            'cost' => $order->cost_amount,
+            'profit' => $order->profit,
         ]);
 
         return response()->json([
@@ -636,6 +788,8 @@ class PosController extends Controller
             'order_id' => $order->id,
             'order_number' => $order->order_number,
             'total_amount' => $order->total_amount,
+            'cost_amount' => $order->cost_amount,
+            'profit' => $order->profit,
             'invoice' => [
                 'store_name'    => gs('site_name') ?? 'Store',
                 'store_address' => gs('address') ?? gs('support_address') ?? 'Address not set',
@@ -649,6 +803,8 @@ class PosController extends Controller
                 'discount'      => $displayDiscount,
                 'total_qty'     => $totalQty,
                 'grand_total'   => $order->total_amount,
+                'cost'          => $order->cost_amount,
+                'profit'        => $order->profit,
                 'sold_by'       => auth()->guard('admin')->user()->name ?? 'Admin',
             ],
         ]);

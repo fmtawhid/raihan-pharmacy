@@ -12,9 +12,9 @@ class ProductListController extends Controller
     {
         $pageTitle = "All Products";
         $trashed   = false;
-        $products  = Product::searchable(['name', 'slug'])
+        $products  = Product::select('id', 'name', 'slug', 'brand_id', 'is_published', 'is_showable', 'is_downloadable', 'product_type_id', 'product_type', 'regular_price', 'sale_price', 'in_stock', 'track_inventory', 'show_stock', 'deleted_at')
+            ->searchable(['name', 'slug'])
             ->filter(['is_published', 'brand_id', 'is_showable', 'is_downloadable', 'product_type_id', 'product_type', 'is_published']);
-
 
         if (request()->has('category')) {
             $products = $products->whereHas('categories', function ($query) {
@@ -45,7 +45,8 @@ class ProductListController extends Controller
     {
         $pageTitle = "Trashed Products";
         $trashed   = true;
-        $products  = Product::searchable(['name'])
+        $products  = Product::select('id', 'name', 'slug', 'brand_id', 'is_published', 'is_showable', 'is_downloadable', 'product_type_id', 'product_type', 'regular_price', 'sale_price', 'in_stock', 'track_inventory', 'show_stock', 'deleted_at')
+            ->searchable(['name'])
             ->with(['brand', 'categories'])
             ->onlyTrashed()
             ->orderByDesc('id')
@@ -57,7 +58,8 @@ class ProductListController extends Controller
     {
         $pageTitle = "Low Stock Products";
         $trashed   = false;
-        $products  = Product::lowStock()
+        $products  = Product::select('id', 'name', 'slug', 'brand_id', 'is_published', 'is_showable', 'is_downloadable', 'product_type_id', 'product_type', 'regular_price', 'sale_price', 'in_stock', 'track_inventory', 'show_stock', 'alert_quantity')
+            ->lowStock()
             ->searchable(['name'])
             ->with(['brand', 'categories'])
             ->orderByDesc('id')
@@ -70,7 +72,8 @@ class ProductListController extends Controller
     {
         $pageTitle = "Out Of Stock Products";
         $trashed   = false;
-        $products  = Product::outOfStock()
+        $products  = Product::select('id', 'name', 'slug', 'brand_id', 'is_published', 'is_showable', 'is_downloadable', 'product_type_id', 'product_type', 'regular_price', 'sale_price', 'in_stock', 'track_inventory', 'show_stock')
+            ->outOfStock()
             ->searchable(['name'])
             ->with(['brand', 'categories'])
             ->orderByDesc('id')

@@ -22,6 +22,7 @@ class Product extends Model
         'sale_price'         => 'double',
         'regular_price'      => 'double',
         'wholesale_price'    => 'double',
+        'purchase_price'     => 'double',
         'sale_starts_from'   => 'datetime',
         'sale_ends_at'       => 'datetime',
         'reviews_avg_rating' => 'double',
@@ -276,7 +277,7 @@ class Product extends Model
             ->orderBy('total', 'desc');
 
         if ($paginate) {
-            return $products->searchable(['name'])->filter(['brand_id'])->paginate(getPaginate());
+            return $products->searchable(['name'])->filter(['brand_id'])->with(['categories', 'brand', 'productVariants'])->paginate(getPaginate());
         }
 
         return $products->limit($limit)->get();

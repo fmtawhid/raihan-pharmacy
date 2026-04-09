@@ -15,6 +15,7 @@ use App\Models\StockLog;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\DB;
 
 /**
  * Class ProductManager
@@ -73,14 +74,19 @@ class ProductManager
      * @param $remark The remark is to identify is the changes is for added or removed.
      * @param string $description The description of the changes.
      * @param $variant The instance of product variant for which stock log is being created.
+     * @param $batchId The batch ID for tracking which batch was used.
      */
-    public function createStockLog($product, $changeQuantity, $description = '', $variant = null, $remark = null, $orderId = null)
+    public function createStockLog($product, $changeQuantity, $description = '', $variant = null, $remark = null, $orderId = null, $batchId = null)
     {
         if ($changeQuantity != 0) {
             $log                     = new StockLog();
             $log->product_id         = $product->id;
             $log->product_variant_id = $variant ? $variant->id : 0;
             $log->order_id           = $orderId;
+            // Store batch number/id in batch_id field (existing column)
+            if ($batchId) {
+                $log->batch_id = (string)$batchId; // Convert to string to store in varchar column
+            }
             $log->change_quantity    = abs($changeQuantity);
             $log->post_quantity      = $variant->in_stock ?? $product->in_stock;
             $log->description        = $description;
@@ -300,19 +306,36 @@ class ProductManager
 
     public function receiveStock(Product $product, ?ProductVariant $variant, array $data): ProductBatch
     {
+        // Validate required data
+        if (empty($data['batch_no'])) {
+            throw new \Exception('Batch number is required');
+        }
+        if (empty($data['purchaser_id'])) {
+            throw new \Exception('Purchaser ID is required');
+        }
+        if (!isset($data['quantity']) || $data['quantity'] <= 0) {
+            throw new \Exception('Quantity must be greater than 0');
+        }
+
         Log::debug('receiveStock called', $data);
+        
         $batch = ProductBatch::firstOrCreate(
             [
                 'product_id' => $product->id,
-                'variant_id' => $variant->id ?? null,
+                'variant_id' => $variant?->id ?? null,
                 'batch_no'   => $data['batch_no'],
             ],
             [
                 'purchaser_id'   => $data['purchaser_id'],
-                'purchase_price' => $data['purchase_price'] ?? null,
+                'purchase_price' => $data['purchase_price'] ?? 0,
                 'purchased_at'   => $data['purchased_at'] ?? now(),
             ]
         );
+
+        // Validate batch was created/found
+        if (!$batch) {
+            throw new \Exception('Failed to create or find batch');
+        }
 
         // increment qty_received
         $batch->increment('qty_received', $data['quantity']);
@@ -328,14 +351,84 @@ class ProductManager
             $batch->id
         );
 
-        // bump product / variant physical stock
+        // bump product / variant physical stock AND update purchase_price
         if ($variant) {
             $variant->increment('in_stock', $data['quantity']);
+            // Update variant purchase price if provided
+            if (isset($data['purchase_price']) && $data['purchase_price'] > 0) {
+                $variant->update(['purchase_price' => $data['purchase_price']]);
+            }
         } else {
             $product->increment('in_stock', $data['quantity']);
+            // Update product purchase price
+            if (isset($data['purchase_price']) && $data['purchase_price'] > 0) {
+                $product->update(['purchase_price' => $data['purchase_price']]);
+            }
         }
 
+        Log::info("Stock received: Batch {$batch->batch_no}, Product {$product->id}, Qty {$data['quantity']}, Price {$data['purchase_price']}, Product in_stock updated");
+
         return $batch;
+    }
+
+    /**
+     * Get best batch for product sale (FIFO - First In First Out)
+     * This ensures accurate profit calculation using historical batch prices
+     * Uses pessimistic locking to prevent race conditions
+     *
+     * @param Product $product
+     * @param int $quantity
+     * @return array|null Array with batch data and actual quantity available
+     */
+    public function getBestBatchForSale(Product $product, int $quantity)
+    {
+        // Get oldest batch with available stock (FIFO principle)
+        // Use lockForUpdate to prevent race conditions during concurrent orders
+        $batch = ProductBatch::where('product_id', $product->id)
+            ->lockForUpdate() // Lock row for update
+            ->orderBy('purchased_at', 'asc')
+            ->orderBy('id', 'asc')  // Secondary sort by ID for stability
+            ->first();
+
+        if (!$batch) {
+            Log::warning("No batch found for product {$product->id}");
+            return null;
+        }
+
+        $availableQty = $batch->qty_received - $batch->qty_sold;
+        
+        // If batch is exhausted, skip to next batch recursively
+        if ($availableQty <= 0) {
+            Log::info("Batch {$batch->batch_no} exhausted (received: {$batch->qty_received}, sold: {$batch->qty_sold}), trying next batch");
+            
+            // Try next batch by excluding current one
+            $nextBatch = ProductBatch::where('product_id', $product->id)
+                ->where('id', '!=', $batch->id)
+                ->lockForUpdate()
+                ->orderBy('purchased_at', 'asc')
+                ->orderBy('id', 'asc')
+                ->first();
+                
+            if (!$nextBatch) {
+                Log::warning("No more batches available for product {$product->id}");
+                return null;
+            }
+            
+            $batch = $nextBatch;
+            $availableQty = $batch->qty_received - $batch->qty_sold;
+        }
+
+        $actualQuantity = min($quantity, $availableQty);
+
+        Log::info("Using batch {$batch->batch_no}: purchase_price={$batch->purchase_price}, available_qty={$availableQty}, using_qty={$actualQuantity}");
+
+        return [
+            'batch_id' => $batch->id,
+            'batch_no' => $batch->batch_no,
+            'purchase_price' => (float)($batch->purchase_price ?? 0),
+            'actual_qty' => $actualQuantity,
+            'remaining_qty' => $availableQty - $actualQuantity,
+        ];
     }
 
 

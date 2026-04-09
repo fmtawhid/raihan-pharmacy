@@ -39,11 +39,14 @@ class ProductStockController extends Controller
         $totalProducts = Product::count();
         $totalPages = ceil($totalProducts / $perPage);
 
-        $products = Product::offset($offset)
+        // Explicitly select columns including in_stock
+        $products = Product::select('id', 'name', 'sku', 'regular_price', 'sale_price', 'wholesale_price', 'in_stock')
+            ->offset($offset)
             ->limit($perPage)
             ->orderBy('id', 'desc')
             ->get()
             ->map(function ($p) {
+                $inStock = (int)($p->in_stock ?? 0);
                 return [
                     'id'    => $p->id,
                     'name'  => $p->name,
@@ -51,8 +54,8 @@ class ProductStockController extends Controller
                     'regular_price' => $p->regular_price ?? null,
                     'sale_price' => $p->sale_price ?? null,
                     'wholesale_price' => $p->wholesale_price ?? null,
-                    'in_stock' => $p->in_stock ?? 0,
-                    'stock' => $p->in_stock ?? 0,
+                    'in_stock' => $inStock,
+                    'stock' => $inStock,
                 ];
             });
 
@@ -76,6 +79,7 @@ class ProductStockController extends Controller
             $batchNo = $request->input('batch_no');
             $purchasedAt = $request->input('purchased_at', now());
 
+            // Validate required fields
             if (empty($items)) {
                 return response()->json([
                     'status' => 'error',
@@ -83,8 +87,32 @@ class ProductStockController extends Controller
                 ], 422);
             }
 
+            if (!$purchaserId) {
+                return response()->json([
+                    'status' => 'error',
+                    'message' => 'Please select a purchaser'
+                ], 422);
+            }
+
+            if (!$batchNo || trim($batchNo) === '') {
+                return response()->json([
+                    'status' => 'error',
+                    'message' => 'Batch number is required'
+                ], 422);
+            }
+
+            // Validate purchaser exists
+            $purchaser = Purchaser::find($purchaserId);
+            if (!$purchaser) {
+                return response()->json([
+                    'status' => 'error',
+                    'message' => 'Selected purchaser not found'
+                ], 422);
+            }
+
             $totalQuantity = 0;
             $totalCost = 0;
+            $productManager = new ProductManager();
 
             // Validate and process each item
             foreach ($items as $item) {
@@ -109,32 +137,44 @@ class ProductStockController extends Controller
                 if ($quantity <= 0) {
                     return response()->json([
                         'status' => 'error',
-                        'message' => 'Quantity must be greater than 0'
+                        'message' => 'Quantity must be greater than 0 for: ' . $product->name
                     ], 422);
                 }
 
                 if ($purchasePrice < 0) {
                     return response()->json([
                         'status' => 'error',
-                        'message' => 'Purchase price cannot be negative'
+                        'message' => 'Purchase price cannot be negative for: ' . $product->name
                     ], 422);
                 }
 
                 $totalQuantity += $quantity;
                 $totalCost += $quantity * $purchasePrice;
 
-                // Create or update batch
-                $this->productManager->receiveStock(
-                    $product,
-                    null,
-                    [
-                        'batch_no'       => $batchNo,
-                        'purchaser_id'   => $purchaserId,
-                        'purchase_price' => $purchasePrice,
-                        'quantity'       => $quantity,
-                        'purchased_at'   => $purchasedAt,
-                    ]
-                );
+                // Create or update batch via ProductManager
+                try {
+                    $batch = $productManager->receiveStock(
+                        $product,
+                        null,
+                        [
+                            'batch_no'       => $batchNo,
+                            'purchaser_id'   => $purchaserId,
+                            'purchase_price' => $purchasePrice,
+                            'quantity'       => $quantity,
+                            'purchased_at'   => $purchasedAt,
+                        ]
+                    );
+
+                    if (!$batch) {
+                        throw new \Exception('Failed to create batch for product: ' . $product->name);
+                    }
+                } catch (\Exception $e) {
+                    \Log::error('Batch creation failed: ' . $e->getMessage());
+                    return response()->json([
+                        'status' => 'error',
+                        'message' => 'Failed to process product: ' . $product->name . '. ' . $e->getMessage()
+                    ], 400);
+                }
             }
 
             return response()->json([
@@ -143,7 +183,7 @@ class ProductStockController extends Controller
                 'data' => [
                     'total_items' => count($items),
                     'total_quantity' => $totalQuantity,
-                    'total_cost' => $totalCost
+                    'total_cost' => round($totalCost, 2)
                 ]
             ]);
 

@@ -150,7 +150,14 @@ class ManageUsersController extends Controller
         $widget['answeredTickets']    = SupportTicket::where('user_id', $user->id)->where('status', Status::TICKET_ANSWER)->count();
         $bdData = getBangladeshLocationData();
 
-        $prescriptions      = \App\Models\PrescriptionUpload::where('user_id', $user->id)->latest()->get();
+        // Fetch prescriptions if table exists
+        $prescriptions = collect();
+        try {
+            $prescriptions = \App\Models\PrescriptionUpload::where('user_id', $user->id)->latest()->get();
+        } catch (\Exception $e) {
+            // Table doesn't exist yet, continue without prescriptions
+        }
+        
         $countries          = getCountries();
         return view('admin.users.detail', compact('pageTitle', 'user', 'countries', 'widget', 'bdData', 'prescriptions'));
     }

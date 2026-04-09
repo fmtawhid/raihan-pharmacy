@@ -28,10 +28,10 @@ $allCategories = \App\Models\Category::orderBy('name','ASC')->get();
                 <div class="header-bottom-search d-none d-lg-flex">
                     <form action="{{ route('product.all') }}" method="GET" class="header-bottom-search-form">
                         <div class="header-bottom-search-inner">
-                            <select name="category" class="header-bottom-category-select">
+                            <select name="category" id="headerCategorySelect" class="header-bottom-category-select">
                                 <option value="">@lang('All Categories')</option>
                                 @foreach ($allCategories as $cat)
-                                <option value="{{ $cat->id }}" @selected(request()->category ==
+                                <option value="{{ $cat->shopLink() }}" data-id="{{ $cat->id }}" @selected(request()->category ==
                                     $cat->id)>{{ $cat->name }}</option>
                                 @endforeach
                             </select>
@@ -46,22 +46,20 @@ $allCategories = \App\Models\Category::orderBy('name','ASC')->get();
                 <!-- <nav class="navbar navbar-expand-lg navbar-light py-0 flex-grow-1"> -->
                 <nav class="navbar navbar-expand-lg navbar-light py-0">
                     <div class="container-fluid px-0">
-                        <button class="navbar-toggler text-white" type="button" data-bs-toggle="collapse"
-                            data-bs-target="#navbarMegaMenu" aria-controls="navbarMegaMenu" aria-expanded="false"
-                            aria-label="Toggle navigation">
-                            <span class="navbar-toggler-icon"></span>
-                        </button>
+                        <div class="d-lg-none mobile-header-controls">
+                            <button class="navbar-toggler text-white" type="button" data-bs-toggle="collapse"
+                                data-bs-target="#navbarMegaMenu" aria-controls="navbarMegaMenu" aria-expanded="false"
+                                aria-label="Toggle navigation">
+                                <span class="navbar-toggler-icon"></span>
+                            </button>
 
-                        <!--<li class="d-lg-none " style="list-style: none;">-->
-                        <!--    <a href="{{ route('multi_express.deal.index') }}" -->
-                        <!--    class="ecommerce deal-btn"-->
-                        <!--    style="background: linear-gradient(135deg, #423fce, #db4437); color: #fff; border: none; padding: 10px 20px; border-radius: 8px; text-decoration: none; display: inline-block; transition: all 0.3s ease;">-->
-                        <!--        <span class="ecommerce__icon">-->
-                        <!--            <span class="ecommerce__is deal-count d-none"></span>-->
-                        <!--        </span>-->
-                        <!--        <span class="" style="color:#fff;">@lang('Deals')</span>-->
-                        <!--    </a>-->
-                        <!--</li>-->
+                            <form action="{{ route('product.all') }}" method="GET" class="mobile-search-form-inline">
+                                <div class="mobile-search-inner-inline">
+                                    <input type="text" name="search" class="mobile-search-input-inline" value="{{ request()->search }}" placeholder="@lang('Search...')">
+                                    <button type="submit" class="mobile-search-btn-inline"><i class="las la-search"></i></button>
+                                </div>
+                            </form>
+                        </div>
 
                         <div class="collapse navbar-collapse" id="navbarMegaMenu">
                             <ul class="main-menu navbar-nav flex-lg-row flex-column">
@@ -107,16 +105,16 @@ $allCategories = \App\Models\Category::orderBy('name','ASC')->get();
                                     @endif
                                     @endforeach
                                     <li class="total-product-item">
-                                        <span class="total-product-badge">
+                                        <a href="{{ route('product.all') }}" class="total-product-badge">
                                             <i class="fas fa-box me-1"></i>
                                             Items: {{ \App\Models\Product::count() }}
-                                        </span>
+                                        </a>
                                     </li>
 
                                     @if ($featuredCategories->count() > $mainMenuLimit)
                                     {{-- "View More" menu item --}}
                                     <li class="menu-item nav-item">
-                                        <a class="nav-link" href="javascript:void(0)">
+                                        <a class="nav-link" href="{{ route('product.all') }}">
                                             View More
                                             <i class="fas fa-chevron-down ms-1 d-inline-block"></i>
                                         </a>
@@ -181,14 +179,24 @@ $allCategories = \App\Models\Category::orderBy('name','ASC')->get();
 @push('script')
 <script>
 document.addEventListener('DOMContentLoaded', function() {
+    // Desktop Category dropdown linkup
+    const categorySelect = document.getElementById('headerCategorySelect');
+    if (categorySelect) {
+        categorySelect.addEventListener('change', function() {
+            if (this.value) {
+                window.location.href = this.value;
+            } else {
+                window.location.href = '{{ route("product.all") }}';
+            }
+        });
+    }
+
     if (window.innerWidth <= 768) {
         document.querySelectorAll('.main-menu .menu-item > a').forEach(function(link) {
             let parentLi = link.parentElement;
             if (parentLi.querySelector('.sub-menu')) {
                 link.addEventListener('click', function(e) {
-                    // লিঙ্কে যাও়া বন্ধ করো
                     e.preventDefault();
-                    // াবমেনু টগল রো
                     let submenu = parentLi.querySelector('.sub-menu');
                     if (submenu.style.display === 'block') {
                         submenu.style.display = 'none';
@@ -301,9 +309,21 @@ document.addEventListener('DOMContentLoaded', function() {
     color: #fff;
     font-size: 16px;
     padding: 8px 18px;
-    background-color: #557DBF;
+    background-color: #dd4637;
     font-weight: 900;
     white-space: nowrap;
+    display: inline-flex;
+    align-items: center;
+    text-decoration: none;
+    border-radius: 4px;
+    transition: background 0.3s;
+    cursor: pointer;
+}
+
+.total-product-badge:hover {
+    background-color: #c73a2f;
+    color: #fff;
+    text-decoration: none;
 }
 
 .total-product-item {
@@ -386,6 +406,19 @@ document.addEventListener('DOMContentLoaded', function() {
 
     .total-product-badge {
         margin-left: auto;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 100%;
+        padding: 12px 16px;
+        background-color: #dd4637;
+        border-radius: 4px;
+        text-decoration: none;
+        color: #fff;
+    }
+
+    .total-product-badge:hover {
+        background-color: #c73a2f;
     }
 
     .sub-menu {
@@ -413,6 +446,87 @@ document.addEventListener('DOMContentLoaded', function() {
         position: static;
     }
 
+    .navbar-toggler {
+        flex-shrink: 0;
+        padding: 8px;
+    }
+
+}
+
+/* Mobile Header Controls */
+.mobile-header-controls {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    width: 100%;
+}
+
+.mobile-search-form-inline {
+    flex: 1;
+    display: flex;
+}
+
+.mobile-search-inner-inline {
+    display: flex;
+    align-items: center;
+    background: #fff;
+    border-radius: 6px;
+    overflow: hidden;
+    height: 36px;
+    width: 100%;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.mobile-search-input-inline {
+    border: none;
+    outline: none;
+    padding: 0 10px;
+    height: 100%;
+    font-size: 13px;
+    flex: 1;
+    color: #333;
+    min-width: 0;
+}
+
+.mobile-search-input-inline::placeholder {
+    color: #999;
+}
+
+.mobile-search-btn-inline {
+    border: none;
+    outline: none;
+    background: hsl(var(--base));
+    color: #fff;
+    padding: 0 12px;
+    height: 100%;
+    font-size: 16px;
+    cursor: pointer;
+    transition: background 0.3s;
+    flex-shrink: 0;
+}
+
+.mobile-search-btn-inline:hover {
+    background: hsl(var(--base) / 0.85);
+}
+
+@media (max-width: 480px) {
+    .mobile-header-controls {
+        gap: 170px;
+    }
+
+    .mobile-search-inner-inline {
+        height: 34px;
+    }
+
+    .mobile-search-input-inline {
+        font-size: 12px;
+        padding: 0 8px;
+    }
+
+    .mobile-search-btn-inline {
+        font-size: 14px;
+        padding: 0 10px;
+    }
 }
 </style>
 @endpush

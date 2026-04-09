@@ -45,15 +45,27 @@ class ReportController extends Controller
     public function  salesReport()
     {
         $pageTitle = 'Sales Report';
-        $logs = Order::isValidOrder()->delivered()->orderBy('id', 'desc')->searchable(['order_number', 'user:username'])->dateFilter()->withSum('orderDetail as total_product', 'quantity')->with('user')->paginate(getPaginate());
+        
+        // Build base query with filters
+        $baseQuery = Order::isValidOrder()->delivered()->searchable(['order_number', 'user:username'])->dateFilter();
+        
+        // Get filtered results
+        $logs = $baseQuery->orderBy('id', 'desc')->withSum('orderDetail as total_product', 'quantity')->with('user')->paginate(getPaginate());
 
-        $totalSalesProduct = OrderDetail::whereHas('order', function ($query) {
-            $query->where('status', Status::ORDER_DELIVERED);
-        })->sum('quantity');
-
-        $totalSalesAmount = Order::isValidOrder()->delivered()->sum('subtotal');
-        $totalShippingCharge = Order::isValidOrder()->delivered()->sum('shipping_charge');
-        $totalAmount = Order::isValidOrder()->delivered()->sum('total_amount');
+        // Calculate totals from filtered data
+        $filteredOrders = (clone $baseQuery)->with('orderDetail')->get();
+        
+        $totalSalesProduct = 0;
+        $totalSalesAmount = 0;
+        $totalShippingCharge = 0;
+        $totalAmount = 0;
+        
+        foreach ($filteredOrders as $order) {
+            $totalSalesProduct += $order->orderDetail->sum('quantity');
+            $totalSalesAmount += $order->subtotal;
+            $totalShippingCharge += $order->shipping_charge;
+            $totalAmount += $order->total_amount;
+        }
 
         return view('admin.reports.sales', compact('pageTitle', 'logs', 'totalSalesProduct', 'totalSalesAmount', 'totalShippingCharge', 'totalAmount'));
     }
@@ -287,18 +299,18 @@ class ReportController extends Controller
             ->delivered()
             ->searchable(['order_number', 'user:username'])
             ->dateFilter()
-            ->withSum('orderDetail as total_product', 'quantity')
-            ->with('user')
+            ->with('orderDetail')
             ->orderBy('id', 'desc')
             ->get();
 
-        $totalSalesProduct = OrderDetail::whereHas('order', function ($query) {
-            $query->where('status', Status::ORDER_DELIVERED);
-        })->sum('quantity');
+        // Calculate totals from filtered data
+        $totalSalesProduct = $orders->sum(function ($order) {
+            return $order->orderDetail->sum('quantity');
+        });
 
-        $totalSalesAmount = Order::isValidOrder()->delivered()->sum('subtotal');
-        $totalShippingCharge = Order::isValidOrder()->delivered()->sum('shipping_charge');
-        $totalAmount = Order::isValidOrder()->delivered()->sum('total_amount');
+        $totalSalesAmount = $orders->sum('subtotal');
+        $totalShippingCharge = $orders->sum('shipping_charge');
+        $totalAmount = $orders->sum('total_amount');
 
         $dateRange = $request->date ?? 'All Time';
         $generatedDate = now()->format('d M, Y');
@@ -331,11 +343,12 @@ class ReportController extends Controller
 
             // Table rows
             foreach ($orders as $order) {
+                $totalProduct = $order->orderDetail->sum('quantity');
                 fputcsv($handle, [
                     $order->order_number,
                     optional($order->user)->username ?? 'Guest',
                     $order->created_at->format('d M, Y'),
-                    $order->total_product,
+                    $totalProduct,
                     number_format($order->shipping_charge, 2),
                     number_format($order->subtotal, 2),
                     number_format($order->total_amount, 2),

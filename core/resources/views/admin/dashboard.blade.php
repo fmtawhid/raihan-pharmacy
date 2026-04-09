@@ -2,25 +2,50 @@
 
 @section('panel')
     <div class="row gy-4">
-        @can('summery_dashboard')
+        @if(auth('admin')->check() && auth('admin')->user()->can('summery_dashboard'))
         <div class="col-12">
             <div class="card summary-card">
                 <div class="card-body">
                     <div class="d-flex flex-wrap justify-content-between align-items-center gap-3">
                         <h5 class="card-title mb-0">@lang('Summary')</h5>
-                        <div class="btn-group" role="group">
-                            <button type="button" class="btn btn-sm filter-btn {{ $dateFilter == 'today' ? 'btn-primary' : 'btn-outline-primary' }}" data-filter="today">
-                                @lang('Today')
-                            </button>
-                            <button type="button" class="btn btn-sm filter-btn {{ $dateFilter == 'last_7_days' ? 'btn-primary' : 'btn-outline-primary' }}" data-filter="last_7_days">
-                                @lang('Last 7 Days')
-                            </button>
-                            <button type="button" class="btn btn-sm filter-btn {{ $dateFilter == 'last_30_days' ? 'btn-primary' : 'btn-outline-primary' }}" data-filter="last_30_days">
-                                @lang('Last 30 Days')
-                            </button>
-                            <button type="button" class="btn btn-sm filter-btn {{ $dateFilter == 'this_year' ? 'btn-primary' : 'btn-outline-primary' }}" data-filter="this_year">
-                                @lang('This Year')
-                            </button>
+                        <div class="d-flex gap-2 align-items-center flex-wrap">
+                            <div class="btn-group" role="group">
+                                <button type="button" class="btn btn-sm filter-btn {{ $dateFilter == 'today' ? 'btn-primary' : 'btn-outline-primary' }}" data-filter="today">
+                                    @lang('Today')
+                                </button>
+                                <button type="button" class="btn btn-sm filter-btn {{ $dateFilter == 'last_7_days' ? 'btn-primary' : 'btn-outline-primary' }}" data-filter="last_7_days">
+                                    @lang('Last 7 Days')
+                                </button>
+                                <button type="button" class="btn btn-sm filter-btn {{ $dateFilter == 'last_30_days' ? 'btn-primary' : 'btn-outline-primary' }}" data-filter="last_30_days">
+                                    @lang('Last 30 Days')
+                                </button>
+                                <button type="button" class="btn btn-sm filter-btn {{ $dateFilter == 'this_year' ? 'btn-primary' : 'btn-outline-primary' }}" data-filter="this_year">
+                                    @lang('This Year')
+                                </button>
+                                <button type="button" class="btn btn-sm filter-btn {{ $dateFilter == 'custom' ? 'btn-primary' : 'btn-outline-primary' }}" data-filter="custom" data-bs-toggle="collapse" data-bs-target="#customDateRange">
+                                    @lang('Custom')
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Custom Date Range Picker -->
+                    <div id="customDateRange" class="collapse mt-3 {{ $dateFilter == 'custom' ? 'show' : '' }}">
+                        <div class="row g-2">
+                            <div class="col-md-3">
+                                <label class="form-label small">@lang('Start Date')</label>
+                                <input type="date" id="summaryStartDate" class="form-control form-control-sm" value="{{ request('start_date', now()->format('Y-m-d')) }}">
+                            </div>
+                            <div class="col-md-3">
+                                <label class="form-label small">@lang('End Date')</label>
+                                <input type="date" id="summaryEndDate" class="form-control form-control-sm" value="{{ request('end_date', now()->format('Y-m-d')) }}">
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label small">&nbsp;</label>
+                                <button type="button" class="btn btn-sm btn-success form-control" id="applySummaryDateRange">
+                                    <i class="las la-check"></i> @lang('Apply')
+                                </button>
+                            </div>
                         </div>
                     </div>
                     <hr>
@@ -57,7 +82,7 @@
                 </div>
             </div>
         </div>
-        @endcan
+        @endif
 
         <div class="col-xxl-3 col-sm-6">
             <div class="card h-100">
@@ -150,7 +175,7 @@
             </div>
         </div>
     </div>
-    @can('salse_report')
+    @if(auth('admin')->check() && auth('admin')->user()->can('salse_dashboard'))
     <div class="row mt-1 gy-4">
         <div class="col-lg-6">
             <div class="card h-100">
@@ -215,7 +240,7 @@
         </div>
         
     </div>
-    @endcan
+    @endif
     <div class="row gy-4 mt-1">
         <div class="col-12">
             <div class="row gy-4">
@@ -465,7 +490,12 @@
                 this.classList.remove('btn-outline-primary');
                 this.classList.add('btn-primary');
                 
-                // Fetch summary data
+                // For custom filter, just expand/collapse the date picker
+                if (filter === 'custom') {
+                    return; // Don't fetch yet, wait for Apply button
+                }
+                
+                // Fetch summary data for preset filters
                 $.ajax({
                     url: @json(route('admin.summary.data')),
                     method: 'GET',
@@ -473,26 +503,57 @@
                     dataType: 'json',
                     success: function(response) {
                         if (response.status == 'success') {
-                            const data = response.data;
-                            document.querySelector('.summary-sales').textContent = data.total_sales_formatted;
-                            document.querySelector('.summary-purchases').textContent = data.total_purchases_formatted;
-                            document.querySelector('.summary-returns').textContent = data.total_returns_formatted;
-                            
-                            const profitEl = document.querySelector('.summary-profit');
-                            profitEl.textContent = data.total_profit_formatted;
-                            
-                            if (data.total_profit >= 0) {
-                                profitEl.classList.remove('text-danger');
-                                profitEl.classList.add('text-success');
-                            } else {
-                                profitEl.classList.remove('text-success');
-                                profitEl.classList.add('text-danger');
-                            }
+                            updateSummaryDisplay(response.data);
                         }
                     }
                 });
             });
         });
+        
+        // Apply custom date range
+        document.getElementById('applySummaryDateRange').addEventListener('click', function() {
+            const startDate = document.getElementById('summaryStartDate').value;
+            const endDate = document.getElementById('summaryEndDate').value;
+            
+            if (!startDate || !endDate) {
+                alert('@lang("Please select both start and end dates")');
+                return;
+            }
+            
+            $.ajax({
+                url: @json(route('admin.summary.data')),
+                method: 'GET',
+                data: { 
+                    date_filter: 'custom',
+                    start_date: startDate,
+                    end_date: endDate
+                },
+                dataType: 'json',
+                success: function(response) {
+                    if (response.status == 'success') {
+                        updateSummaryDisplay(response.data);
+                    }
+                }
+            });
+        });
+        
+        // Helper function to update summary display
+        const updateSummaryDisplay = (data) => {
+            document.querySelector('.summary-sales').textContent = data.total_sales_formatted;
+            document.querySelector('.summary-purchases').textContent = data.total_purchases_formatted;
+            document.querySelector('.summary-returns').textContent = data.total_returns_formatted;
+            
+            const profitEl = document.querySelector('.summary-profit');
+            profitEl.textContent = data.total_profit_formatted;
+            
+            if (data.total_profit >= 0) {
+                profitEl.classList.remove('text-danger');
+                profitEl.classList.add('text-success');
+            } else {
+                profitEl.classList.remove('text-success');
+                profitEl.classList.add('text-danger');
+            }
+        };
     </script>
 @endpush
 

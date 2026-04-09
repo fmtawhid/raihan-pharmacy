@@ -18,6 +18,7 @@ class ProductVariant extends Model
         'attribute_values' => 'array',
         'sale_price'         => 'double',
         'regular_price'      => 'double',
+        'purchase_price'     => 'double',
         'sale_starts_from'   => 'datetime',
         'sale_ends_at'       => 'datetime',
     ];

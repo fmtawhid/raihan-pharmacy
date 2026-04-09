@@ -55,9 +55,13 @@
                             <tr>
                                 <td><strong>#{{ $return->id }}</strong></td>
                                 <td>
-                                    <a href="{{ route('admin.order.details', $return->order->id) }}" class="text--primary">
-                                        {{ optional($return->order)->order_number ?? 'N/A' }}
-                                    </a>
+                                    @if($return->order)
+                                        <a href="{{ route('admin.order.details', $return->order->id) }}" class="text--primary">
+                                            {{ $return->order->order_number }}
+                                        </a>
+                                    @else
+                                        <span class="text-muted">N/A</span>
+                                    @endif
                                 </td>
                                 <td>{{ optional($return->product)->name ?? 'N/A' }}</td>
                                 <td><span class="badge badge--primary">{{ $return->quantity_returned }}</span></td>
