@@ -413,61 +413,97 @@ input[type="number"] {
           </table>
         </div>
 
-        <div class="card-body p-2 border-top">
-          <div class="d-flex justify-content-between align-items-center p-2 bg-light rounded mb-3" id="cart-total" style="font-size: 0.875rem;">
-            <span class="fw-600">Total</span>
-            <span class="h6 mb-0" style="color: #16a34a;">৳0.00</span>
-          </div>
-          
-          {{-- Price Type Selector --}}
-          <div class="mb-3" style="background: linear-gradient(135deg, #e7f4f1, #f0fdf9); border: 1px solid #a8d5cc; border-radius: 0.5rem; padding: 1rem;">
-            <label class="form-label small fw-700 mb-2 d-block" style="color: #0d5f42; font-size: 0.8125rem; text-transform: uppercase; letter-spacing: 0.3px;">
-              <i class="la la-tag" style="margin-right: 0.375rem;"></i>Price Type
-            </label>
-            <div class="d-flex gap-2">
-              <div class="flex-grow-1">
-                <input type="radio" name="price_type" id="pt_regular" value="regular" class="form-check-input">
-                <label for="pt_regular" class="form-check-label small" style="cursor: pointer; font-weight: 500; color: #1e293b;">
-                  <i class="la la-tag" style="color: #059669;"></i> Regular
+                <div class="card-body p-2 border-top">
+
+          <div class="row g-3 align-items-stretch">
+
+            <!-- Price Type -->
+            <div class="col-md-4">
+              <div style="background: linear-gradient(135deg, #e7f4f1, #f0fdf9); border: 1.5px solid #6ee7b7; border-radius: 0.75rem; padding: 1.25rem; height: 100%; box-shadow: 0 2px 8px rgba(5, 150, 105, 0.06);">
+                <label class="form-label small fw-700 mb-3 d-block" style="color: #0d5f42; font-size: 0.8125rem; text-transform: uppercase; letter-spacing: 0.5px;">
+                  <i class="la la-tag" style="margin-right: 0.375rem; font-size: 1rem;"></i>Price Type
                 </label>
-              </div>
-              <div class="flex-grow-1">
-                <input type="radio" name="price_type" id="pt_wholesale" value="wholesale" class="form-check-input">
-                <label for="pt_wholesale" class="form-check-label small" style="cursor: pointer; font-weight: 500; color: #1e293b;">
-                  <i class="la la-boxes" style="color: #f0b83d;"></i> Wholesale
-                </label>
+                <div class="d-flex gap-3 flex-column">
+                  <div class="form-check">
+                    <input type="radio" name="price_type" id="pt_regular" value="regular" class="form-check-input" style="width: 1.1rem; height: 1.1rem; margin-top: 0.2rem;">
+                    <label for="pt_regular" class="form-check-label" style="cursor: pointer; font-weight: 600; color: #1e293b; font-size: 0.9rem; margin-left: 0.5rem;">
+                      <i class="la la-tag" style="color: #059669; margin-right: 0.5rem;"></i>Regular
+                    </label>
+                  </div>
+                  <div class="form-check">
+                    <input type="radio" name="price_type" id="pt_wholesale" value="wholesale" class="form-check-input" style="width: 1.1rem; height: 1.1rem; margin-top: 0.2rem;">
+                    <label for="pt_wholesale" class="form-check-label" style="cursor: pointer; font-weight: 600; color: #1e293b; font-size: 0.9rem; margin-left: 0.5rem;">
+                      <i class="la la-boxes" style="color: #f0b83d; margin-right: 0.5rem;"></i>Wholesale
+                    </label>
+                  </div>
+                </div>
               </div>
             </div>
+
+            <!-- Discount -->
+            <div class="col-md-4">
+              <div style="background: linear-gradient(135deg, #fef3c7, #fefce8); border: 1.5px solid #fcd34d; border-radius: 0.75rem; padding: 1.25rem; height: 100%; box-shadow: 0 2px 8px rgba(217, 119, 6, 0.06);">
+                <div class="small fw-700 text-dark mb-3" style="color: #b45309; font-size: 0.8125rem; text-transform: uppercase; letter-spacing: 0.5px;">
+                  <i class="la la-percent" style="margin-right: 0.375rem; font-size: 1rem;"></i>Discount
+                </div>
+                <div class="d-flex gap-3 mb-3 pb-3 border-bottom" style="border-color: #fcd34d !important;">
+                  <div class="form-check">
+                    <input type="radio" name="discount_type" id="dt_percentage" value="percentage" class="form-check-input" style="width: 1.1rem; height: 1.1rem; margin-top: 0.2rem;">
+                    <label for="dt_percentage" class="form-check-label small" style="cursor: pointer; font-weight: 600; color: #1e293b; margin-left: 0.5rem;">Percent %</label>
+                  </div>
+                  <div class="form-check">
+                    <input type="radio" name="discount_type" id="dt_fixed" value="fixed" class="form-check-input" style="width: 1.1rem; height: 1.1rem; margin-top: 0.2rem;">
+                    <label for="dt_fixed" class="form-check-label small" style="cursor: pointer; font-weight: 600; color: #1e293b; margin-left: 0.5rem;">Fixed Amount</label>
+                  </div>
+                </div>
+                <div class="d-flex gap-2">
+                  <input type="number" id="discount-input" placeholder="0.00" min="0" step="0.01" class="form-control form-control-sm" disabled style="border: 1.5px solid #fcd34d; font-weight: 600; font-size: 0.9rem; background: white;">
+                  <span id="discount-unit" class="input-group-text small fw-700" style="min-width: 50px; text-align: center; background: white; border: 1.5px solid #fcd34d; color: #b45309; font-size: 0.9rem; border-radius: 0.375rem;">%</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Cart Total -->
+            <div class="col-md-4">
+              <div style="background: linear-gradient(135deg, #f0fdf9, #ccfbf1); border: 2px solid #5eead4; border-radius: 0.75rem; padding: 1.5rem; height: 100%; display: flex; flex-direction: column; justify-content: space-between; box-shadow: 0 4px 20px rgba(5, 150, 105, 0.12);">
+                
+                <div>
+                  <div class="d-flex justify-content-between align-items-center mb-3">
+                    <span style="color: #1e293b; font-size: 0.8rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px;">Subtotal</span>
+                    <span style="color: #059669; font-size: 1rem; font-weight: 800;" id="cart-subtotal">৳0.00</span>
+                  </div>
+                  <div class="d-flex justify-content-between align-items-center mb-3">
+                    <span style="color: #1e293b; font-size: 0.8rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px;">Items</span>
+                    <span style="color: #059669; font-size: 1rem; font-weight: 800;" id="cart-items">0</span>
+                  </div>
+                  
+                  <div id="cart-discount-row" class="d-flex justify-content-between align-items-start mb-3" style="display: none; padding: 0.75rem; background: rgba(153, 27, 27, 0.1); border-radius: 0.5rem; border-left: 3px solid #dc2626;">
+                    <span style="color: #1e293b; font-size: 0.8rem; font-weight: 700;">Discount</span>
+                    <div style="text-align: right;">
+                      <div style="color: #991b1b; font-size: 0.95rem; font-weight: 800; line-height: 1.2;" id="cart-discount">-৳0.00</div>
+                    </div>
+                  </div>
+                </div>
+                
+                <div>
+                  <div class="border-top" style="border-color: #5eead4; margin: 1rem 0;"></div>
+                  <div class="d-flex justify-content-between align-items-center">
+                    <span style="color: #0d5f42; font-size: 0.8rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px;">Total</span>
+                    <span style="color: #059669; font-size: 1.5rem; font-weight: 900; letter-spacing: 0.5px;" id="cart-grand-total">৳0.00</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
           </div>
 
-          {{-- Discount Section --}}
-          <div class="mb-2" style="background: linear-gradient(135deg, #fef3c7, #fefce8); border: 1px solid #f0b83d; border-radius: 0.5rem; padding: 1rem;">
-            <div class="small fw-700 text-dark mb-2" style="color: #b45309; font-size: 0.8125rem; text-transform: uppercase; letter-spacing: 0.3px;">
-              <i class="la la-percent" style="margin-right: 0.375rem;"></i>Discount
-            </div>
-            <div class="d-flex gap-2 mb-2 pb-2 border-bottom" style="border-color: #f0b83d !important;">
-              <div class="form-check">
-                <input type="radio" name="discount_type" id="dt_percentage" value="percentage" class="form-check-input">
-                <label for="dt_percentage" class="form-check-label small" style="cursor: pointer; font-weight: 500; color: #1e293b;">Percentage %</label>
-              </div>
-              <div class="form-check">
-                <input type="radio" name="discount_type" id="dt_fixed" value="fixed" class="form-check-input">
-                <label for="dt_fixed" class="form-check-label small" style="cursor: pointer; font-weight: 500; color: #1e293b;">Fixed Amount</label>
-              </div>
-            </div>
-            <div class="d-flex gap-2 mb-2">
-              <input type="number" id="discount-input" placeholder="Enter amount" min="0" step="0.01" class="form-control form-control-sm" disabled style="border-color: #f0b83d; font-weight: 600;">
-              <span id="discount-unit" class="input-group-text small fw-700" style="min-width: 50px; text-align: center; background: #fef3c7; border-color: #f0b83d; color: #b45309;">%</span>
-            </div>
-            <div id="discount-info" class="d-flex justify-content-between align-items-center" style="background: rgba(244, 114, 44, 0.05); padding: 0.625rem; border-radius: 0.375rem;">
-              <span style="font-size: 0.75rem; color: #6c757d; font-weight: 500;">Discount Amount:</span>
-              <strong id="discount-display" style="color: #b45309; font-size: 0.9375rem;">৳0.00</strong>
-            </div>
+          <!-- Button -->
+          <div class="mt-4">
+            <button id="confirm-order" class="btn btn-success w-100" disabled style="opacity: .45; cursor: not-allowed; font-size: 0.95rem; padding: 0.9rem 1.25rem; font-weight: 700; letter-spacing: 0.3px; border-radius: 0.5rem; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);">
+              <i class="la la-check-circle" style="margin-right: 0.5rem;"></i> Confirm Order
+            </button>
           </div>
 
-          <button id="confirm-order" class="btn btn-success w-100 btn-sm" disabled style="opacity:.45;cursor:not-allowed;font-size: 0.8rem;">
-            <i class="la la-check-circle"></i> Confirm
-          </button>
         </div>
       </div>
     </div>
@@ -1165,9 +1201,19 @@ $(document).ready(function() {
     return subtotal;
   }
 
+  // ── Calculate total items in cart ──────────────
+  function calculateTotalItems() {
+    let totalItems = 0;
+    for (let id in cart) {
+      totalItems += cart[id].quantity;
+    }
+    return totalItems;
+  }
+
   // ── Update cart total only (no full re-render) ──
   function updateCartTotalOnly() {
     let cartSubtotal = calculateCartSubtotal();
+    let totalItems = calculateTotalItems();
     
     let actualDiscount = 0;
     if (discountType === 'percentage' && discountAmount > 0) {
@@ -1177,8 +1223,24 @@ $(document).ready(function() {
     }
     
     let finalTotal = cartSubtotal - actualDiscount;
-    let label = selectedPriceType === 'wholesale' ? ' <small style="font-size:10px;opacity:.7;color:#a8b3bf">(W)</small>' : '';
-    $('#cart-total').html('<span class="tl">Order Total' + label + '</span><span class="tv">৳' + finalTotal.toFixed(2) + '</span>');
+    
+    // Update subtotal
+    $('#cart-subtotal').text('৳' + cartSubtotal.toFixed(2));
+    
+    // Update total items
+    $('#cart-items').text(totalItems);
+    
+    // Update discount row (show only if there's a discount)
+    if (actualDiscount > 0) {
+      let discountLabel = discountType === 'percentage' ? `${discountAmount.toFixed(2)}% OFF` : 'Fixed Amount';
+      $('#cart-discount').html('-৳' + actualDiscount.toFixed(2) + '<br><small style="opacity: 0.8; font-size: 0.75rem;">' + discountLabel + '</small>');
+      $('#cart-discount-row').show();
+    } else {
+      $('#cart-discount-row').hide();
+    }
+    
+    // Update grand total
+    $('#cart-grand-total').text('৳' + finalTotal.toFixed(2));
   }
 
   // ── Update discount display ────────────────────
@@ -1199,6 +1261,7 @@ $(document).ready(function() {
   // ── Update cart total with discount ─────────────
   function updateCartTotal() {
     let cartSubtotal = calculateCartSubtotal();
+    let totalItems = calculateTotalItems();
     let actualDiscount = 0;
     
     if (discountType === 'percentage' && discountAmount > 0) {
@@ -1208,8 +1271,24 @@ $(document).ready(function() {
     }
     
     let finalTotal = cartSubtotal - actualDiscount;
-    let label = selectedPriceType === 'wholesale' ? ' <small style="font-size:12px;opacity:.7">(Wholesale)</small>' : '';
-    $('#cart-total').html('<div class="d-flex justify-content-between align-items-center" style="font-size: 0.875rem;"><span class="fw-600">Order Total' + label + '</span><span class="h6 mb-0" style="color: #16a34a;">৳' + finalTotal.toFixed(2) + '</span></div>');
+    
+    // Update subtotal
+    $('#cart-subtotal').text('৳' + cartSubtotal.toFixed(2));
+    
+    // Update total items
+    $('#cart-items').text(totalItems);
+    
+    // Update discount row (show only if there's a discount)
+    if (actualDiscount > 0) {
+      let discountLabel = discountType === 'percentage' ? `${discountAmount.toFixed(2)}% OFF` : 'Fixed Amount';
+      $('#cart-discount').html('-৳' + actualDiscount.toFixed(2) + '<br><small style="opacity: 0.8; font-size: 0.75rem;">' + discountLabel + '</small>');
+      $('#cart-discount-row').show();
+    } else {
+      $('#cart-discount-row').hide();
+    }
+    
+    // Update grand total
+    $('#cart-grand-total').text('৳' + finalTotal.toFixed(2));
   }
 
   // ── Get current cart total (from cart object, not DOM) ──
@@ -1336,6 +1415,7 @@ $(document).ready(function() {
               showCancelButton: true,
               cancelButtonText: '<i class="la la-check"></i> Done',
               cancelButtonColor: '#6366f1',
+              focusCancel: true,
             }).then((result2) => {
               if (result2.isConfirmed) {
                 res.invoice.discount_type = discountType;
@@ -1738,7 +1818,10 @@ $(document).ready(function() {
     
     if (!hasItems) {
       html = `<tr><td colspan="7"><div class="text-center py-5 text-muted"><i class="la la-shopping-cart" style="font-size:2rem;margin-bottom:0.625rem;display:block"></i><p style="font-size:12px;margin:0">Cart empty</p></div></td></tr>`;
-      $('#cart-total').html('<div class="d-flex justify-content-between align-items-center" style="font-size: 0.875rem;"><span class="fw-600">Total</span><span class="h6 mb-0" style="color: #16a34a;">৳0.00</span></div>');
+      $('#cart-subtotal').text('৳0.00');
+      $('#cart-items').text('0');
+      $('#cart-discount-row').hide();
+      $('#cart-grand-total').text('৳0.00');
     } else {
       // Calculate discount
       let actualDiscount = 0;
@@ -1749,8 +1832,25 @@ $(document).ready(function() {
       }
       
       let finalTotal = subtotal - actualDiscount;
-      let label = priceType === 'wholesale' ? ' <small style="font-size:10px;opacity:.7">(W)</small>' : '';
-      $('#cart-total').html('<div class="d-flex justify-content-between align-items-center" style="font-size: 0.875rem;"><span class="fw-600">Total' + label + '</span><span class="h6 mb-0" style="color: #16a34a;">৳' + finalTotal.toFixed(2) + '</span></div>');
+      let totalItems = calculateTotalItems();
+      
+      // Update subtotal
+      $('#cart-subtotal').text('৳' + subtotal.toFixed(2));
+      
+      // Update total items
+      $('#cart-items').text(totalItems);
+      
+      // Update discount row (show only if there's a discount)
+      if (actualDiscount > 0) {
+        let discountLabel = discountType === 'percentage' ? `${discountAmount.toFixed(2)}% OFF` : 'Fixed Amount';
+        $('#cart-discount').html('-৳' + actualDiscount.toFixed(2) + '<br><small style="opacity: 0.8; font-size: 0.75rem;">' + discountLabel + '</small>');
+        $('#cart-discount-row').show();
+      } else {
+        $('#cart-discount-row').hide();
+      }
+      
+      // Update grand total
+      $('#cart-grand-total').text('৳' + finalTotal.toFixed(2));
     }
     
     $('#cart-table tbody').html(html);
