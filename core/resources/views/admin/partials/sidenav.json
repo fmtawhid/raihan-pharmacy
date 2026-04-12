@@ -191,7 +191,8 @@
                 ],
                 "title": "Add Stock",
                 "route_name": "admin.products.add.stock",
-                "menu_active": "admin.products.add.stock"
+                "menu_active": "admin.products.add.stock",
+                "permission": "add_stock_products"
             },
             {
                 "keyword": [

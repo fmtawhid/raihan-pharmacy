@@ -83,7 +83,7 @@
             </div>
         </div>
         @endif
-
+        @if(auth('admin')->check() && auth('admin')->user()->can('order_dashboard'))
         <div class="col-xxl-3 col-sm-6">
             <div class="card h-100">
                 <div class="card-body p-0">
@@ -103,7 +103,8 @@
                 </div>
             </div>
         </div>
-
+        @endcan
+        @if(auth('admin')->check() && auth('admin')->user()->can('customer_dashboard'))
         <div class="col-xxl-3 col-sm-6">
             <div class="card h-100">
                 <div class="card-body">
@@ -133,7 +134,8 @@
                 </div>
             </div>
         </div>
-
+        @endcan
+        @if(auth('admin')->check() && auth('admin')->user()->can('top_sale_product_dashboard'))  
         <div class="col-lg-6">
             <div class="card h-100">
                 <div class="card-body">
@@ -174,6 +176,7 @@
                 </div>
             </div>
         </div>
+        @endcan
     </div>
     @if(auth('admin')->check() && auth('admin')->user()->can('salse_dashboard'))
     <div class="row mt-1 gy-4">
@@ -241,6 +244,7 @@
         
     </div>
     @endif
+    @if(auth('admin')->check() && auth('admin')->user()->can('latest_customer_dashboard'))
     <div class="row gy-4 mt-1">
         <div class="col-12">
             <div class="row gy-4">
@@ -347,7 +351,8 @@
             </div>
         </div>
     </div>
-
+    @endcan
+    @if(auth('admin')->check() && auth('admin')->user()->can('login_by_dashboard'))
     <div class="row gy-4 mt-1">
         <div class="col-xl-4 col-lg-6 mb-30">
             <div class="card">
@@ -374,6 +379,7 @@
             </div>
         </div>
     </div>
+    @endcan
 @endsection
 
 @push('script-lib')
