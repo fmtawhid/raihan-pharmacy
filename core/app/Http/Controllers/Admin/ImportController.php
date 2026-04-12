@@ -37,6 +37,8 @@ class ImportController extends Controller
         try {
             $import = new ProductsImport();
             
+            \Log::info('🔄 Starting Excel import process');
+            
             // Import the file
             Excel::import($import, $request->file('file'));
 
@@ -44,28 +46,37 @@ class ImportController extends Controller
             $skipCount = $import->getSkipCount();
             $errors = $import->getErrors();
 
-            \Log::info('Import completed', [
+            \Log::info('✅ Import completed successfully', [
                 'success' => $successCount,
                 'skipped' => $skipCount,
                 'errors' => count($errors),
             ]);
 
+            // Verify data in database
+            $verifyProducts = \App\Models\Product::latest()->take(5)->get(['id', 'name', 'sku', 'sale_price', 'in_stock']);
+            \Log::info('📊 Latest products after import', ['products' => $verifyProducts->toArray()]);
+
             return response()->json([
                 'status' => 'success',
-                'message' => "Import completed! {$successCount} products imported, {$skipCount} rows skipped.",
+                'message' => "✅ Import completed! {$successCount} products imported, {$skipCount} rows skipped.",
                 'success_count' => $successCount,
                 'skip_count' => $skipCount,
                 'errors' => $errors,
+                'latest_products' => $verifyProducts,
             ]);
 
         } catch (\Exception $e) {
-            \Log::error('Excel import error: ' . $e->getMessage(), [
+            \Log::error('❌ Excel import error: ' . $e->getMessage(), [
                 'trace' => $e->getTraceAsString(),
             ]);
 
             return response()->json([
                 'status' => 'error',
-                'message' => 'Import failed: ' . $e->getMessage(),
+                'message' => '❌ Import failed: ' . $e->getMessage(),
+                'debug' => [
+                    'file' => $request->file('file') ? $request->file('file')->getClientOriginalName() : 'no file',
+                    'size' => $request->file('file') ? $request->file('file')->getSize() : 0,
+                ]
             ], 422);
         }
     }

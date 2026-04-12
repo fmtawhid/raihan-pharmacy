@@ -12,6 +12,7 @@ use App\Http\Controllers\Admin\AdminUserController;
 use App\Http\Controllers\Admin\PermissionController;
 use App\Http\Controllers\Admin\RoleController;
 use App\Http\Controllers\Admin\PosController;
+use App\Http\Controllers\Admin\ImportController;
 
 
 use App\Models\OrderDetail;
@@ -115,6 +116,13 @@ Route::middleware('admin')->group(function () {
         Route::post('clear-cart', 'clearCart')->name('clearCart');
         Route::get('cart', 'getCart')->name('getCart');
         Route::post('confirm', 'confirmOrder')->name('confirmOrder');
+    });
+
+    // Import
+    Route::controller(ImportController::class)->prefix('import')->name('import.')->group(function(){
+        Route::get('products', 'showImportForm')->name('products');
+        Route::post('products', 'importProducts')->name('products.store');
+        Route::get('template', 'downloadTemplate')->name('template');
     });
 
 
