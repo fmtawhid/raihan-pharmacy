@@ -352,7 +352,7 @@ $.ajaxSetup({
 $(document).ready(function() {
 
   let productCache = {};
-  let stockItems = {};
+  let stockItems = []; // Changed to Array to maintain insertion order
   
   // ── LOAD PRODUCTS ON PAGE LOAD ──────────
   function loadProducts() {
@@ -501,20 +501,23 @@ $(document).ready(function() {
       return;
     }
 
-    // Add to items
-    if (!stockItems[productId]) {
-      stockItems[productId] = {
-        id: product.id,
-        name: product.name,
-        sku: product.sku,
-        current_stock: product.in_stock,
-        quantity: 1,
-        purchase_price: 0
-      };
-      toastr.success(`"${product.name}" added!`);
-    } else {
+    // Check if already added
+    let exists = stockItems.some(item => item.id === productId);
+    if (exists) {
       toastr.info('Already added to list');
+      return;
     }
+
+    // Add to items array
+    stockItems.push({
+      id: product.id,
+      name: product.name,
+      sku: product.sku,
+      current_stock: product.in_stock,
+      quantity: 1,
+      purchase_price: 0
+    });
+    toastr.success(`"${product.name}" added!`);
 
     renderStockTable();
     $('#product-search').val('').focus();
@@ -528,24 +531,23 @@ $(document).ready(function() {
     let totalQty = 0;
     let totalCost = 0;
 
-    for (let id in stockItems) {
-      let item = stockItems[id];
+    stockItems.forEach(function(item) {
       let cost = item.quantity * item.purchase_price;
       totalQty += item.quantity;
       totalCost += cost;
       itemCount++;
 
-      html += `<tr data-product-id="${id}">
+      html += `<tr data-product-id="${item.id}">
         <td style="padding: 0.5rem;"><strong>${item.name}</strong><br><small style="color:#6c757d">SKU: ${item.sku}</small></td>
         <td style="text-align:center; padding: 0.5rem;"><span style="background:#e0f2fe;color:#0369a1;padding:4px 8px;border-radius:4px;font-weight:600;font-size:11px">${item.current_stock}</span></td>
         <td style="text-align:center; padding: 0.5rem;">
-          <input type="number" class="qty-input" data-product-id="${id}" value="${item.quantity}" min="1" style="width:50px;padding:6px;border:1px solid #dee2e6;border-radius:4px;font-size:11px;text-align:center;font-weight:600;">
+          <input type="number" class="qty-input" data-product-id="${item.id}" value="${item.quantity}" min="1" style="width:50px;padding:6px;border:1px solid #dee2e6;border-radius:4px;font-size:11px;text-align:center;font-weight:600;">
         </td>
-        <td style="text-align:right; padding: 0.5rem;"><input type="number" class="price-input" data-product-id="${id}" value="${item.purchase_price}" min="0" step="0.01" style="width:80px;padding:6px;border:1px solid #dee2e6;border-radius:4px;font-size:11px;text-align:right;"></td>
+        <td style="text-align:right; padding: 0.5rem;"><input type="number" class="price-input" data-product-id="${item.id}" value="${item.purchase_price}" min="0" step="0.01" style="width:80px;padding:6px;border:1px solid #dee2e6;border-radius:4px;font-size:11px;text-align:right;"></td>
         <td style="text-align:right; padding: 0.5rem; font-weight:600; color:#16a34a;">৳${cost.toFixed(2)}</td>
-        <td style="text-align:center; padding: 0.5rem;"><button class="btn btn-sm btn-danger remove-item" data-product-id="${id}" style="padding:2px 4px;font-size:10px;"><i class="la la-trash"></i></button></td>
+        <td style="text-align:center; padding: 0.5rem;"><button class="btn btn-sm btn-danger remove-item" data-product-id="${item.id}" style="padding:2px 4px;font-size:10px;"><i class="la la-trash"></i></button></td>
       </tr>`;
-    }
+    });
 
     if (itemCount === 0) {
       $('#stock-table tbody').html('<tr><td colspan="6"><!-- empty --></td></tr>');
@@ -568,7 +570,8 @@ $(document).ready(function() {
     let quantity = parseInt($(this).val()) || 1;
     
     if (quantity < 1) quantity = 1;
-    stockItems[productId].quantity = quantity;
+    let item = stockItems.find(i => i.id === productId);
+    if (item) item.quantity = quantity;
     renderStockTable();
   });
 
@@ -578,14 +581,15 @@ $(document).ready(function() {
     let price = parseFloat($(this).val()) || 0;
     
     if (price < 0) price = 0;
-    stockItems[productId].purchase_price = price;
+    let item = stockItems.find(i => i.id === productId);
+    if (item) item.purchase_price = price;
     renderStockTable();
   });
 
   // ── REMOVE ITEM ──────
   $(document).on('click', '.remove-item', function() {
     let productId = $(this).data('product-id');
-    delete stockItems[productId];
+    stockItems = stockItems.filter(item => item.id !== productId);
     renderStockTable();
   });
 
@@ -601,7 +605,7 @@ $(document).ready(function() {
       cancelButtonText: 'Cancel'
     }).then((result) => {
       if (result.isConfirmed) {
-        stockItems = {};
+        stockItems = [];
         renderStockTable();
         toastr.info('All items cleared');
       }
@@ -624,19 +628,16 @@ $(document).ready(function() {
       return;
     }
 
-    if (Object.keys(stockItems).length === 0) {
+    if (stockItems.length === 0) {
       toastr.error('Please add at least one item');
       return;
     }
 
-    let items = [];
-    for (let id in stockItems) {
-      items.push({
-        id: stockItems[id].id,
-        quantity: stockItems[id].quantity,
-        purchase_price: stockItems[id].purchase_price
-      });
-    }
+    let items = stockItems.map(item => ({
+      id: item.id,
+      quantity: item.quantity,
+      purchase_price: item.purchase_price
+    }));
 
     let $btn = $(this);
     $btn.prop('disabled', true).html('<i class="la la-spinner fa-spin"></i> Processing...');
@@ -664,7 +665,7 @@ $(document).ready(function() {
             icon: 'success',
             confirmButtonColor: '#10b981'
           }).then((result) => {
-            stockItems = {};
+            stockItems = [];
             $('#batch-no').val('');
             $('#purchaser-select').val('');
             renderStockTable();
@@ -797,11 +798,10 @@ $(document).ready(function() {
     console.log('');
     
     console.log('🛒 ITEMS IN TABLE:');
-    let itemCount = Object.keys(stockItems).length;
+    let itemCount = stockItems.length;
     console.log('  Total items added:', itemCount);
     if (itemCount > 0) {
-      Object.keys(stockItems).forEach(function(id) {
-        let item = stockItems[id];
+      stockItems.forEach(function(item) {
         console.log(`    - ${item.name}: Qty=${item.quantity}, Price=৳${item.purchase_price}`);
       });
     }
