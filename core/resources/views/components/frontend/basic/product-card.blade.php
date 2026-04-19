@@ -116,7 +116,27 @@
 
         {{-- ========= Buttons (side‑by‑side) ========= --}}
         @if ($showCartButton)
-            <div class="button-group"> {{-- grid wrapper --}}
+            <style>
+                .button-group {
+                    display: flex;
+                    gap: 10px;
+                    flex-wrap: wrap;
+                }
+                .button-group button {
+                    flex: 1;
+                    min-width: 120px;
+                }
+                @media (max-width: 480px) {
+                    .button-group {
+                        flex-direction: column;
+                    }
+                    .button-group button {
+                        width: 100%;
+                        min-width: auto;
+                    }
+                }
+            </style>
+            <div class="button-group">
                 {{-- ── Add to Cart ──────────────────── --}}
                 @if ($product->productVariants->count())
                     <button class="quickViewBtn add-to-cart-btn" data-product="{{ $product->slug }}">

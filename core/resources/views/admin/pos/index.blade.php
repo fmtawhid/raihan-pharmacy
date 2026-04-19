@@ -1330,6 +1330,24 @@ $(document).ready(function() {
     });
   });
 
+  // ── SERIALIZE CART (Convert to Invoice-like Format) ──────────────
+  function serializeCart(cartObj) {
+    let serialized = [];
+    for (let productId in cartObj) {
+      let item = cartObj[productId];
+      serialized.push({
+        product_id: parseInt(productId),
+        name: item.name,
+        sku: item.sku || null,
+        price: parseFloat(item.price) || 0,
+        wholesale_price: item.wholesale_price ? parseFloat(item.wholesale_price) : null,
+        quantity: parseInt(item.quantity) || 1,
+        total: parseFloat(item.total) || (parseFloat(item.price) * parseInt(item.quantity))
+      });
+    }
+    return serialized;
+  }
+
   // ── CONFIRM ORDER (Send to Backend) ──────────────
   $('#confirm-order').click(function() {
     if (Object.keys(cart).length === 0) {
@@ -1389,7 +1407,7 @@ $(document).ready(function() {
           contentType: 'application/json',
           data: JSON.stringify({
             _token: '{{ csrf_token() }}',
-            cart: cart,
+            cart: serializeCart(cart),
             price_type: selectedPriceType,
             discount_type: discountType || null,
             discount_amount: discountAmount || 0
@@ -1433,11 +1451,11 @@ $(document).ready(function() {
               $('#discount-input').val('0').prop('disabled', true);
               updateDiscountDisplay();
               $('#confirm-order').prop('disabled', true).css({ 
-                opacity: .45, 
+                opacity: '.45', 
                 cursor: 'not-allowed',
                 background: 'linear-gradient(135deg, #404854, #2c323d)',
                 boxShadow: 'none'
-              });
+              }).html('<i class="la la-check-circle"></i> Confirm & Complete Order');
               renderCart(cart, null);
               renderSelectedCustomer(null);
               $('#product-search').val('');

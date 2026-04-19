@@ -138,6 +138,7 @@ class PosController extends Controller
                     'regular_price' => $p->regular_price ?? null,
                     'sale_price' => $p->sale_price ?? null,
                     'wholesale_price' => $p->wholesale_price ?? null,
+                    'purchase_price' => $p->purchase_price ?? 0,
                     'in_stock' => $p->in_stock ?? 0,
                     'stock' => $p->in_stock ?? 0, // For compatibility with frontend
                 ];
@@ -175,6 +176,7 @@ class PosController extends Controller
                     'regular_price' => $product->regular_price ?? null,
                     'sale_price' => $product->sale_price ?? null,
                     'wholesale_price' => $product->wholesale_price ?? null,
+                    'purchase_price' => $product->purchase_price ?? 0,
                     'in_stock' => $product->in_stock ?? 0,
                 ]
             ]);
@@ -213,6 +215,7 @@ class PosController extends Controller
                     'regular_price' => $p->regular_price ?? null,
                     'sale_price' => $p->sale_price ?? null,
                     'wholesale_price' => $p->wholesale_price ?? null,
+                    'purchase_price' => $p->purchase_price ?? 0,
                     'in_stock' => $p->in_stock ?? 0,
                     'stock' => $p->in_stock ?? 0, // For compatibility with frontend
                 ];
@@ -522,10 +525,16 @@ class PosController extends Controller
 
         // Normalize cart data (convert from frontend format if needed)
         $cart = [];
-        foreach ($cartData as $id => $item) {
+        foreach ($cartData as $item) {
             if (is_array($item)) {
-                $cart[$id] = [
+                $productId = $item['product_id'] ?? $item['id'];
+                if (!$productId) {
+                    continue;
+                }
+                
+                $cart[$productId] = [
                     'name' => $item['name'] ?? '',
+                    'sku' => $item['sku'] ?? null,
                     'price' => (float)($item['price'] ?? 0),
                     'wholesale_price' => isset($item['wholesale_price']) ? (float)$item['wholesale_price'] : null,
                     'quantity' => (int)($item['quantity'] ?? 1),

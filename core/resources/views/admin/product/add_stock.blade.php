@@ -508,14 +508,14 @@ $(document).ready(function() {
       return;
     }
 
-    // Add to items array
+    // Add to items array with purchase_price from product
     stockItems.push({
       id: product.id,
       name: product.name,
       sku: product.sku,
       current_stock: product.in_stock,
       quantity: 1,
-      purchase_price: 0
+      purchase_price: product.purchase_price || 0
     });
     toastr.success(`"${product.name}" added!`);
 
@@ -537,13 +537,17 @@ $(document).ready(function() {
       totalCost += cost;
       itemCount++;
 
+      // Check if this is existing purchase price or new
+      let priceLabel = item.purchase_price > 0 ? '(Existing)' : '(New)';
+      let priceBgColor = item.purchase_price > 0 ? '#f3f4f6' : '#fef2f2';
+
       html += `<tr data-product-id="${item.id}">
         <td style="padding: 0.5rem;"><strong>${item.name}</strong><br><small style="color:#6c757d">SKU: ${item.sku}</small></td>
         <td style="text-align:center; padding: 0.5rem;"><span style="background:#e0f2fe;color:#0369a1;padding:4px 8px;border-radius:4px;font-weight:600;font-size:11px">${item.current_stock}</span></td>
         <td style="text-align:center; padding: 0.5rem;">
           <input type="number" class="qty-input" data-product-id="${item.id}" value="${item.quantity}" min="1" style="width:50px;padding:6px;border:1px solid #dee2e6;border-radius:4px;font-size:11px;text-align:center;font-weight:600;">
         </td>
-        <td style="text-align:right; padding: 0.5rem;"><input type="number" class="price-input" data-product-id="${item.id}" value="${item.purchase_price}" min="0" step="0.01" style="width:80px;padding:6px;border:1px solid #dee2e6;border-radius:4px;font-size:11px;text-align:right;"></td>
+        <td style="text-align:right; padding: 0.5rem;"><input type="number" class="price-input" data-product-id="${item.id}" value="${item.purchase_price}" min="0" step="0.01" style="width:100px;padding:6px;border:1px solid #dee2e6;border-radius:4px;font-size:11px;text-align:right;background-color:${priceBgColor};" title="${priceLabel}"><br><small style="color:#6c757d;font-size:10px">${priceLabel}</small></td>
         <td style="text-align:right; padding: 0.5rem; font-weight:600; color:#16a34a;">৳${cost.toFixed(2)}</td>
         <td style="text-align:center; padding: 0.5rem;"><button class="btn btn-sm btn-danger remove-item" data-product-id="${item.id}" style="padding:2px 4px;font-size:10px;"><i class="la la-trash"></i></button></td>
       </tr>`;

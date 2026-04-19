@@ -114,6 +114,11 @@ class ProductController extends Controller
             $product->specify = $request->specify; // Save the 'specify' field
         }
 
+        // Assign purchase_price if provided
+        if ($request->has('purchase_price')) {
+            $product->purchase_price = $request->purchase_price;
+        }
+
         // Continue with the existing logic for gallery images
         if ($request->gallery_images) {
             $requestGalleryImages = trim($request->gallery_images, ',');

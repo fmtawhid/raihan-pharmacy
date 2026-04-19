@@ -27,7 +27,7 @@
                     </span>
 
                     <span id="stockBadge"></span>
-                    <a href="https://wa.me/+8801821051012" target="_blank" class="whatsapp-button">
+                    <a href="https://wa.me/+8801911997241" target="_blank" class="whatsapp-button">
                         <i class="fab fa-whatsapp"></i>
                         <span class="whatsapp-text">Chat on WhatsApp</span>
                     </a>
@@ -344,7 +344,7 @@
                 <p class="mb-0" style="font-size: 16px;">
                     প্রযুক্তি যেহেতু দ্রুত পরিবর্তনশীল, তাই যেকোনো সময় মূল্য, স্টক ও ডেলিভারি সম্পর্কিত তথ্য পরিবর্তিত হতে পারে। 
                     অর্ডার করার পূর্বে মূল্য, স্টক ও ডেলিভারি সম্পর্কে জানতে যোগাযোগ করুন 
-                    <strong>01821051012</strong> নাম্বারে।
+                    <strong>01911997241</strong> নাম্বারে।
                 </p>
 
             </div>

@@ -200,10 +200,10 @@
                 </div>
             </div>
         </div>
-        <hr>
+        <!-- <hr> -->
 
         {{-- Include purchase/batch info section --}}
-        @include('admin.product.partials.purchase_info_inline')
+        <!-- @include('admin.product.partials.purchase_info_inline') -->
 
         {{-- ──────── Purchaser / Batch inputs ──────── --}}
         {{-- @include('admin.product.partials.purchaser_info', [

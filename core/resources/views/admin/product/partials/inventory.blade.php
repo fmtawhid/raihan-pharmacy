@@ -56,5 +56,16 @@
                 <input type="number" min="0" name="alert_quantity" class="form-control alert_quantity-field" value="{{ old('alert_quantity', @$product->alert_quantity) }}" />
             </div>
         </div>
+
+        <div class="form-group row">
+            <div class="col-xl-4 col-md-3">
+                <label>@lang('Purchase Price') <i class="la la-info-circle text-muted" title="@lang('Cost price for your reference')"></i></label>
+            </div>
+
+            <div class="col-xl-8 col-md-9">
+                <input type="number" min="0" step="0.01" name="purchase_price" class="form-control purchase_price-field" value="{{ old('purchase_price', @$product->purchase_price) }}" placeholder="0.00" />
+                <small class="text-muted">@lang('This is the purchase/cost price of the product')</small>
+            </div>
+        </div>
     </div>
 </div>
