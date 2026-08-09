@@ -507,13 +507,14 @@ class PosController extends Controller
 
         // Get cart from frontend request (not from session)
         $cartData = $request->input('cart', []);
+        $priceType = $request->input('price_type', 'regular');
         
         // If cart is empty, get from session (fallback)
         if (empty($cartData)) {
             $cartData = session()->get('pos_cart', []);
         }
         
-        \Log::info('Cart data received:', ['cart' => $cartData]);
+        \Log::info('Cart data received:', ['cart' => $cartData, 'price_type' => $priceType]);
         
         if (empty($cartData)) {
             \Log::warning('POS order failed: empty cart');
@@ -525,26 +526,67 @@ class PosController extends Controller
 
         // Normalize cart data (convert from frontend format if needed)
         $cart = [];
-        foreach ($cartData as $item) {
-            if (is_array($item)) {
-                $productId = $item['product_id'] ?? $item['id'];
-                if (!$productId) {
-                    continue;
-                }
-                
-                $cart[$productId] = [
-                    'name' => $item['name'] ?? '',
-                    'sku' => $item['sku'] ?? null,
-                    'price' => (float)($item['price'] ?? 0),
-                    'wholesale_price' => isset($item['wholesale_price']) ? (float)$item['wholesale_price'] : null,
-                    'quantity' => (int)($item['quantity'] ?? 1),
-                ];
+        $orderedCart = [];
+        $sequence = 0;
+        foreach ($cartData as $key => $item) {
+            if (!is_array($item)) {
+                continue;
             }
+
+            $sequence++;
+            $productId = $item['product_id'] ?? $item['id'] ?? $key;
+            if (!$productId) {
+                continue;
+            }
+
+            $regularPrice = isset($item['regular_price']) ? (float)$item['regular_price'] : (float)($item['price'] ?? 0);
+            $salePrice = isset($item['sale_price']) ? (float)$item['sale_price'] : 0;
+            $wholesalePrice = isset($item['wholesale_price']) ? (float)$item['wholesale_price'] : 0;
+
+            $price = $regularPrice;
+            if ($priceType === 'wholesale' && $wholesalePrice > 0) {
+                $price = $wholesalePrice;
+            } elseif ($priceType === 'sale' && $salePrice > 0) {
+                $price = $salePrice;
+            } elseif (isset($item['price']) && (float)$item['price'] > 0) {
+                $price = (float)$item['price'];
+            }
+
+            $quantity = (int)($item['quantity'] ?? 1);
+            if ($quantity < 1) {
+                $quantity = 1;
+            }
+
+            $normalizedItem = [
+                'product_id' => $productId,
+                'name' => $item['name'] ?? '',
+                'sku' => $item['sku'] ?? null,
+                'price' => $price,
+                'regular_price' => $regularPrice,
+                'sale_price' => $salePrice,
+                'wholesale_price' => $wholesalePrice,
+                'quantity' => $quantity,
+                'sort_order' => isset($item['sort_order']) ? (int)$item['sort_order'] : $sequence,
+            ];
+
+            $cart[$productId] = $normalizedItem;
+            $orderedCart[] = $normalizedItem;
         }
+
+        usort($orderedCart, function ($first, $second) {
+            $firstOrder = (int)($first['sort_order'] ?? 0);
+            $secondOrder = (int)($second['sort_order'] ?? 0);
+
+            if ($firstOrder === $secondOrder) {
+                return 0;
+            }
+
+            return $firstOrder < $secondOrder ? -1 : 1;
+        });
 
         \Log::info('Normalized cart:', ['cart' => $cart]);
         
-        if (empty($cart)) {
+        if (empty($orderedCart)) {
             \Log::warning('POS order failed: no valid items in cart');
             return response()->json([
                 'status' => 'error',
@@ -553,7 +595,7 @@ class PosController extends Controller
         }
 
         // Snapshot cart items + customer
-        $cartSnapshot = $cart;
+        $cartSnapshot = $orderedCart;
         $customerId = session('pos_customer');
         $customerName = 'Walk-in Customer';
         if ($customerId) {
@@ -569,7 +611,6 @@ class PosController extends Controller
             }
         }
 
-        $priceType = $request->input('price_type', 'regular'); // 'regular' or 'wholesale'
         $discountType = $request->input('discount_type'); // 'percentage' or 'fixed'
         $discountAmount = floatval($request->input('discount_amount', 0));
 
@@ -577,12 +618,12 @@ class PosController extends Controller
         $productManager = new ProductManager();
         
         try {
-            DB::transaction(function () use ($cart, &$order, $priceType, $discountType, $discountAmount, $productManager) {
+            DB::transaction(function () use ($orderedCart, &$order, $priceType, $discountType, $discountAmount, $productManager) {
                 $subtotal = 0;
                 $totalCost = 0;
-                foreach ($cart as $item) {
+                foreach ($orderedCart as $item) {
                     $useWholesale = ($priceType === 'wholesale') && !empty($item['wholesale_price']);
-                    $unitPrice    = $useWholesale ? (float)$item['wholesale_price'] : (float)$item['price'];
+                    $unitPrice    = $useWholesale ? (float)$item['wholesale_price'] : (float)($item['price'] ?? $item['regular_price'] ?? 0);
                     $subtotal += $unitPrice * $item['quantity'];
                 }
 
@@ -612,14 +653,19 @@ class PosController extends Controller
                 ]);
 
                 // Create order items with batch tracking and profit calculation
-                foreach ($cart as $productId => $item) {
+                foreach ($orderedCart as $item) {
+                    $productId = $item['product_id'] ?? $item['id'] ?? null;
+                    if (!$productId) {
+                        continue;
+                    }
+
                     $product = Product::find($productId);
                     if (!$product) {
                         throw new \Exception("Product not found: ID {$productId}");
                     }
 
                     $useWholesale = ($priceType === 'wholesale') && !empty($item['wholesale_price']);
-                    $unitPrice    = $useWholesale ? (float)$item['wholesale_price'] : (float)$item['price'];
+                    $unitPrice    = $useWholesale ? (float)$item['wholesale_price'] : (float)($item['price'] ?? $item['regular_price'] ?? 0);
 
                     // Distribute discount proportionally across items
                     $itemSubtotal = $unitPrice * $item['quantity'];
@@ -759,9 +805,22 @@ class PosController extends Controller
         $invoiceItems = [];
         $totalQty = 0;
         $subtotal = 0;
-        foreach ($cartSnapshot as $productId => $item) {
+        $invoiceSnapshot = $cartSnapshot;
+        usort($invoiceSnapshot, function ($first, $second) {
+            $firstOrder = (int)($first['sort_order'] ?? 0);
+            $secondOrder = (int)($second['sort_order'] ?? 0);
+
+            if ($firstOrder === $secondOrder) {
+                return 0;
+            }
+
+            return $firstOrder < $secondOrder ? -1 : 1;
+        });
+
+        foreach ($invoiceSnapshot as $item) {
+            $productId = $item['product_id'] ?? $item['id'] ?? null;
             $useWholesale = ($priceType === 'wholesale') && !empty($item['wholesale_price']);
-            $unitPrice    = $useWholesale ? (float)$item['wholesale_price'] : (float)$item['price'];
+            $unitPrice    = $useWholesale ? (float)$item['wholesale_price'] : (float)($item['price'] ?? $item['regular_price'] ?? 0);
             $itemTotal = $unitPrice * $item['quantity'];
             $subtotal += $itemTotal;
             $invoiceItems[] = [

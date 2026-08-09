@@ -366,11 +366,33 @@
                     contentType: false,
                     processData: false,
                     data: formData,
-                    success: handleFormSubmission
-                }).always((response) => {
-                    isSubmitting = false;
-                    btn.prop('disabled', false);
-                    btn.text(`@lang('Submit')`);
+                    success: handleFormSubmission,
+                    error: function(xhr, status, error) {
+                        console.error('AJAX Error:', xhr, status, error);
+                        isSubmitting = false;
+                        btn.prop('disabled', false);
+                        btn.text(`@lang('Submit')`);
+                        
+                        let errorMessage = 'An error occurred while saving the product';
+                        
+                        if (xhr.responseJSON && xhr.responseJSON.message) {
+                            errorMessage = xhr.responseJSON.message;
+                        } else if (xhr.status === 422) {
+                            errorMessage = 'Validation error. Please check the form';
+                        } else if (xhr.status === 404) {
+                            errorMessage = 'Product not found';
+                        } else if (xhr.status === 500) {
+                            errorMessage = 'Server error. Please try again';
+                        }
+                        
+                        if (typeof notify === 'function') {
+                            notify('error', errorMessage);
+                        } else if (typeof toastr !== 'undefined') {
+                            toastr.error(errorMessage);
+                        } else {
+                            alert(errorMessage);
+                        }
+                    }
                 }).done(function() {
                     let slug = $('.slug-field').val();
                     if ($('.view-in-shop').length) {
@@ -442,34 +464,67 @@
             }
 
             const handleFormSubmission = (response) => {
+                console.log('Product form response:', response);
 
-
-                notify(response.status, response.message);
-                if ((response.isUpdate == false || isChangeAttribute) && response.redirectTo) {
-                    window.location.href = response.redirectTo;
-                } else {
-                    window.location.reload();
+                if (!response) {
+                    if (typeof toastr !== 'undefined') {
+                        toastr.error('No response from server');
+                    } else {
+                        alert('No response from server');
+                    }
+                    isSubmitting = false;
+                    return;
                 }
 
+                // Handle response - it should have status and message
+                const status = response.status || 'error';
+                const message = response.message || 'Unknown error occurred';
 
-                if (response.status == 'error') {
-                    let fields = $(`.${Object.keys(response.message)[0]}-field`);
-
-                    if (fields.length > 0) {
-                        $.each(fields, function(index, element) {
-                            if (!$(this).val().length) {
-                                let tabName = $(element).parents('.tab-pane').attr('aria-labelledby');
-                                let tab = $(`#${tabName}`);
-                                tab.tab('show');
-
-                                setTimeout(() => {
-                                    $(element).focus();
-                                }, 200);
-
-                                return false;
-                            }
-                        });
+                // Show notification using toastr or notify function
+                if (typeof notify === 'function') {
+                    notify(status, message);
+                } else if (typeof toastr !== 'undefined') {
+                    if (status === 'success') {
+                        toastr.success(message);
+                    } else {
+                        toastr.error(message);
                     }
+                } else {
+                    alert(message);
+                }
+
+                if (status === 'error') {
+                    // Handle validation errors
+                    if (response.message && typeof response.message === 'object') {
+                        let fields = Object.keys(response.message)[0];
+                        if (fields) {
+                            let fieldElements = $(`.${fields}-field`);
+                            if (fieldElements.length > 0) {
+                                $.each(fieldElements, function(index, element) {
+                                    if (!$(this).val().length) {
+                                        let tabName = $(element).parents('.tab-pane').attr('aria-labelledby');
+                                        let tab = $(`#${tabName}`);
+                                        if (tab.length) {
+                                            tab.tab('show');
+                                        }
+                                        setTimeout(() => {
+                                            $(element).focus();
+                                        }, 200);
+                                        return false;
+                                    }
+                                });
+                            }
+                        }
+                    }
+                } else if (status === 'success') {
+                    // Show success notification before redirect
+                    setTimeout(() => {
+                        if ((response.isUpdate == false || isChangeAttribute) && response.redirectTo) {
+                            window.location.href = response.redirectTo;
+                        } else {
+                            window.location.reload();
+                        }
+                    }, 1500);
                 }
             }
 

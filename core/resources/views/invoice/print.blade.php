@@ -10,6 +10,29 @@
 <body onload="window.print()">
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
+        @page {
+            size: auto;
+            margin: 0;
+        }
+        @media print {
+            html, body {
+                width: 76mm !important;
+                margin: 0 !important;
+                padding: 0 !important;
+                background: white;
+            }
+            body {
+                padding: 6px 8px !important;
+            }
+            .receipt-container {
+                width: 100% !important;
+                max-width: 76mm !important;
+                margin: 0 !important;
+            }
+            table, table thead, table tbody, table tr, table th, table td {
+                page-break-inside: avoid !important;
+            }
+        }
         html, body {
             font-family: 'Courier New', Courier, monospace;
             font-size: 12px;
@@ -17,63 +40,103 @@
             width: 80mm;
             margin: 0;
             padding: 0;
+            background: white;
+            height: auto;
+            overflow: visible;
         }
         body {
             padding: 6px 8px;
+            min-height: auto;
         }
         .receipt-container {
+            width: 100%;
             max-width: 80mm;
             margin: 0 auto;
+            min-height: auto;
+            overflow: visible;
         }
         .text-center { text-align: center; }
         .store-name {
-            font-size: 16px;
+            font-size: 15px;
             font-weight: bold;
             margin-bottom: 4px;
+            line-height: 1.2;
         }
         .divider {
             border-top: 1px dashed #000;
             margin: 6px 0;
         }
         .invoice-header {
-            font-size: 11px;
+            font-size: 10px;
             margin-bottom: 8px;
-            line-height: 1.5;
+            line-height: 1.4;
             font-weight: 600;
         }
         .invoice-header p {
             margin: 2px 0;
+            word-break: break-word;
+            overflow-wrap: anywhere;
         }
         table {
             width: 100%;
             border-collapse: collapse;
             margin: 8px 0;
+            table-layout: fixed;
         }
         table thead th {
-            font-size: 10px;
+            font-size: 9px;
             font-weight: bold;
             text-align: left;
-            padding: 3px 2px;
+            padding: 2px 1px;
             border-bottom: 1px solid #000;
+            word-break: break-word;
+            overflow-wrap: anywhere;
         }
         table tbody td {
-            font-size: 10px;
-            padding: 2px 2px;
+            font-size: 9px;
+            padding: 2px 1px;
             border-bottom: 1px dotted #ccc;
             font-weight: 600;
+            word-break: break-word;
+            overflow-wrap: anywhere;
+            white-space: normal;
+        }
+        table thead th:nth-child(2),
+        table tbody td:nth-child(2) {
+            white-space: normal;
+            overflow-wrap: anywhere;
         }
         table tbody tr:last-child td {
             border-bottom: 1px solid #000;
         }
+        table, table thead, table tbody, table tr, table th, table td {
+            page-break-inside: auto;
+            break-inside: auto;
+        }
+        table thead th:nth-child(1), table tbody td:nth-child(1) { width: 8%; text-align: center; }
+        table thead th:nth-child(2), table tbody td:nth-child(2) { width: 44%; }
+        table thead th:nth-child(3), table tbody td:nth-child(3) { width: 10%; text-align: center; }
+        table thead th:nth-child(4), table tbody td:nth-child(4) { width: 18%; text-align: right; }
+        table thead th:nth-child(5), table tbody td:nth-child(5) { width: 20%; text-align: right; }
         .summary-section {
-            font-size: 11px;
+            font-size: 10px;
             margin: 8px 0;
-            line-height: 1.6;
+            line-height: 1.5;
             font-weight: 600;
         }
         .summary-row {
             display: flex;
             justify-content: space-between;
+            gap: 4px;
+            margin: 2px 0;
+        }
+        .summary-row span:first-child {
+            flex: 1;
+            min-width: 0;
+        }
+        .summary-row span:last-child {
+            text-align: right;
+            white-space: nowrap;
         }
         .summary-total {
             font-weight: bold;
@@ -84,14 +147,14 @@
         }
         .footer-section {
             text-align: center;
-            font-size: 9px;
+            font-size: 8px;
             margin-top: 8px;
-            line-height: 1.5;
+            line-height: 1.4;
             font-weight: 600;
         }
         .thanks {
             font-weight: bold;
-            font-size: 10px;
+            font-size: 9px;
             margin: 6px 0;
         }
     </style>

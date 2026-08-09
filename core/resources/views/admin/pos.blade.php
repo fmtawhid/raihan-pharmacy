@@ -928,11 +928,38 @@ $(document).ready(function() {
   let selectedPriceType = null;
   let discountType = null;
   let discountAmount = 0;
+  let cartOrderCounter = 0;
+
+  function getNextCartOrder() {
+    cartOrderCounter += 1;
+    return cartOrderCounter;
+  }
+
+  function syncCartOrder(sourceCart) {
+    let orderedKeys = Object.keys(sourceCart || {});
+    let maxOrder = cartOrderCounter;
+
+    orderedKeys.forEach(function(key, index) {
+      let item = sourceCart[key] || {};
+      let order = Number(item.sort_order || 0);
+      if (!order) {
+        order = index + 1;
+      }
+      item.sort_order = order;
+      sourceCart[key] = item;
+      if (order > maxOrder) {
+        maxOrder = order;
+      }
+    });
+
+    cartOrderCounter = maxOrder;
+    return sourceCart;
+  }
 
   // Load initial data with stock
   function initCart() {
     $.get('{{ route("admin.pos.getCart") }}', (res) => {
-      cart = res.cart || {};
+      cart = syncCartOrder(res.cart || {});
       // Fetch stock for all items
       if (Object.keys(cart).length > 0) {
         let productIds = Object.keys(cart);
@@ -1060,7 +1087,8 @@ $(document).ready(function() {
         sale_price: product.sale_price,
         wholesale_price: product.wholesale_price,
         quantity: 1,
-        stock: product.stock || 999
+        stock: product.stock || 999,
+        sort_order: getNextCartOrder()
       };
     }
 
@@ -1271,10 +1299,12 @@ $(document).ready(function() {
         $btn.prop('disabled', true);
         $btn.html('<i class="la la-spinner fa-spin"></i> Processing...');
 
+        let payloadCart = normalizeCartForSubmit(cart, selectedPriceType);
+
         // Send ENTIRE CART OBJECT + metadata to backend
         $.post('{{ route("admin.pos.confirmOrder") }}', {
           _token: '{{ csrf_token() }}',
-          cart: cart,  // ENTIRE cart object with all items
+          cart: payloadCart,
           price_type: selectedPriceType,
           discount_type: discountType || null,
           discount_amount: discountAmount || 0
@@ -1335,14 +1365,64 @@ $(document).ready(function() {
     });
   });
 
+  function normalizeCartForSubmit(sourceCart, priceType) {
+    let normalized = [];
+    let orderedKeys = Object.keys(sourceCart || {}).sort(function(a, b) {
+      return (Number(sourceCart[a].sort_order || 0) || 0) - (Number(sourceCart[b].sort_order || 0) || 0);
+    });
+
+    orderedKeys.forEach(function(key) {
+      let item = sourceCart[key] || {};
+      let regularPrice = Number(item.regular_price || item.price || 0);
+      let salePrice = Number(item.sale_price || 0);
+      let wholesalePrice = Number(item.wholesale_price || 0);
+      let quantity = Number(item.quantity || 1);
+
+      let selectedPrice = regularPrice;
+      if (priceType === 'wholesale' && wholesalePrice > 0) {
+        selectedPrice = wholesalePrice;
+      } else if (priceType === 'sale' && salePrice > 0) {
+        selectedPrice = salePrice;
+      } else if (item.price) {
+        selectedPrice = Number(item.price);
+      }
+
+      normalized.push({
+        id: item.id || key,
+        product_id: item.id || key,
+        name: item.name || '',
+        sku: item.sku || null,
+        price: selectedPrice,
+        regular_price: regularPrice,
+        sale_price: salePrice,
+        wholesale_price: wholesalePrice,
+        quantity: quantity,
+        total: selectedPrice * quantity,
+        sort_order: item.sort_order || 0
+      });
+    });
+
+    return normalized;
+  }
+
+  function escapeHtml(value) {
+    return String(value ?? '')
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#39;');
+  }
+
   // ── Print POS Invoice (receipt-style) ───────────
   function printPosInvoice(inv) {
     let sy = inv.currency_sym || '৳';
     let itemsHtml = '';
     inv.items.forEach(function(item, i) {
+      let itemName = escapeHtml(item.name || 'Unnamed item');
       itemsHtml += `<tr>
         <td>${i + 1}</td>
-        <td>${item.name}</td>
+        <td style="white-space: normal; line-height: 1.2; word-break: break-word;"><span style="display:block;">${itemName}</span></td>
         <td>${item.qty}</td>
         <td>${Number(item.price).toFixed(2)}</td>
         <td>${Number(item.total).toFixed(2)}</td>
@@ -1360,7 +1440,7 @@ $(document).ready(function() {
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         @page {
-            size: 80mm auto;
+            size: auto;
             margin: 0;
         }
         @media print {
@@ -1394,15 +1474,20 @@ $(document).ready(function() {
             margin: 0;
             padding: 0;
             background: white;
+            height: auto;
+            overflow: visible;
         }
         body {
             padding: 0;
+            min-height: auto;
         }
         .receipt-container {
             width: 100%;
             margin: 0;
             padding: 10px 11px;
             box-sizing: border-box;
+            min-height: auto;
+            overflow: visible;
         }
         .text-center { text-align: center; }
         .store-name {
@@ -1467,6 +1552,10 @@ $(document).ready(function() {
         }
         table tbody tr:last-child td {
             border-bottom: 1px solid #000;
+        }
+        table, table thead, table tbody, table tr, table th, table td {
+            page-break-inside: auto;
+            break-inside: auto;
         }
         td:nth-child(1) { width: 7%; text-align: center; }
         td:nth-child(2) { width: 50%; text-align: left; }
@@ -1593,7 +1682,9 @@ $(document).ready(function() {
 </html>`;
 
 
-    let printWin = window.open('', '_blank', 'width=350,height=600');
+    let itemCount = Array.isArray(inv.items) ? inv.items.length : 0;
+    let popupHeight = Math.max(700, Math.min(1800, 280 + (itemCount * 22)));
+    let printWin = window.open('', '_blank', 'width=380,height=' + popupHeight + ',scrollbars=yes,resizable=yes');
     printWin.document.write(receiptHtml);
     printWin.document.close();
     printWin.onload = function() {
@@ -1612,8 +1703,11 @@ $(document).ready(function() {
   // ═════════════════════════════════════════════════════════
   function renderCart(cart, priceType) {
     let html = '', subtotal = 0, hasItems = false;
+    let orderedIds = Object.keys(cart).sort(function(a, b) {
+      return (Number(cart[a].sort_order || 0) || 0) - (Number(cart[b].sort_order || 0) || 0);
+    });
 
-    for (let id in cart) {
+    orderedIds.forEach(function(id) {
       let item = cart[id];
       
       // Determine which price to use
@@ -1652,7 +1746,7 @@ $(document).ready(function() {
         <td style="text-align:right;font-size:11px"><strong style="color:#059669">${priceIndicator}৳${itemTotal.toFixed(0)}</strong></td>
         <td style="text-align:center"><button class="pos-btn pos-btn--danger remove-from-cart" data-id="${id}" style="padding:3px 6px;font-size:10px" title="Remove"><i class="la la-trash"></i></button></td>
       </tr>`;
-    }
+    });
 
     if (!hasItems) {
       html = `<tr><td colspan="6"><div class="pos-cart-empty"><i class="la la-shopping-cart"></i><p style="font-size:12px">Cart empty</p></div></td></tr>`;

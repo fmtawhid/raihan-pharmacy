@@ -196,6 +196,107 @@ class ProductStockController extends Controller
         }
     }
 
+    // public function saveStockPurchase(Request $request)
+    // {
+    //     try {
+    //         $items = $request->input('items', []);
+    //         $purchaserId = $request->input('purchaser_id');
+    //         $purchasedAt = $request->input('purchased_at', now());
+
+    //         // Auto generate batch number (NO INPUT NEEDED)
+    //         $batchNo = rand(1000000000, 9999999999);
+
+    //         if (empty($items)) {
+    //             return response()->json([
+    //                 'status' => 'error',
+    //                 'message' => 'Please add at least one product'
+    //             ], 422);
+    //         }
+
+    //         if (!$purchaserId) {
+    //             return response()->json([
+    //                 'status' => 'error',
+    //                 'message' => 'Please select a purchaser'
+    //             ], 422);
+    //         }
+
+    //         $purchaser = Purchaser::find($purchaserId);
+    //         if (!$purchaser) {
+    //             return response()->json([
+    //                 'status' => 'error',
+    //                 'message' => 'Selected purchaser not found'
+    //             ], 422);
+    //         }
+
+    //         $totalQuantity = 0;
+    //         $totalCost = 0;
+
+    //         foreach ($items as $item) {
+
+    //             if (!isset($item['id']) || !isset($item['quantity']) || !isset($item['purchase_price'])) {
+    //                 return response()->json([
+    //                     'status' => 'error',
+    //                     'message' => 'Invalid item data'
+    //                 ], 422);
+    //             }
+
+    //             $product = Product::find($item['id']);
+    //             if (!$product) {
+    //                 return response()->json([
+    //                     'status' => 'error',
+    //                     'message' => 'Product not found'
+    //                 ], 404);
+    //             }
+
+    //             $quantity = (int) $item['quantity'];
+    //             $purchasePrice = (float) $item['purchase_price'];
+
+    //             if ($quantity <= 0) {
+    //                 return response()->json([
+    //                     'status' => 'error',
+    //                     'message' => 'Quantity must be greater than 0'
+    //                 ], 422);
+    //             }
+
+    //             $totalQuantity += $quantity;
+    //             $totalCost += $quantity * $purchasePrice;
+
+    //             $this->productManager->receiveStock(
+    //                 $product,
+    //                 null,
+    //                 [
+    //                     'batch_no'       => $batchNo,
+    //                     'purchaser_id'   => $purchaserId,
+    //                     'purchase_price' => $purchasePrice,
+    //                     'quantity'       => $quantity,
+    //                     'purchased_at'   => $purchasedAt,
+    //                 ]
+    //             );
+    //         }
+
+    //         return response()->json([
+    //             'status' => 'success',
+    //             'message' => 'Stock added successfully',
+    //             'data' => [
+    //                 'batch_no' => $batchNo,
+    //                 'total_items' => count($items),
+    //                 'total_quantity' => $totalQuantity,
+    //                 'total_cost' => round($totalCost, 2)
+    //             ]
+    //         ]);
+
+    //     } catch (\Exception $e) {
+    //         \Log::error('Add Stock Error: ' . $e->getMessage());
+
+    //         return response()->json([
+    //             'status' => 'error',
+    //             'message' => $e->getMessage()
+    //         ], 500);
+    //     }
+    // }
+
+
+    
     public function stockLogByProduct($id)
     {
         $product = Product::findOrFail($id);

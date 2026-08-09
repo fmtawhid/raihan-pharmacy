@@ -17,6 +17,7 @@ use App\Models\Product;
 use App\Services\ProductValidationService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
+use Illuminate\Support\Facades\Storage;
 
 class ProductController extends Controller
 {
@@ -27,6 +28,36 @@ class ProductController extends Controller
     public function __construct(ProductManager $productManager)
     {
         $this->productManager = $productManager;
+    }
+
+    /**
+     * Clean request data - remove empty files, duplicate fields, and normalize empty values
+     *
+     * @param \Illuminate\Http\Request $request
+     * @return void
+     */
+    private function cleanRequestData(Request $request)
+    {
+        // Remove empty file uploads (filename="" or no file content)
+        if ($request->hasFile('file')) {
+            $file = $request->file('file');
+            if (!$file || !$file->isValid() || $file->getSize() === 0) {
+                $request->request->remove('file');
+            }
+        }
+
+        // Convert empty strings to null for better database handling
+        $emptyStringFields = [
+            'in_stock', 'alert_quantity', 'sale_starts_from', 'sale_ends_at', 
+            'video_link', 'delivery_type', 'summary', 'meta_title', 'meta_description',
+            'product_type_id', 'purchase_price'
+        ];
+
+        foreach ($emptyStringFields as $field) {
+            if ($request->has($field) && $request->input($field) === '') {
+                $request->request->set($field, null);
+            }
+        }
     }
 
     /**
@@ -87,152 +118,212 @@ class ProductController extends Controller
      */
     public function store(Request $request, $id = 0)
     {
-        $productManager    = $this->productManager;
-        $isUpdate          = $id ? true : false;
+        try {
+            // Clean request data - remove empty files, duplicate fields, and normalize empty values
+            $this->cleanRequestData($request);
+            
+            // Log incoming request for debugging
+            \Log::info('Product Store Request Received', [
+                'product_id' => $id,
+                'is_update' => (bool)$id,
+                'request_keys' => array_keys($request->all()),
+                'sku' => $request->input('sku'),
+                'gallery_images' => $request->input('gallery_images'),
+                'has_file' => $request->hasFile('file'),
+            ]);
+            
+            $productManager    = $this->productManager;
+            $isUpdate          = $id ? true : false;
 
-        if ($isUpdate) {
-            $product = Product::find($id);
-            if (!$product) {
-                return errorResponse('Product not found');
+            if ($isUpdate) {
+                $product = Product::find($id);
+                if (!$product) {
+                    return response()->json(['status' => 'error', 'message' => 'Product not found'], 404);
+                }
+            } else {
+                $product = new Product();
             }
-        } else {
-            $product = new Product();
+
+            $validationService = new ProductValidationService();
+            $validator         = $validationService->productValidationRule($request, $product);
+            if ($validator->fails()) {
+                \Log::warning('Product Validation Failed', [
+                    'product_id' => $id,
+                    'errors' => $validator->errors()->all()
+                ]);
+                $data = [
+                    'isUpdate' => $isUpdate,
+                    'redirectTo' => $this->getRedirectUrl($product, $isUpdate),
+                    'errors' => $validator->errors()
+                ];
+                return response()->json(['status' => 'error', 'message' => $validator->errors(), 'data' => $data], 422);
+            }
+        } catch (\Exception $e) {
+            \Log::error('Product Store - Validation Error', [
+                'message' => $e->getMessage(),
+                'file' => $e->getFile(),
+                'line' => $e->getLine(),
+                'trace' => $e->getTraceAsString(),
+                'request_keys' => array_keys($request->all())
+            ]);
+            return response()->json(['status' => 'error', 'message' => 'Error: ' . $e->getMessage()], 500);
         }
 
-        $validationService = new ProductValidationService();
-        $validator         = $validationService->productValidationRule($request, $product);
-        if ($validator->fails()) {
-            $data = [
-                'isUpdate' => $isUpdate,
+        try {
+            // Assign 'specify' value from the request to the product (added here)
+            if ($request->has('specify')) {
+                $product->specify = $request->specify; // Save the 'specify' field
+            }
+
+            // Assign purchase_price if provided
+            if ($request->has('purchase_price')) {
+                $product->purchase_price = $request->purchase_price;
+            }
+
+            // Continue with the existing logic for gallery images
+            if ($request->gallery_images) {
+                $requestGalleryImages = trim($request->gallery_images, ',');
+                $galleryImages = explode(",", $requestGalleryImages);
+                $existingImages = Media::whereIn('id', $galleryImages)->pluck('id')->toArray();
+                if (count($galleryImages) !== count($existingImages)) {
+                    return errorResponse('Invalid images selected');
+                }
+            } else {
+                $galleryImages = [];
+            }
+
+            // Continue with validation for attribute values, stock, etc.
+            $validationService->validateAttributeValues($request);
+            $needAttributeAdjustment = $this->isAttributeAdjustmentNeeded($request, $product);
+
+            // Create unique slug
+            $slug = createUniqueSlug($request->slug ?? $request->name, Product::class, $id);
+            $request->merge(['slug' => $slug]);
+
+            // Handle digital file upload
+            $digitalFileName = null;
+            if ($request->is_downloadable && $request->hasFile('file') && $request->delivery_type == Status::DOWNLOAD_INSTANT && $request->product_type == Status::PRODUCT_TYPE_SIMPLE) {
+                $digitalFileName = $productManager->uploadDigitalProductFile($request->file, $product->digitalFile->name ?? null);
+            }
+
+            // Check if stock is trackable
+            $isTrackable = $this->checkStockTrackable($request->track_inventory, $request->in_stock, $product, $isUpdate);
+            $changeQty = $isTrackable ? $this->getStockChangeQuantity($request->in_stock, $product, $isUpdate) : 0;
+
+            // Set product values and save product
+            $productManager->setProductEntities($request, $product);
+            $product->save();
+
+            // Handle batch and purchaser information if provided
+            // Only create batch if batch_no is explicitly provided (batch_no is the key identifier)
+            if ($request->filled('batch_no')) {
+                $purchaserId = $this->handlePurchaserInfo($request);
+
+                // Create stock entry and track changes
+                $this->productManager->receiveStock(
+                    $product,
+                    null,
+                    [
+                        'batch_no'       => $request->batch_no,
+                        'purchaser_id'   => $purchaserId,
+                        'purchase_price' => $request->purchase_price,
+                        'quantity'       => $request->quantity ?? 0,
+                        'purchased_at'   => $request->purchased_at,
+                    ]
+                );
+
+                $isTrackable = false;
+            }
+
+            // Handle SKU and barcode
+            if ($isUpdate) {
+                if ($product->wasChanged('sku')) {
+                    if ($product->getOriginal('barcode_path')) {
+                        Storage::disk('public')->delete($product->getOriginal('barcode_path'));
+                    }
+                    $product->barcode_path = null;
+                }
+            }
+
+            if (!$product->barcode_path) {
+                try {
+                    $product->barcode_path = Barcode::file(
+                        $product->sku,
+                        'barcodes/products'
+                    );
+                    $product->saveQuietly();
+                } catch (\Throwable $barcodeError) {
+                    \Log::warning('Barcode generation issue', [
+                        'sku' => $product->sku,
+                        'error' => $barcodeError->getMessage(),
+                        'finfo_available' => extension_loaded('fileinfo')
+                    ]);
+                    // Don't fail the entire product save just because barcode failed
+                }
+            }
+
+            // Handle stock log after product save
+            if ($isTrackable) {
+                $string = Str::plural('product', abs($changeQty));
+                $description = $changeQty > 0 ?  $changeQty . " $string added" : abs($changeQty) . " $string subtracted";
+                $remark = $changeQty > 0 ? '+' : '-';
+                $productManager->createStockLog($product, $changeQty, $description, null, $remark);
+            }
+
+            // Handle attribute adjustments
+            if ($needAttributeAdjustment) {
+                $productAttributes = $product->product_type == Status::PRODUCT_TYPE_VARIABLE ? $request->product_attributes : [];
+                $attributeValues = $product->product_type == Status::PRODUCT_TYPE_VARIABLE ? $request->attribute_values : [];
+                $productManager->adjustProductAttributes($productAttributes, $product, $isUpdate);
+                
+                // Fix: Only merge if array is not empty
+                if (!empty($attributeValues)) {
+                    $attributeValues = array_merge(...$attributeValues);
+                } else {
+                    $attributeValues = [];
+                }
+                
+                $productManager->adjustProductAttributeValues($attributeValues, $product, $isUpdate);
+                $productManager->adjustProductVariants($product->id);
+            }
+
+            // Remove the old digital file if necessary
+            if ($product->digitalFile && ($request->delivery_type == Status::DOWNLOAD_AFTER_SALE || $request->product_type == Status::PRODUCT_TYPE_VARIABLE)) {
+                $productManager->removeDigitalProductFile($product->digitalFile->name);
+                $product->digitalFile->delete();
+            }
+
+            // Save the new digital file if necessary
+            if ($digitalFileName) {
+                $digitalFile = $product->digitalFile ?? new DigitalFile();
+                $digitalFile->name = $digitalFileName;
+                $product->digitalFile()->save($digitalFile);
+            }
+
+            // Handle gallery images, categories, variants, etc.
+            $productManager->adjustGalleryImages($galleryImages, $product, $isUpdate);
+            $productManager->adjustCategories($request->categories, $product, $isUpdate);
+            $this->saveProductVariants($request, $product);
+
+            $message = $isUpdate ? 'Product updated successfully' : 'Product added successfully';
+
+            return response()->json([
+                'status' => 'success', 
+                'message' => $message, 
+                'isUpdate' => $isUpdate, 
                 'redirectTo' => $this->getRedirectUrl($product, $isUpdate)
-            ];
-            return errorResponse($validator->errors(), $data);
+            ], 200);
+        } catch (\Exception $e) {
+            \Log::error('Product Store Error', [
+                'message' => $e->getMessage(),
+                'file' => $e->getFile(),
+                'line' => $e->getLine(),
+                'trace' => $e->getTraceAsString(),
+                'product_id' => $product->id ?? null,
+                'isUpdate' => $isUpdate
+            ]);
+            return response()->json(['status' => 'error', 'message' => 'Error: ' . $e->getMessage()], 500);
         }
-
-        // Assign 'specify' value from the request to the product (added here)
-        if ($request->has('specify')) {
-            $product->specify = $request->specify; // Save the 'specify' field
-        }
-
-        // Assign purchase_price if provided
-        if ($request->has('purchase_price')) {
-            $product->purchase_price = $request->purchase_price;
-        }
-
-        // Continue with the existing logic for gallery images
-        if ($request->gallery_images) {
-            $requestGalleryImages = trim($request->gallery_images, ',');
-            $galleryImages = explode(",", $requestGalleryImages);
-            $existingImages = Media::whereIn('id', $galleryImages)->pluck('id')->toArray();
-            if (count($galleryImages) !== count($existingImages)) {
-                return errorResponse('Invalid images selected');
-            }
-        } else {
-            $galleryImages = [];
-        }
-
-        // Continue with validation for attribute values, stock, etc.
-        $validationService->validateAttributeValues($request);
-        $needAttributeAdjustment = $this->isAttributeAdjustmentNeeded($request, $product);
-
-        // Create unique slug
-        $slug = createUniqueSlug($request->slug ?? $request->name, Product::class, $id);
-        $request->merge(['slug' => $slug]);
-
-        // Handle digital file upload
-        $digitalFileName = null;
-        if ($request->is_downloadable && $request->hasFile('file') && $request->delivery_type == Status::DOWNLOAD_INSTANT && $request->product_type == Status::PRODUCT_TYPE_SIMPLE) {
-            $digitalFileName = $productManager->uploadDigitalProductFile($request->file, $product->digitalFile->name ?? null);
-        }
-
-        // Check if stock is trackable
-        $isTrackable = $this->checkStockTrackable($request->track_inventory, $request->in_stock, $product, $isUpdate);
-        $changeQty = $isTrackable ? $this->getStockChangeQuantity($request->in_stock, $product, $isUpdate) : 0;
-
-        // Set product values and save product
-        $productManager->setProductEntities($request, $product);
-        $product->save();
-
-        // Handle batch and purchaser information if provided
-        $hasBatchInfo =
-            $request->filled('batch_no')       ||
-            $request->filled('quantity')       ||
-            $request->filled('purchase_price');
-
-        if ($hasBatchInfo) {
-            $purchaserId = $this->handlePurchaserInfo($request);
-
-            // Create stock entry and track changes
-            $this->productManager->receiveStock(
-                $product,
-                null,
-                [
-                    'batch_no'       => $request->batch_no,
-                    'purchaser_id'   => $purchaserId,
-                    'purchase_price' => $request->purchase_price,
-                    'quantity'       => $request->quantity ?? 0,
-                    'purchased_at'   => $request->purchased_at,
-                ]
-            );
-
-            $isTrackable = false;
-        }
-
-        // Handle SKU and barcode
-        if ($isUpdate) {
-            if ($product->wasChanged('sku')) {
-                Storage::disk('public')->delete($product->getOriginal('barcode_path'));
-                $product->barcode_path = null;
-            }
-        }
-
-        if (!$product->barcode_path) {
-            $product->barcode_path = Barcode::file(
-                $product->sku,
-                'barcodes/products'
-            );
-            $product->saveQuietly();
-        }
-
-        // Handle stock log after product save
-        if ($isTrackable) {
-            $string = Str::plural('product', abs($changeQty));
-            $description = $changeQty > 0 ?  $changeQty . " $string added" : abs($changeQty) . " $string subtracted";
-            $remark = $changeQty > 0 ? '+' : '-';
-            $productManager->createStockLog($product, $changeQty, $description, null, $remark);
-        }
-
-        // Handle attribute adjustments
-        if ($needAttributeAdjustment) {
-            $productAttributes = $product->product_type == Status::PRODUCT_TYPE_VARIABLE ? $request->product_attributes : [];
-            $attributeValues = $product->product_type == Status::PRODUCT_TYPE_VARIABLE ? $request->attribute_values : [];
-            $productManager->adjustProductAttributes($productAttributes, $product, $isUpdate);
-            $attributeValues = array_merge(...$attributeValues);
-            $productManager->adjustProductAttributeValues($attributeValues, $product, $isUpdate);
-            $productManager->adjustProductVariants($product->id);
-        }
-
-        // Remove the old digital file if necessary
-        if ($product->digitalFile && ($request->delivery_type == Status::DOWNLOAD_AFTER_SALE || $request->product_type == Status::PRODUCT_TYPE_VARIABLE)) {
-            $productManager->removeDigitalProductFile($product->digitalFile->name);
-            $product->digitalFile->delete();
-        }
-
-        // Save the new digital file if necessary
-        if ($digitalFileName) {
-            $digitalFile = $product->digitalFile ?? new DigitalFile();
-            $digitalFile->name = $digitalFileName;
-            $product->digitalFile()->save($digitalFile);
-        }
-
-        // Handle gallery images, categories, variants, etc.
-        $productManager->adjustGalleryImages($galleryImages, $product, $isUpdate);
-        $productManager->adjustCategories($request->categories, $product, $isUpdate);
-        $this->saveProductVariants($request, $product);
-
-        $message = $isUpdate ? 'Product updated successfully' : 'Product added successfully';
-
-        return response()->json(['status' => 'success', 'message' => $message, 'isUpdate' => $isUpdate, 'redirectTo' => $this->getRedirectUrl($product, $isUpdate)]);
     }
 
 //     public function store(Request $request, $id = 0)

@@ -585,11 +585,38 @@ $(document).ready(function() {
   let selectedPriceType = null;
   let discountType = null;
   let discountAmount = 0;
+  let cartOrderCounter = 0;
+
+  function getNextCartOrder() {
+    cartOrderCounter += 1;
+    return cartOrderCounter;
+  }
+
+  function syncCartOrder(sourceCart) {
+    let orderedKeys = Object.keys(sourceCart || {});
+    let maxOrder = cartOrderCounter;
+
+    orderedKeys.forEach(function(key, index) {
+      let item = sourceCart[key] || {};
+      let order = Number(item.sort_order || 0);
+      if (!order) {
+        order = index + 1;
+      }
+      item.sort_order = order;
+      sourceCart[key] = item;
+      if (order > maxOrder) {
+        maxOrder = order;
+      }
+    });
+
+    cartOrderCounter = maxOrder;
+    return sourceCart;
+  }
 
   // Load initial cart from session (one-time only)
   function initializeCart() {
     $.get('{{ route("admin.pos.getCart") }}', function(res) {
-      cart = res.cart || {};
+      cart = syncCartOrder(res.cart || {});
       renderCart(cart, null);
     }).fail(() => {
       console.log('Cart initialized empty');
@@ -634,7 +661,7 @@ $(document).ready(function() {
         wholesale_price: p.wholesale_price ?? null,
         stock: p.in_stock ?? 0,
         quantity: 1,
-        _addedAt: Date.now()
+        sort_order: getNextCartOrder()
       };
       toastr.success(`"${p.name}" added to cart!`);
     }
@@ -749,16 +776,22 @@ $(document).ready(function() {
   // ── Discount type selector ──────────────────────
   $('input[name="discount_type"]').on('change', function() {
     discountType = $(this).val();
-    $('#discount-input').prop('disabled', false);
+    $('#discount-input').prop('disabled', false).val('0'); // ✅ Reset input to 0
     $('#discount-unit').text(discountType === 'percentage' ? '%' : '৳');
-    $('#discount-input').val('0');
     discountAmount = 0;
+    $('#discount-display').text('৳0.00'); // ✅ Clear display immediately
     updateDiscountDisplay();
   });
 
   // ── Discount amount input ───────────────────────
   $('#discount-input').on('input', function() {
-    discountAmount = parseFloat($(this).val()) || 0;
+    let inputVal = $(this).val();
+    if (!inputVal || inputVal === '') {
+      discountAmount = 0;
+    } else {
+      discountAmount = parseFloat(inputVal) || 0;
+      if (discountAmount < 0) discountAmount = 0; // ✅ Prevent negative discount
+    }
     updateDiscountDisplay();
   });
 
@@ -1203,11 +1236,7 @@ $(document).ready(function() {
 
   // ── Calculate total items in cart ──────────────
   function calculateTotalItems() {
-    let totalItems = 0;
-    for (let id in cart) {
-      totalItems += cart[id].quantity;
-    }
-    return totalItems;
+    return Object.keys(cart).length;
   }
 
   // ── Update cart total only (no full re-render) ──
@@ -1333,7 +1362,11 @@ $(document).ready(function() {
   // ── SERIALIZE CART (Convert to Invoice-like Format) ──────────────
   function serializeCart(cartObj) {
     let serialized = [];
-    for (let productId in cartObj) {
+    let orderedIds = Object.keys(cartObj || {}).sort(function(a, b) {
+      return (Number(cartObj[a].sort_order || 0) || 0) - (Number(cartObj[b].sort_order || 0) || 0);
+    });
+
+    orderedIds.forEach(function(productId) {
       let item = cartObj[productId];
       serialized.push({
         product_id: parseInt(productId),
@@ -1342,9 +1375,10 @@ $(document).ready(function() {
         price: parseFloat(item.price) || 0,
         wholesale_price: item.wholesale_price ? parseFloat(item.wholesale_price) : null,
         quantity: parseInt(item.quantity) || 1,
-        total: parseFloat(item.total) || (parseFloat(item.price) * parseInt(item.quantity))
+        total: parseFloat(item.total) || (parseFloat(item.price) * parseInt(item.quantity)),
+        sort_order: Number(item.sort_order || 0)
       });
-    }
+    });
     return serialized;
   }
 
@@ -1449,6 +1483,10 @@ $(document).ready(function() {
               $('input[name="price_type"]').prop('checked', false);
               $('input[name="discount_type"]').prop('checked', false);
               $('#discount-input').val('0').prop('disabled', true);
+              $('#discount-unit').text('%'); // Reset unit display
+              $('#discount-display').text('৳0.00'); // ✅ Clear discount display
+              $('#cart-discount').html(''); // ✅ Clear discount row content
+              $('#cart-discount-row').hide(); // ✅ Hide discount row
               updateDiscountDisplay();
               $('#confirm-order').prop('disabled', true).css({ 
                 opacity: '.45', 
@@ -1505,14 +1543,24 @@ $(document).ready(function() {
     });
   });
 
+  function escapeHtml(value) {
+    return String(value ?? '')
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#39;');
+  }
+
   // ── Print POS Invoice (receipt-style) ───────────
   function printPosInvoice(inv) {
     let sy = inv.currency_sym || '৳';
     let itemsHtml = '';
     inv.items.forEach(function(item, i) {
+      let itemName = escapeHtml(item.name || 'Unnamed item');
       itemsHtml += `<tr>
         <td>${i + 1}</td>
-        <td>${item.name}</td>
+        <td style="white-space: normal; line-height: 1.2; word-break: break-word;"><span style="display:block;">${itemName}</span></td>
         <td>${item.qty}</td>
         <td>${Number(item.price).toFixed(2)}</td>
         <td>${Number(item.total).toFixed(2)}</td>
@@ -1530,7 +1578,7 @@ $(document).ready(function() {
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         @page {
-            size: 80mm auto;
+            size: auto;
             margin: 0;
         }
         @media print {
@@ -1641,6 +1689,10 @@ $(document).ready(function() {
         }
         table tbody tr:last-child td {
             border-bottom: 1px solid #000;
+        }
+        table, table thead, table tbody, table tr, table th, table td {
+            page-break-inside: auto;
+            break-inside: auto;
         }
         td:nth-child(1) { width: 7%; text-align: center; }
         td:nth-child(2) { width: 50%; text-align: left; }
@@ -1764,7 +1816,9 @@ $(document).ready(function() {
 </html>`;
 
 
-    let printWin = window.open('', '_blank', 'width=350,height=600');
+    let itemCount = Array.isArray(inv.items) ? inv.items.length : 0;
+    let popupHeight = Math.max(700, Math.min(1800, 280 + (itemCount * 22)));
+    let printWin = window.open('', '_blank', 'width=380,height=' + popupHeight + ',scrollbars=yes,resizable=yes');
     printWin.document.write(receiptHtml);
     printWin.document.close();
     printWin.onload = function() {
@@ -1783,12 +1837,12 @@ $(document).ready(function() {
       subtotal = 0,
       hasItems = false;
     
-    // Sort items by insertion order (_addedAt timestamp)
+    // Sort items by preserved insertion order
     let sortedIds = Object.keys(cartObj).sort((a, b) => {
-      return (cartObj[a]._addedAt || 0) - (cartObj[b]._addedAt || 0);
+      return (Number(cartObj[a].sort_order || 0) || 0) - (Number(cartObj[b].sort_order || 0) || 0);
     });
     
-    sortedIds.forEach(id => {
+    sortedIds.forEach((id, index) => {
       let item = cartObj[id];
       let useWholesale = (priceType === 'wholesale') && item.wholesale_price;
       let unitPrice = useWholesale ? Number(item.wholesale_price) : Number(item.price);
@@ -1796,6 +1850,7 @@ $(document).ready(function() {
       subtotal += itemTotal;
       hasItems = true;
       
+      let serialNumber = index + 1; // ✅ ক্রমিক সংখ্যা (1, 2, 3, ...)
       let stockDisplay = item.stock ? `<span style="color:#059669;font-weight:600">${item.stock}</span>` : '<span style="color:#dc2626;font-weight:600">0</span>';
       // Display full name (40 chars) + brand name
       let displayName = item.name.length > 40 ? item.name.substring(0, 40) + '...' : item.name;
@@ -1806,7 +1861,7 @@ $(document).ready(function() {
       let wDisplayValue = (priceType === 'wholesale') ? `<input type="number" class="wholesale-price-input" data-id="${id}" value="${item.wholesale_price ? Number(item.wholesale_price).toFixed(2) : 0}" step="0.01" min="0" style="width:65px;padding:3px;border:1px solid #dee2e6;border-radius:3px;font-size:10px;text-align:right;font-weight:600;font-family:inherit">` : '<span style="color:#6c757d;font-size:9px">—</span>';
       
       html += `<tr data-product-id="${id}">
-        <td style="padding: 0.5rem; overflow: hidden; text-overflow: ellipsis;"><strong title="${item.name}">${displayName}</strong>${brandDisplay}</td>
+        <td style="padding: 0.5rem; overflow: hidden; text-overflow: ellipsis;"><strong style="color:#0d5f42;background:#e0f2e4;padding:2px 6px;border-radius:3px;margin-right:4px;font-size:11px;font-weight:700">#${serialNumber}</strong><strong title="${item.name}">${displayName}</strong>${brandDisplay}</td>
         <td style="text-align:center; padding: 0.5rem; white-space: nowrap;">
           <div style="display:flex;align-items:center;justify-content:center;gap:3px">
             <button class="qty-btn qty-minus" data-id="${id}" title="−">−</button>
@@ -1824,7 +1879,7 @@ $(document).ready(function() {
     
     // Table header adjustment
     let headerHtml = `<tr style="font-size: 0.75rem;">
-      <th style="width: 40%;">Product</th>
+      <th style="width: 40%;">Sl. | Product</th>
       <th style="width: 20%; text-align:center;">Qty</th>
       <th style="width: 10%; text-align:center; font-size: 0.7rem;">Stock</th>
       <th style="width: 12%; text-align:right;" class="${(priceType === 'wholesale') ? 'd-none' : ''}">Unit Price (Editable)</th>

@@ -6,6 +6,17 @@
     <div class="row">
         <div class="col-lg-12">
             <div class="card b-radius--10">
+                @if (!$trashed)
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="card-title mb-0">@lang('Products')</h5>
+                    <a href="{{ route('admin.products.all', ['trashed' => 1]) }}" class="btn btn-sm btn-outline--warning">
+                        <i class="las la-trash"></i> @lang('Trash') 
+                        @if (App\Models\Product::onlyTrashed()->count() > 0)
+                        <span class="badge bg-warning">{{ App\Models\Product::onlyTrashed()->count() }}</span>
+                        @endif
+                    </a>
+                </div>
+                @endif
                 <div class="card-body p-0">
                     <div class="table-responsive--md table-responsive">
                         <table class="table--light style--two table">
