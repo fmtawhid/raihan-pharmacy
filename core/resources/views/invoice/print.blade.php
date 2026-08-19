@@ -15,21 +15,62 @@
             margin: 0;
         }
         @media print {
+            @page {
+                size: auto;
+                margin: 8mm 6mm;
+            }
+
             html, body {
-                width: 76mm !important;
+                width: 100% !important;
+                max-width: 100% !important;
                 margin: 0 !important;
                 padding: 0 !important;
                 background: white;
+                height: auto !important;
+                overflow: visible !important;
             }
+
             body {
-                padding: 6px 8px !important;
+                padding: 0 !important;
+                min-height: auto !important;
             }
+
             .receipt-container {
                 width: 100% !important;
-                max-width: 76mm !important;
+                max-width: 80mm !important;
                 margin: 0 !important;
+                padding: 0 !important;
+                min-height: auto !important;
+                overflow: visible !important;
+                height: auto !important;
             }
-            table, table thead, table tbody, table tr, table th, table td {
+
+            table {
+                width: 100% !important;
+                max-width: 100% !important;
+                border-collapse: collapse;
+                table-layout: fixed;
+                overflow: visible !important;
+            }
+
+            thead {
+                display: table-header-group;
+            }
+
+            tfoot {
+                display: table-footer-group;
+            }
+
+            tr,
+            th,
+            td {
+                break-inside: avoid !important;
+                page-break-inside: avoid !important;
+            }
+
+            .summary-section,
+            .footer-section {
+                break-inside: avoid !important;
                 page-break-inside: avoid !important;
             }
         }
