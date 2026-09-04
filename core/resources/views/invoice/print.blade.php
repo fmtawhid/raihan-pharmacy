@@ -7,52 +7,49 @@
     <title>{{ $order->order_number }}</title>
 </head>
 
-<body onload="window.print()">
+<body>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
-        @page {
-            size: auto;
-            margin: 0;
-        }
-        @media print {
-            @page {
-                size: auto;
-                margin: 8mm 6mm;
-            }
 
+        /* Print page configuration for thermal receipt - no pagination */
+        @page {
+            size: 80mm auto;
+            margin: 0;
+            padding: 0;
+        }
+
+        @media print {
             html, body {
-                width: 100% !important;
-                max-width: 100% !important;
-                margin: 0 !important;
-                padding: 0 !important;
+                width: 80mm;
+                margin: 0;
+                padding: 0;
                 background: white;
-                height: auto !important;
-                overflow: visible !important;
+                height: auto;
+                overflow: visible;
             }
 
             body {
-                padding: 0 !important;
-                min-height: auto !important;
+                padding: 6px 8px;
+                min-height: auto;
             }
 
             .receipt-container {
-                width: 100% !important;
-                max-width: 80mm !important;
-                margin: 0 !important;
-                padding: 0 !important;
-                min-height: auto !important;
-                overflow: visible !important;
-                height: auto !important;
+                width: 80mm;
+                margin: 0;
+                padding: 0;
+                min-height: auto;
+                overflow: visible;
+                height: auto;
             }
 
             table {
-                width: 100% !important;
-                max-width: 100% !important;
+                width: 100%;
                 border-collapse: collapse;
-                table-layout: fixed;
-                overflow: visible !important;
+                table-layout: auto;
+                overflow: visible;
             }
 
+            /* Allow table to span multiple pages naturally */
             thead {
                 display: table-header-group;
             }
@@ -61,19 +58,20 @@
                 display: table-footer-group;
             }
 
-            tr,
-            th,
-            td {
-                break-inside: avoid !important;
-                page-break-inside: avoid !important;
+            /* Remove all break-inside: avoid that cause content shifting */
+            tr, th, td {
+                page-break-inside: auto;
+                break-inside: auto;
             }
 
-            .summary-section,
-            .footer-section {
-                break-inside: avoid !important;
-                page-break-inside: avoid !important;
+            /* Allow sections to break naturally */
+            .summary-section, .footer-section {
+                page-break-inside: auto;
+                break-inside: auto;
             }
         }
+
+        /* Screen/Normal Display Styles */
         html, body {
             font-family: 'Courier New', Courier, monospace;
             font-size: 12px;
@@ -85,45 +83,54 @@
             height: auto;
             overflow: visible;
         }
+
         body {
             padding: 6px 8px;
             min-height: auto;
         }
+
         .receipt-container {
-            width: 100%;
-            max-width: 80mm;
+            width: 80mm;
             margin: 0 auto;
             min-height: auto;
             overflow: visible;
+            height: auto;
         }
+
         .text-center { text-align: center; }
+
         .store-name {
             font-size: 15px;
             font-weight: bold;
             margin-bottom: 4px;
             line-height: 1.2;
         }
+
         .divider {
             border-top: 1px dashed #000;
             margin: 6px 0;
         }
+
         .invoice-header {
             font-size: 10px;
             margin-bottom: 8px;
             line-height: 1.4;
             font-weight: 600;
         }
+
         .invoice-header p {
             margin: 2px 0;
             word-break: break-word;
             overflow-wrap: anywhere;
         }
+
         table {
             width: 100%;
             border-collapse: collapse;
             margin: 8px 0;
-            table-layout: fixed;
+            table-layout: auto;
         }
+
         table thead th {
             font-size: 9px;
             font-weight: bold;
@@ -133,6 +140,7 @@
             word-break: break-word;
             overflow-wrap: anywhere;
         }
+
         table tbody td {
             font-size: 9px;
             padding: 2px 1px;
@@ -142,43 +150,47 @@
             overflow-wrap: anywhere;
             white-space: normal;
         }
+
         table thead th:nth-child(2),
         table tbody td:nth-child(2) {
             white-space: normal;
             overflow-wrap: anywhere;
         }
+
         table tbody tr:last-child td {
             border-bottom: 1px solid #000;
         }
-        table, table thead, table tbody, table tr, table th, table td {
-            page-break-inside: auto;
-            break-inside: auto;
-        }
+
         table thead th:nth-child(1), table tbody td:nth-child(1) { width: 8%; text-align: center; }
         table thead th:nth-child(2), table tbody td:nth-child(2) { width: 44%; }
         table thead th:nth-child(3), table tbody td:nth-child(3) { width: 10%; text-align: center; }
         table thead th:nth-child(4), table tbody td:nth-child(4) { width: 18%; text-align: right; }
         table thead th:nth-child(5), table tbody td:nth-child(5) { width: 20%; text-align: right; }
+
         .summary-section {
             font-size: 10px;
             margin: 8px 0;
             line-height: 1.5;
             font-weight: 600;
         }
+
         .summary-row {
             display: flex;
             justify-content: space-between;
             gap: 4px;
             margin: 2px 0;
         }
+
         .summary-row span:first-child {
             flex: 1;
             min-width: 0;
         }
+
         .summary-row span:last-child {
             text-align: right;
             white-space: nowrap;
         }
+
         .summary-total {
             font-weight: bold;
             border-top: 1px solid #000;
@@ -186,6 +198,7 @@
             padding: 3px 0;
             margin: 4px 0;
         }
+
         .footer-section {
             text-align: center;
             font-size: 8px;
@@ -193,6 +206,7 @@
             line-height: 1.4;
             font-weight: 600;
         }
+
         .thanks {
             font-weight: bold;
             font-size: 9px;
@@ -307,6 +321,16 @@
             <p style="font-size: 9px;">Sold by: {{ auth()->user()->username ?? 'Super Admin' }} {{ showDateTime($order->created_at, 'd-m-Y H:i:s') }}</p>
         </div>
     </div>
+
+    <script>
+        // Ensure full DOM render before printing
+        // This allows the browser to properly layout all content before print
+        window.addEventListener('load', function () {
+            setTimeout(function () {
+                window.print();
+            }, 300);
+        });
+    </script>
 </body>
 
 </html>
