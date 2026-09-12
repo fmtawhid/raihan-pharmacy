@@ -859,6 +859,7 @@ class PosController extends Controller
             'cost_amount' => $order->cost_amount,
             'profit' => $order->profit,
             'invoice' => [
+                'order_id'      => $order->id,
                 'store_name'    => gs('site_name') ?? 'Store',
                 'store_address' => gs('address') ?? gs('support_address') ?? 'Address not set',
                 'store_phone'   => gs('phone_number') ?? gs('support_phone') ?? 'Phone not set',

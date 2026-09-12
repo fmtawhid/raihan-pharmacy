@@ -1452,6 +1452,7 @@ $(document).ready(function() {
             
             if (res.status === 'success') {
             // Add discount info to invoice
+            res.invoice.order_id = res.order_id;
             res.invoice.discount_type = discountType;
             res.invoice.discount_amount = discountAmount;
             printPosInvoice(res.invoice);
@@ -1470,6 +1471,7 @@ $(document).ready(function() {
               focusCancel: true,
             }).then((result2) => {
               if (result2.isConfirmed) {
+                res.invoice.order_id = res.order_id;
                 res.invoice.discount_type = discountType;
                 res.invoice.discount_amount = discountAmount;
                 printPosInvoice(res.invoice);
@@ -1554,6 +1556,16 @@ $(document).ready(function() {
 
   // ── Print POS Invoice (receipt-style) ───────────
   function printPosInvoice(inv) {
+    if (inv && inv.order_id) {
+      let printUrl = '{{ route("admin.print.invoice", ["order" => "__ORDER_ID__"]) }}';
+      printUrl = printUrl.replace('__ORDER_ID__', encodeURIComponent(inv.order_id));
+      let printWin = window.open(printUrl, '_blank', 'width=420,height=900,scrollbars=yes,resizable=yes');
+      if (printWin) {
+        printWin.focus();
+      }
+      return;
+    }
+
     let sy = inv.currency_sym || '৳';
     let itemsHtml = '';
     inv.items.forEach(function(item, i) {
