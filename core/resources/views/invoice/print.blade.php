@@ -611,6 +611,10 @@
                 window.print();
             }, 700);
         });
+
+        window.addEventListener('afterprint', function () {
+            window.close();
+        });
     </script>
 </body>
 </html>

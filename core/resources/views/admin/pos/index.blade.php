@@ -500,7 +500,7 @@ input[type="number"] {
           <!-- Button -->
           <div class="mt-4">
             <button id="confirm-order" class="btn btn-success w-100" disabled style="opacity: .45; cursor: not-allowed; font-size: 0.95rem; padding: 0.9rem 1.25rem; font-weight: 700; letter-spacing: 0.3px; border-radius: 0.5rem; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);">
-              <i class="la la-check-circle" style="margin-right: 0.5rem;"></i> Confirm Order
+              <i class="la la-check-circle" style="margin-right: 0.5rem;"></i> Confirm &amp; Complete Order
             </button>
           </div>
 
@@ -586,6 +586,7 @@ $(document).ready(function() {
   let discountType = null;
   let discountAmount = 0;
   let cartOrderCounter = 0;
+  let posPrintWindow = null;
 
   function getNextCartOrder() {
     cartOrderCounter += 1;
@@ -1455,7 +1456,6 @@ $(document).ready(function() {
             res.invoice.order_id = res.order_id;
             res.invoice.discount_type = discountType;
             res.invoice.discount_amount = discountAmount;
-            printPosInvoice(res.invoice);
 
             Swal.fire({
               title: 'Order Confirmed!',
@@ -1464,9 +1464,9 @@ $(document).ready(function() {
                 '</strong></p><p style="color:#64748b;font-size:14px">Total Amount: <strong>৳' + res.total_amount.toFixed(2) + '</strong></p>',
               icon: 'success',
               confirmButtonColor: '#059669',
-              confirmButtonText: '<i class="la la-print"></i> Print Again',
+              confirmButtonText: '<i class="la la-print"></i> Print',
               showCancelButton: true,
-              cancelButtonText: '<i class="la la-check"></i> Done',
+              cancelButtonText: '<i class="la la-check"></i> Done / Don\'t Print',
               cancelButtonColor: '#6366f1',
               focusCancel: true,
             }).then((result2) => {
@@ -1475,6 +1475,8 @@ $(document).ready(function() {
                 res.invoice.discount_type = discountType;
                 res.invoice.discount_amount = discountAmount;
                 printPosInvoice(res.invoice);
+              } else if (posPrintWindow && !posPrintWindow.closed) {
+                posPrintWindow.close();
               }
               
               // Reset everything
@@ -1559,9 +1561,9 @@ $(document).ready(function() {
     if (inv && inv.order_id) {
       let printUrl = '{{ route("admin.print.invoice", ["order" => "__ORDER_ID__"]) }}';
       printUrl = printUrl.replace('__ORDER_ID__', encodeURIComponent(inv.order_id));
-      let printWin = window.open(printUrl, '_blank', 'width=420,height=900,scrollbars=yes,resizable=yes');
-      if (printWin) {
-        printWin.focus();
+      posPrintWindow = window.open(printUrl, '_blank', 'width=420,height=900,scrollbars=yes,resizable=yes');
+      if (posPrintWindow) {
+        posPrintWindow.focus();
       }
       return;
     }
@@ -1831,6 +1833,7 @@ $(document).ready(function() {
     let itemCount = Array.isArray(inv.items) ? inv.items.length : 0;
     let popupHeight = Math.max(700, Math.min(1800, 280 + (itemCount * 22)));
     let printWin = window.open('', '_blank', 'width=380,height=' + popupHeight + ',scrollbars=yes,resizable=yes');
+    posPrintWindow = printWin;
     printWin.document.write(receiptHtml);
     printWin.document.close();
     printWin.onload = function() {
