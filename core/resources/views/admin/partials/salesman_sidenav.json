@@ -1,0 +1,22 @@
+{
+    "dashboard": {
+        "title": "Dashboard",
+        "icon": "las la-home",
+        "route_name": "admin.dashboard",
+        "menu_active": "admin.dashboard"
+    },
+    "pos": {
+        "title": "Point of Sale",
+        "icon": "las la-cash-register",
+        "route_name": "admin.pos.index",
+        "menu_active": "admin.pos.*"
+    },
+    "orders": {
+        "title": "My Branch Sales",
+        "icon": "las la-receipt",
+        "menu_active": "admin.order.*",
+        "submenu": [
+            {"title": "Branch Orders", "route_name": "admin.order.index", "menu_active": "admin.order.index"}
+        ]
+    }
+}

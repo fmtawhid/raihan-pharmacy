@@ -1,0 +1,85 @@
+{
+    "dashboard": {
+        "title": "Dashboard",
+        "icon": "las la-home",
+        "route_name": "admin.dashboard",
+        "menu_active": "admin.dashboard"
+    },
+    "pos": {
+        "title": "Point of Sale",
+        "icon": "las la-cash-register",
+        "route_name": "admin.pos.index",
+        "menu_active": "admin.pos.*"
+    },
+    "sms_panel": {
+        "title": "SMS Panel",
+        "icon": "las la-sms",
+        "route_name": "admin.sms.panel.index",
+        "menu_active": "admin.sms.panel.*"
+    },
+    "people": {
+        "title": "People",
+        "icon": "las la-users",
+        "menu_active": ["admin.users.*", "admin.customers.*", "admin.purchasers.*", "admin.branch-salesmen.*"],
+        "submenu": [
+            {"title": "Customers", "route_name": "admin.users.all", "menu_active": "admin.users.*"},
+            {"title": "Suppliers", "route_name": "admin.purchasers.index", "menu_active": "admin.purchasers.*"},
+            {"title": "Salesmen", "route_name": "admin.branch-salesmen.index", "menu_active": "admin.branch-salesmen.*"}
+        ]
+    },
+    "product_config": {
+        "title": "Product Config",
+        "icon": "lab la-dropbox",
+        "menu_active": ["admin.category.*", "admin.brand.*", "admin.attribute.*", "admin.product.type.*"],
+        "submenu": [
+            {"title": "Categories", "route_name": "admin.category.all", "menu_active": "admin.category.all"},
+            {"title": "Brands", "route_name": "admin.brand.all", "menu_active": "admin.brand.all"},
+            {"title": "Attributes", "route_name": "admin.attribute.all", "menu_active": "admin.attribute.all"},
+            {"title": "Product Types", "route_name": "admin.product.type.all", "menu_active": "admin.product.type.all"}
+        ]
+    },
+    "products": {
+        "title": "Product",
+        "icon": "la la-product-hunt",
+        "menu_active": ["admin.products.*"],
+        "submenu": [
+            {"title": "All Products", "route_name": "admin.products.all", "menu_active": "admin.products.all"},
+            {"title": "Add Stock", "route_name": "admin.products.add.stock", "menu_active": "admin.products.add.stock"},
+            {"title": "Purchases", "route_name": "admin.products.purchases.list", "menu_active": "admin.products.purchases.list"},
+            {"title": "Expiry Alerts (7 Days)", "route_name": "admin.products.expiry.alerts", "menu_active": "admin.products.expiry.alerts"},
+            {"title": "Stock Logs", "route_name": "admin.products.stock.log.list", "menu_active": "admin.products.stock.log.list"}
+        ]
+    },
+    "orders": {
+        "title": "Orders",
+        "icon": "las la-receipt",
+        "menu_active": "admin.order.*",
+        "submenu": [
+            {"title": "All Orders", "route_name": "admin.order.index", "menu_active": "admin.order.index"},
+            {"title": "Add Return", "route_name": "admin.order.add_return", "menu_active": "admin.order.add_return"},
+            {"title": "Return List", "route_name": "admin.order.returns.list", "menu_active": "admin.order.returns.list"}
+        ]
+    },
+    "payments": {
+        "title": "Payments",
+        "icon": "las la-file-invoice-dollar",
+        "menu_active": ["admin.deposit.*", "admin.users.due.bills*"],
+        "submenu": [
+            {"title": "All Payments", "route_name": "admin.deposit.list", "menu_active": "admin.deposit.list"},
+            {"title": "Pending Payments", "route_name": "admin.deposit.pending", "menu_active": "admin.deposit.pending"},
+            {"title": "Successful Payments", "route_name": "admin.deposit.successful", "menu_active": "admin.deposit.successful"},
+            {"title": "Due Bill", "route_name": "admin.users.due.bills", "menu_active": "admin.users.due.bills"}
+        ]
+    },
+    "reports": {
+        "title": "Branch Reports",
+        "icon": "las la-chart-bar",
+        "menu_active": ["admin.report.sales", "admin.report.business", "admin.report.purchase", "admin.report.return"],
+        "submenu": [
+            {"title": "Sales Report", "route_name": "admin.report.sales", "menu_active": "admin.report.sales"},
+            {"title": "Purchase Report", "route_name": "admin.report.purchase", "menu_active": "admin.report.purchase"},
+            {"title": "Return Report", "route_name": "admin.report.return", "menu_active": "admin.report.return"},
+            {"title": "Business Report", "route_name": "admin.report.business", "menu_active": "admin.report.business"}
+        ]
+    }
+}

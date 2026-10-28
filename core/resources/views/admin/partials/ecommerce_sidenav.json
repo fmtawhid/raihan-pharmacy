@@ -1,0 +1,260 @@
+{
+    "dashboard": {
+        "title": "Dashboard",
+        "icon": "las la-home",
+        "route_name": "admin.dashboard",
+        "menu_active": "admin.dashboard"
+    },
+    "sms_panel": {
+        "title": "SMS Panel",
+        "icon": "las la-sms",
+        "route_name": "admin.sms.panel.index",
+        "menu_active": "admin.sms.panel.*"
+    },
+    "people": {
+        "title": "People",
+        "icon": "las la-users",
+        "menu_active": "admin.users.*",
+        "submenu": [
+            {
+                "title": "Website Customers",
+                "route_name": "admin.users.all",
+                "menu_active": "admin.users.*"
+            }
+        ]
+    },
+    "product_config": {
+        "title": "Product Config",
+        "icon": "lab la-dropbox",
+        "menu_active": [
+            "admin.category.*",
+            "admin.brand.*",
+            "admin.attribute.*",
+            "admin.product.type.*"
+        ],
+        "submenu": [
+            {
+                "title": "Categories",
+                "route_name": "admin.category.all",
+                "menu_active": "admin.category.*"
+            },
+            {
+                "title": "Brands",
+                "route_name": "admin.brand.all",
+                "menu_active": "admin.brand.*"
+            },
+            {
+                "title": "Attributes",
+                "route_name": "admin.attribute.all",
+                "menu_active": "admin.attribute.*"
+            },
+            {
+                "title": "Product Types",
+                "route_name": "admin.product.type.all",
+                "menu_active": "admin.product.type.*"
+            }
+        ]
+    },
+    "products": {
+        "title": "Product",
+        "icon": "la la-product-hunt",
+        "menu_active": "admin.products.*",
+        "submenu": [
+            {
+                "title": "All Products",
+                "route_name": "admin.products.all",
+                "menu_active": "admin.products.*"
+            },
+            {
+                "title": "Low Stock Products",
+                "route_name": "admin.products.low.stock",
+                "menu_active": "admin.products.low.stock"
+            },
+            {
+                "title": "Out of Stock Products",
+                "route_name": "admin.products.out.of.stock",
+                "menu_active": "admin.products.out.of.stock"
+            },
+            {
+                "title": "Add Product",
+                "route_name": "admin.products.create",
+                "menu_active": "admin.products.create"
+            },
+            {
+                "title": "Add Stock",
+                "route_name": "admin.products.add.stock",
+                "menu_active": "admin.products.add.stock"
+            },
+            {
+                "title": "Purchases",
+                "route_name": "admin.products.purchases.list",
+                "menu_active": "admin.products.purchases.list"
+            },
+            {
+                "title": "Stock Logs",
+                "route_name": "admin.products.stock.log.list",
+                "menu_active": "admin.products.stock.log.list"
+            },
+            {
+                "title": "Expiry Alerts",
+                "route_name": "admin.products.expiry.alerts",
+                "menu_active": "admin.products.expiry.alerts"
+            }
+        ]
+    },
+    "promotion": {
+        "title": "Promotion",
+        "icon": "las la-bullhorn",
+        "menu_active": [
+            "admin.promo.banner.*",
+            "admin.coupon.*",
+            "admin.offer.*"
+        ],
+        "submenu": [
+            {
+                "title": "Promo Banners",
+                "route_name": "admin.promo.banner.index",
+                "menu_active": "admin.promo.banner.*"
+            },
+            {
+                "title": "Coupons",
+                "route_name": "admin.coupon.index",
+                "menu_active": "admin.coupon.*"
+            },
+            {
+                "title": "Offers",
+                "route_name": "admin.offer.index",
+                "menu_active": "admin.offer.*"
+            }
+        ]
+    },
+    "orders": {
+        "title": "Orders",
+        "icon": "las la-receipt",
+        "menu_active": "admin.order.*",
+        "submenu": [
+            {
+                "title": "Website Orders",
+                "route_name": "admin.order.index",
+                "menu_active": "admin.order.*"
+            }
+        ]
+    },
+    "payments": {
+        "title": "Payments",
+        "icon": "las la-file-invoice-dollar",
+        "menu_active": "admin.deposit.*",
+        "submenu": [
+            {
+                "title": "All Payments",
+                "route_name": "admin.deposit.list",
+                "menu_active": "admin.deposit.*"
+            },
+            {
+                "title": "Pending Payments",
+                "route_name": "admin.deposit.pending",
+                "menu_active": "admin.deposit.pending"
+            },
+            {
+                "title": "Successful Payments",
+                "route_name": "admin.deposit.successful",
+                "menu_active": "admin.deposit.successful"
+            }
+        ]
+    },
+    "support_tickets": {
+        "title": "Support Ticket",
+        "icon": "las la-ticket-alt",
+        "menu_active": "admin.ticket.*",
+        "submenu": [
+            {
+                "title": "All Tickets",
+                "route_name": "admin.ticket.index",
+                "menu_active": "admin.ticket.*"
+            },
+            {
+                "title": "Pending Tickets",
+                "route_name": "admin.ticket.pending",
+                "menu_active": "admin.ticket.pending"
+            }
+        ]
+    },
+    "store_setting": {
+        "header": "Settings",
+        "title": "Store Front Settings",
+        "icon": "las la-life-ring",
+        "route_name": "admin.setting.system",
+        "menu_active": [
+            "admin.setting.system",
+            "admin.setting.socialite.credentials",
+            "admin.setting.logo.icon",
+            "admin.language.manage",
+            "admin.language.key",
+            "admin.seo",
+            "admin.frontend.templates",
+            "admin.frontend.manage.*",
+            "admin.maintenance.mode",
+            "admin.setting.cookie",
+            "admin.setting.popup.banner",
+            "admin.setting.custom.css",
+            "admin.setting.robot",
+            "admin.frontend.index",
+            "admin.frontend.sections*",
+            "admin.promo.banner*",
+            "admin.collection.*",
+            "admin.menu.builder.*",
+            "admin.gateway.*"
+        ]
+    },
+    "general_settings": {
+        "title": "General Setting",
+        "icon": "las la-cog",
+        "route_name": "admin.setting.general",
+        "menu_active": "admin.setting.general"
+    },
+    "system_configuration": {
+        "title": "System Configuration",
+        "icon": "las la-tools",
+        "route_name": "admin.setting.system.configuration",
+        "menu_active": "admin.setting.system.configuration"
+    },
+
+    "shipping_methods": {
+        "title": "Shipping Methods",
+        "icon": "la la-shipping-fast",
+        "route_name": "admin.shipping.methods.all",
+        "menu_active": "admin.shipping.methods*"
+    },
+    "reports": {
+        "title": "Reports",
+        "icon": "las la-chart-bar",
+        "menu_active": [
+            "admin.report.sales",
+            "admin.report.business",
+            "admin.report.purchase",
+            "admin.report.return"
+        ],
+        "submenu": [
+            {
+                "title": "Sales Report",
+                "route_name": "admin.report.sales",
+                "menu_active": "admin.report.sales"
+            },
+            {
+                "title": "Purchase Report",
+                "route_name": "admin.report.purchase",
+                "menu_active": "admin.report.purchase"
+            },
+            {
+                "title": "Return Report",
+                "route_name": "admin.report.return",
+                "menu_active": "admin.report.return"
+            },
+            {
+                "title": "Business Report",
+                "route_name": "admin.report.business",
+                "menu_active": "admin.report.business"
+            }
+        ]
+    }
+}

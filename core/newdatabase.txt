@@ -1,0 +1,7 @@
+php artisan migrate --path=database/migrations/2026_10_10_000000_create_branches_and_add_branch_ownership.php
+
+php artisan migrate --path=database/migrations/2026_10_17_000000_add_expiry_date_to_product_batches_table.php
+
+php artisan migrate --path=database/migrations/2026_10_20_000000_create_ecommerce_manager_role.php
+
+php artisan migrate --path=database/migrations/2026_10_21_000000_add_backorder_sales_to_branches.php
