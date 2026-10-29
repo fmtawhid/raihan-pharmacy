@@ -21,7 +21,7 @@ class SmsPanelController extends Controller
             'message' => 'required|string|max:5000',
         ]);
 
-        $result = $smsService->send($validated['mobile'], $validated['message']);
+        $result = $smsService->sendMasking($validated['mobile'], $validated['message']);
         $notify[] = [$result['success'] ? 'success' : 'error', $result['message']];
 
         return back()->withInput()->withNotify($notify);

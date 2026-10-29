@@ -13,11 +13,32 @@ class DeelkoSmsService
             return ['success' => false, 'message' => 'SMS API is not configured on the server'];
         }
 
+        return $this->sendUsingEndpoint($mobile, $message, 'non-masking');
+    }
+
+    public function sendMasking(string $mobile, string $message): array
+    {
+        $maskingId = config('services.deelko_sms.masking_id');
+        if (!$maskingId) {
+            return ['success' => false, 'message' => 'Deelko masking SMS sender ID is not configured on the server'];
+        }
+
+        return $this->sendUsingEndpoint($mobile, $message, 'masking', ['maskingId' => $maskingId]);
+    }
+
+    private function sendUsingEndpoint(string $mobile, string $message, string $endpoint, array $parameters = []): array
+    {
+        $apiKey = config('services.deelko_sms.api_key');
+        if (!$apiKey) {
+            return ['success' => false, 'message' => 'SMS API is not configured on the server'];
+        }
+
         try {
-            $response = Http::timeout(20)->get('https://sms.deelko.net/smsapi/v2/non-masking', [
+            $response = Http::timeout(20)->get('https://sms.deelko.net/smsapi/v2/' . $endpoint, [
                 'api_key' => $apiKey,
                 'mobileNo' => $mobile,
                 'smsContent' => $message,
+                ...$parameters,
             ]);
 
             if ($response->successful() && (int) data_get($response->json(), 'code') === 1000) {

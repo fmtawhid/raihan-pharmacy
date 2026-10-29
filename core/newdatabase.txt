@@ -1,7 +1,131 @@
-php artisan migrate --path=database/migrations/2026_10_10_000000_create_branches_and_add_branch_ownership.php
+-- MySQL / MariaDB manual SQL for these four Laravel migrations.
+-- Select the application's database before running this file.
+-- Back up the live database first. Run only if these migrations have not
+-- already been applied; the ALTER TABLE statements are not safe to rerun.
 
-php artisan migrate --path=database/migrations/2026_10_17_000000_add_expiry_date_to_product_batches_table.php
+-- 2026_10_10_000000_create_branches_and_add_branch_ownership
+CREATE TABLE `branches` (
+    `id` BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+    `name` VARCHAR(255) NOT NULL,
+    `code` VARCHAR(32) NOT NULL,
+    `is_active` TINYINT(1) NOT NULL DEFAULT 1,
+    `created_at` TIMESTAMP NULL DEFAULT NULL,
+    `updated_at` TIMESTAMP NULL DEFAULT NULL,
+    PRIMARY KEY (`id`),
+    UNIQUE KEY `branches_name_unique` (`name`),
+    UNIQUE KEY `branches_code_unique` (`code`)
+) ENGINE=InnoDB;
 
-php artisan migrate --path=database/migrations/2026_10_20_000000_create_ecommerce_manager_role.php
+INSERT INTO `branches` (`name`, `code`, `is_active`, `created_at`, `updated_at`)
+SELECT 'Main Branch', 'MAIN', 1, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP
+WHERE NOT EXISTS (
+    SELECT 1 FROM `branches` WHERE `code` = 'MAIN'
+);
 
-php artisan migrate --path=database/migrations/2026_10_21_000000_add_backorder_sales_to_branches.php
+SET @main_branch_id = (
+    SELECT `id` FROM `branches` WHERE `code` = 'MAIN' LIMIT 1
+);
+
+ALTER TABLE `admins`
+    ADD COLUMN `branch_id` BIGINT UNSIGNED NULL,
+    ADD INDEX `admins_branch_id_index` (`branch_id`);
+
+ALTER TABLE `users`
+    ADD COLUMN `branch_id` BIGINT UNSIGNED NULL,
+    ADD INDEX `users_branch_id_index` (`branch_id`);
+
+ALTER TABLE `customers`
+    ADD COLUMN `branch_id` BIGINT UNSIGNED NULL,
+    ADD INDEX `customers_branch_id_index` (`branch_id`);
+
+ALTER TABLE `purchasers`
+    ADD COLUMN `branch_id` BIGINT UNSIGNED NULL,
+    ADD INDEX `purchasers_branch_id_index` (`branch_id`);
+
+ALTER TABLE `product_batches`
+    ADD COLUMN `branch_id` BIGINT UNSIGNED NULL,
+    ADD INDEX `product_batches_branch_id_index` (`branch_id`);
+
+ALTER TABLE `orders`
+    ADD COLUMN `branch_id` BIGINT UNSIGNED NULL,
+    ADD INDEX `orders_branch_id_index` (`branch_id`);
+
+ALTER TABLE `deposits`
+    ADD COLUMN `branch_id` BIGINT UNSIGNED NULL,
+    ADD INDEX `deposits_branch_id_index` (`branch_id`);
+
+ALTER TABLE `stock_logs`
+    ADD COLUMN `branch_id` BIGINT UNSIGNED NULL,
+    ADD INDEX `stock_logs_branch_id_index` (`branch_id`);
+
+UPDATE `customers` SET `branch_id` = @main_branch_id WHERE `branch_id` IS NULL;
+UPDATE `purchasers` SET `branch_id` = @main_branch_id WHERE `branch_id` IS NULL;
+UPDATE `product_batches` SET `branch_id` = @main_branch_id WHERE `branch_id` IS NULL;
+UPDATE `stock_logs` SET `branch_id` = @main_branch_id WHERE `branch_id` IS NULL;
+UPDATE `orders`
+SET `branch_id` = @main_branch_id
+WHERE `order_number` LIKE 'POS-%' AND `branch_id` IS NULL;
+UPDATE `users`
+SET `branch_id` = @main_branch_id
+WHERE `branch_id` IS NULL
+  AND `id` IN (
+      SELECT `user_id`
+      FROM `orders`
+      WHERE `order_number` LIKE 'POS-%' AND `user_id` IS NOT NULL
+  );
+UPDATE `deposits` AS d
+JOIN `orders` AS o ON d.`order_id` = o.`id`
+SET d.`branch_id` = o.`branch_id`
+WHERE d.`branch_id` IS NULL AND o.`branch_id` IS NOT NULL;
+
+ALTER TABLE `product_batches`
+    DROP INDEX `product_batches_product_id_variant_id_batch_no_unique`,
+    ADD UNIQUE INDEX `product_batches_product_id_variant_id_branch_id_batch_no_unique`
+        (`product_id`, `variant_id`, `branch_id`, `batch_no`);
+
+INSERT INTO `roles` (`name`, `guard_name`, `created_at`, `updated_at`)
+SELECT 'branch_manager', 'admin', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP
+WHERE NOT EXISTS (
+    SELECT 1 FROM `roles`
+    WHERE `name` = 'branch_manager' AND `guard_name` = 'admin'
+);
+
+-- 2026_10_17_000000_add_expiry_date_to_product_batches_table
+ALTER TABLE `product_batches`
+    ADD COLUMN `expiry_date` DATE NULL AFTER `purchased_at`,
+    ADD INDEX `product_batches_expiry_date_index` (`expiry_date`);
+
+-- 2026_10_20_000000_create_ecommerce_manager_role
+INSERT INTO `roles` (`name`, `guard_name`, `created_at`, `updated_at`)
+SELECT 'ecommerce_manager', 'admin', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP
+WHERE NOT EXISTS (
+    SELECT 1 FROM `roles`
+    WHERE `guard_name` = 'admin'
+      AND `name` IN ('ecommerce_manager', 'Ecommerce Manager')
+);
+
+-- 2026_10_21_000000_add_backorder_sales_to_branches
+ALTER TABLE `branches`
+    ADD COLUMN `allow_backorder_sales` TINYINT(1) NOT NULL DEFAULT 0;
+
+-- Record the manually applied migrations so a later `php artisan migrate`
+-- does not try to apply them again.
+SET @migration_batch = (
+    SELECT COALESCE(MAX(`batch`), 0) + 1 FROM `migrations`
+);
+
+INSERT INTO `migrations` (`migration`, `batch`)
+SELECT pending.`migration`, @migration_batch
+FROM (
+    SELECT '2026_10_10_000000_create_branches_and_add_branch_ownership' AS `migration`
+    UNION ALL
+    SELECT '2026_10_17_000000_add_expiry_date_to_product_batches_table'
+    UNION ALL
+    SELECT '2026_10_20_000000_create_ecommerce_manager_role'
+    UNION ALL
+    SELECT '2026_10_21_000000_add_backorder_sales_to_branches'
+) AS pending
+WHERE NOT EXISTS (
+    SELECT 1 FROM `migrations` AS applied
+    WHERE applied.`migration` = pending.`migration`
+);

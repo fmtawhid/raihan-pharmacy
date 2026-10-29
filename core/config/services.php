@@ -33,6 +33,7 @@ return [
 
     'deelko_sms' => [
         'api_key' => env('DEELKO_SMS_API_KEY'),
+        'masking_id' => env('DEELKO_SMS_MASKING_ID', 'Rayhan Pharmacy'),
     ],
 
 ];
