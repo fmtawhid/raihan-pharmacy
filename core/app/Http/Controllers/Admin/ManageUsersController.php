@@ -217,7 +217,7 @@ class ManageUsersController extends Controller
         $message = 'রায়হান ফার্মেসি থেকে বলছি, আপনার বকেয়া ৳'
             . number_format($dueAmount, 2)
             . ' টাকা। অনুগ্রহ করে পরিশোধ করুন। ধন্যবাদ।';
-        $result = $smsService->send($user->mobileNumber, $message);
+        $result = $smsService->sendMasking($user->mobileNumber, $message);
         $notify[] = [$result['success'] ? 'success' : 'error', $result['message']];
 
         return back()->withNotify($notify);

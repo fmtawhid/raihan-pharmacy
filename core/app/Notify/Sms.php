@@ -3,8 +3,8 @@
 namespace App\Notify;
 
 use App\Notify\NotifyProcess;
-use App\Notify\SmsGateway;
 use App\Notify\Notifiable;
+use App\Services\DeelkoSmsService;
 
 
 class Sms extends NotifyProcess implements Notifiable
@@ -45,20 +45,16 @@ class Sms extends NotifyProcess implements Notifiable
         //get message from parent
         $message = $this->getMessage();
         if ($message) {
-            try {
-                $gateway = gs('sms_config')->name;
-                if ($this->mobile) {
-                    $sendSms = new SmsGateway();
-                    $sendSms->to = $this->mobile;
-                    $sendSms->from = $this->getSmsFrom();
-                    $sendSms->message = strip_tags($message);
-                    $sendSms->config = gs('sms_config');
-                    $sendSms->$gateway();
+            if ($this->mobile) {
+                $this->getSmsFrom();
+                $result = app(DeelkoSmsService::class)->sendMasking($this->mobile, strip_tags($message));
+
+                if ($result['success']) {
                     $this->createLog('sms');
+                } else {
+                    $this->createErrorLog('SMS Error: ' . $result['message']);
+                    session()->flash('sms_error', $result['message']);
                 }
-            } catch (\Exception $e) {
-                $this->createErrorLog('SMS Error: ' . $e->getMessage());
-                session()->flash('sms_error', 'API Error: ' . $e->getMessage());
             }
         }
     }
