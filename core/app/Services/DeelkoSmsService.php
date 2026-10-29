@@ -23,7 +23,7 @@ class DeelkoSmsService
             return ['success' => false, 'message' => 'Deelko masking SMS sender ID is not configured on the server'];
         }
 
-        return $this->sendUsingEndpoint($mobile, $message, 'masking', ['maskingId' => $maskingId]);
+        return $this->sendUsingEndpoint($mobile, $message, 'masking', ['maskingID' => $maskingId]);
     }
 
     private function sendUsingEndpoint(string $mobile, string $message, string $endpoint, array $parameters = []): array

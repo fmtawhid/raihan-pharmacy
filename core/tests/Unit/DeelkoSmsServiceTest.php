@@ -22,7 +22,7 @@ class DeelkoSmsServiceTest extends TestCase
             'services' => [
                 'deelko_sms' => [
                     'api_key' => 'test-key',
-                    'masking_id' => 'Rayhan Pharmacy',
+                    'masking_id' => 'RN PHARMACY',
                 ],
             ],
         ]));
@@ -55,7 +55,7 @@ class DeelkoSmsServiceTest extends TestCase
             && $request['api_key'] === 'test-key'
             && $request['mobileNo'] === '8801700000000'
             && $request['smsContent'] === 'Test message'
-            && $request['maskingId'] === 'Rayhan Pharmacy'
+            && $request['maskingID'] === 'RN PHARMACY'
         );
     }
 
@@ -66,7 +66,7 @@ class DeelkoSmsServiceTest extends TestCase
         $this->assertTrue($result['success']);
         Http::assertSent(fn (Request $request) =>
             str_contains($request->url(), '/smsapi/v2/non-masking?')
-            && !isset($request['maskingId'])
+            && !isset($request['maskingID'])
         );
     }
 }
