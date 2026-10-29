@@ -33,6 +33,11 @@ class DeelkoSmsService
             return ['success' => false, 'message' => 'SMS API is not configured on the server'];
         }
 
+        $mobile = $this->normalizeBangladeshMobile($mobile);
+        if ($mobile === null) {
+            return ['success' => false, 'message' => 'Enter a valid Bangladesh mobile number, such as 01603747235 or 8801603747235'];
+        }
+
         try {
             $response = Http::timeout(20)->get('https://sms.deelko.net/smsapi/v2/' . $endpoint, [
                 'api_key' => $apiKey,
@@ -49,6 +54,24 @@ class DeelkoSmsService
         } catch (\Throwable $exception) {
             return ['success' => false, 'message' => 'Could not connect to the SMS service'];
         }
+    }
+
+    private function normalizeBangladeshMobile(string $mobile): ?string
+    {
+        $mobile = preg_replace('/[\s().-]+/u', '', trim($mobile));
+        if (!is_string($mobile) || $mobile === '') {
+            return null;
+        }
+
+        if (str_starts_with($mobile, '+')) {
+            $mobile = substr($mobile, 1);
+        } elseif (str_starts_with($mobile, '00')) {
+            $mobile = substr($mobile, 2);
+        } elseif (preg_match('/^01[3-9]\d{8}$/', $mobile)) {
+            $mobile = '880' . substr($mobile, 1);
+        }
+
+        return preg_match('/^8801[3-9]\d{8}$/', $mobile) ? $mobile : null;
     }
 
     private function errorMessage($response): string

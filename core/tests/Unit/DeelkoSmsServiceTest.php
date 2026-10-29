@@ -69,4 +69,23 @@ class DeelkoSmsServiceTest extends TestCase
             && !isset($request['maskingID'])
         );
     }
+
+    public function test_masking_sms_normalizes_a_local_bangladesh_mobile_number(): void
+    {
+        $result = app(DeelkoSmsService::class)->sendMasking('01603747235', 'Test message');
+
+        $this->assertTrue($result['success']);
+        Http::assertSent(fn (Request $request) =>
+            $request['mobileNo'] === '8801603747235'
+        );
+    }
+
+    public function test_masking_sms_rejects_an_invalid_mobile_without_calling_the_provider(): void
+    {
+        $result = app(DeelkoSmsService::class)->sendMasking('0160374723', 'Test message');
+
+        $this->assertFalse($result['success']);
+        $this->assertStringContainsString('valid Bangladesh mobile number', $result['message']);
+        Http::assertNothingSent();
+    }
 }
