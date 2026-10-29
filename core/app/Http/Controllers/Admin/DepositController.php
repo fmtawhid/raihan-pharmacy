@@ -123,7 +123,7 @@ class DepositController extends Controller
     public function details($id)
     {
         $deposit = Deposit::where('id', $id)->with(['user', 'gateway'])->firstOrFail();
-        $pageTitle = $deposit->user->username.' requested ' . showAmount($deposit->amount);
+        $pageTitle = ($deposit->user?->username ?? __('Unknown user')).' requested ' . showAmount($deposit->amount);
         $details = ($deposit->detail != null) ? json_encode($deposit->detail) : null;
         return view('admin.deposit.detail', compact('pageTitle', 'deposit','details'));
     }
