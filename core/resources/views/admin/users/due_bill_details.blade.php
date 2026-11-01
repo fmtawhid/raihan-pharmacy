@@ -50,7 +50,48 @@
                 </div></div>
             </div>
         @endif
+        @if($canAddDue)
+            <div id="add-customer-due" class="col-md-4 col-sm-6 mb-3">
+                <div class="card h-100"><div class="card-body">
+                    <form method="POST" action="{{ route('admin.users.due.bills.add') }}">
+                        @csrf
+                        <input type="hidden" name="user_id" value="{{ $user->id }}">
+                        <label for="due-entry-amount" class="small text-muted">Add customer due</label>
+                        <input id="due-entry-amount" type="number" name="amount" class="form-control mt-2"
+                            min="0.01" step="0.01" value="{{ old('amount') }}" required>
+                        <label for="due-entry-description" class="small text-muted mt-2">Description</label>
+                        <input id="due-entry-description" type="text" name="description" class="form-control mt-1"
+                            maxlength="255" value="{{ old('description') }}" required>
+                        <button type="submit" class="btn btn--primary mt-3">Add Due</button>
+                        @error('amount')<div class="text-danger small mt-1">{{ $message }}</div>@enderror
+                        @error('description')<div class="text-danger small mt-1">{{ $message }}</div>@enderror
+                    </form>
+                </div></div>
+            </div>
+        @endif
     </div>
+
+    @if($manualDues->isNotEmpty())
+        <div class="card mb-3">
+            <div class="card-header"><h6 class="mb-0">Additional Customer Dues</h6></div>
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table--light style--two mb-0">
+                        <thead><tr><th>Date</th><th>Description</th><th class="text-end">Outstanding</th></tr></thead>
+                        <tbody>
+                            @foreach($manualDues as $manualDue)
+                                <tr>
+                                    <td>{{ showDateTime($manualDue->created_at, 'd M Y, H:i') }}</td>
+                                    <td>{{ $manualDue->description }}</td>
+                                    <td class="text-end fw-bold">{{ showAmount($manualDue->balance) }}</td>
+                                </tr>
+                            @endforeach
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    @endif
 
     <div class="card">
         <div class="card-header"><h6 class="mb-0">Outstanding POS Orders</h6></div>

@@ -179,52 +179,6 @@
             }
         ]
     },
-    "store_setting": {
-        "header": "Settings",
-        "title": "Store Front Settings",
-        "icon": "las la-life-ring",
-        "route_name": "admin.setting.system",
-        "menu_active": [
-            "admin.setting.system",
-            "admin.setting.socialite.credentials",
-            "admin.setting.logo.icon",
-            "admin.language.manage",
-            "admin.language.key",
-            "admin.seo",
-            "admin.frontend.templates",
-            "admin.frontend.manage.*",
-            "admin.maintenance.mode",
-            "admin.setting.cookie",
-            "admin.setting.popup.banner",
-            "admin.setting.custom.css",
-            "admin.setting.robot",
-            "admin.frontend.index",
-            "admin.frontend.sections*",
-            "admin.promo.banner*",
-            "admin.collection.*",
-            "admin.menu.builder.*",
-            "admin.gateway.*"
-        ]
-    },
-    "general_settings": {
-        "title": "General Setting",
-        "icon": "las la-cog",
-        "route_name": "admin.setting.general",
-        "menu_active": "admin.setting.general"
-    },
-    "system_configuration": {
-        "title": "System Configuration",
-        "icon": "las la-tools",
-        "route_name": "admin.setting.system.configuration",
-        "menu_active": "admin.setting.system.configuration"
-    },
-
-    "shipping_methods": {
-        "title": "Shipping Methods",
-        "icon": "la la-shipping-fast",
-        "route_name": "admin.shipping.methods.all",
-        "menu_active": "admin.shipping.methods*"
-    },
     "reports": {
         "title": "Reports",
         "icon": "las la-chart-bar",

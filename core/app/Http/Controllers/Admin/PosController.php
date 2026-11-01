@@ -40,6 +40,24 @@ class PosController extends Controller
             ->when(BranchContext::ownerId(), fn($query, $branchId) => $query->where('branch_id', $branchId));
     }
 
+    private function posCustomerDueAmounts(array $userIds): array
+    {
+        if (empty($userIds)) {
+            return [];
+        }
+
+        return Deposit::query()
+            ->whereIn('user_id', $userIds)
+            ->where('status', Status::PAYMENT_PENDING)
+            ->where('method_code', 0)
+            ->where('trx', 'like', 'POS-%-DUE-%')
+            ->selectRaw('user_id, SUM(amount) as due_amount')
+            ->groupBy('user_id')
+            ->pluck('due_amount', 'user_id')
+            ->map(fn($amount) => (float) $amount)
+            ->all();
+    }
+
     private function productPayload(Product $product): array
     {
         $stock = (int) ($product->in_stock ?? 0);
@@ -406,7 +424,8 @@ class PosController extends Controller
             'id' => $customer->id,
             'name' => $customerName,
             'email' => $customer->email ?? null,
-            'mobile' => $customer->mobile ?? null
+            'mobile' => $customer->mobile ?? null,
+            'due_amount' => $this->posCustomerDueAmounts([$customer->id])[$customer->id] ?? 0,
         ]]);
     }
 
@@ -448,8 +467,9 @@ class PosController extends Controller
             });
 
             $users = $qb->limit(10)->get();
+            $dueAmounts = $this->posCustomerDueAmounts($users->pluck('id')->all());
 
-            $result = $users->map(function ($u) use ($hasName, $hasFirstname, $hasLastname, $hasUsername, $mobileColumn) {
+            $result = $users->map(function ($u) use ($hasName, $hasFirstname, $hasLastname, $hasUsername, $mobileColumn, $dueAmounts) {
                 if ($hasName) {
                     $name = $u->name;
                 } elseif ($hasFirstname && $hasLastname) {
@@ -463,7 +483,8 @@ class PosController extends Controller
                     'id' => $u->id,
                     'name' => $name,
                     'email' => $u->email ?? null,
-                    'mobile' => $mobileColumn ? ($u->{$mobileColumn} ?? null) : null
+                    'mobile' => $mobileColumn ? ($u->{$mobileColumn} ?? null) : null,
+                    'due_amount' => $dueAmounts[$u->id] ?? 0,
                 ];
             });
 
@@ -516,7 +537,8 @@ class PosController extends Controller
                 'id' => $user->id,
                 'name' => $customerName,
                 'email' => $user->email ?? null,
-                'mobile' => $user->mobile ?? null
+                'mobile' => $user->mobile ?? null,
+                'due_amount' => $this->posCustomerDueAmounts([$user->id])[$user->id] ?? 0,
             ]]);
         } catch (\Exception $e) {
             \Log::error('POS Create Customer Error: ' . $e->getMessage());
@@ -542,7 +564,8 @@ class PosController extends Controller
             'id' => $user->id,
             'name' => $customerName,
             'email' => $user->email ?? null,
-            'mobile' => $user->mobile ?? null
+            'mobile' => $user->mobile ?? null,
+            'due_amount' => $this->posCustomerDueAmounts([$user->id])[$user->id] ?? 0,
         ]]);
     }
 

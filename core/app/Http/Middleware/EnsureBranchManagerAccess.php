@@ -15,7 +15,7 @@ class EnsureBranchManagerAccess
         'admin.print.invoice',
         'admin.pos.*', 'admin.users.*', 'admin.customers.*', 'admin.purchasers.*',
         'admin.category.all', 'admin.brand.all', 'admin.attribute.all', 'admin.product.type.all',
-        'admin.products.all', 'admin.products.add.stock', 'admin.products.get.products.stock',
+        'admin.products.all', 'admin.products.low.stock', 'admin.products.add.stock', 'admin.products.get.products.stock',
         'admin.products.save.stock.purchase', 'admin.products.stock.log.list', 'admin.products.purchases.list',
         'admin.products.expiry.alerts',
         'admin.products.batch.*', 'admin.products.stock.log', 'admin.products.stock.log.variant',
@@ -49,8 +49,7 @@ class EnsureBranchManagerAccess
         'admin.products.*', 'admin.media*',
         'admin.promo.banner.*', 'admin.coupon.*', 'admin.offer.*',
         'admin.order.*', 'admin.deposit.*', 'admin.ticket.*',
-        'admin.setting.system', 'admin.setting.general', 'admin.setting.system.configuration',
-        'admin.setting.notification.global.email*', 'admin.shipping.methods.*',
+        'admin.setting.notification.global.email*',
         'admin.frontend.*', 'admin.menu.builder.*', 'admin.seo',
         'admin.setting.logo.icon', 'admin.setting.socialite.credentials*',
         'admin.language.*', 'admin.maintenance.mode',
@@ -62,8 +61,6 @@ class EnsureBranchManagerAccess
     ];
 
     private const ECOMMERCE_MANAGER_POST_PATHS = [
-        'admin/general-setting',
-        'admin/setting/system-configuration',
         'admin/frontend/frontend-element-seo/*/*',
         'admin/frontend/manage-seo/*',
         'admin/custom-css',

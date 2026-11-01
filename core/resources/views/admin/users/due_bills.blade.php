@@ -3,14 +3,57 @@
 @section('panel')
     <div class="d-flex mb-30 flex-wrap gap-3 justify-content-between align-items-center">
         <h6 class="page-title">@lang('Due Bills')</h6>
-        <form method="GET" class="d-flex gap-2">
-            <input type="search" name="q" value="{{ request('q') }}" class="form-control"
-                placeholder="@lang('Search name or phone')" aria-label="@lang('Search name or phone')">
-            <button type="submit" class="btn btn--primary">
-                <i class="las la-search"></i> @lang('Search')
-            </button>
-        </form>
+        <div class="d-flex flex-wrap gap-2">
+            
+            <form method="GET" class="d-flex gap-2">
+                <input type="search" name="q" value="{{ request('q') }}" class="form-control"
+                    placeholder="@lang('Search name or phone')" aria-label="@lang('Search name or phone')">
+                <button type="submit" class="btn btn--primary">
+                    <i class="las la-search"></i> @lang('Search')
+                </button>
+            </form>
+        </div>
     </div>
+
+    @if($canAddDue)
+        <div id="add-customer-due" class="card mb-4">
+            <div class="card-header"><h6 class="mb-0">Add Customer Due</h6></div>
+            <div class="card-body">
+                <form method="POST" action="{{ route('admin.users.due.bills.add') }}">
+                    @csrf
+                    <div class="row align-items-end">
+                        <div class="col-lg-4 col-md-6 mb-3">
+                            <label for="due-user" class="form-label">Search customer</label>
+                            <select id="due-user" name="user_id" class="form-control" required>
+                                @if(old('user_id'))
+                                    <option value="{{ old('user_id') }}" selected>{{ old('user_label', 'Selected customer') }}</option>
+                                @endif
+                            </select>
+                            <input type="hidden" name="user_label" id="due-user-label" value="{{ old('user_label') }}">
+                            @error('user_id')<div class="text-danger small mt-1">{{ $message }}</div>@enderror
+                        </div>
+                        <div class="col-lg-3 col-md-6 mb-3">
+                            <label for="due-amount" class="form-label">Amount</label>
+                            <input id="due-amount" type="number" name="amount" class="form-control"
+                                min="0.01" step="0.01" value="{{ old('amount') }}" required>
+                            @error('amount')<div class="text-danger small mt-1">{{ $message }}</div>@enderror
+                        </div>
+                        <div class="col-lg-3 col-md-8 mb-3">
+                            <label for="due-description" class="form-label">Short description</label>
+                            <input id="due-description" type="text" name="description" class="form-control"
+                                maxlength="255" value="{{ old('description') }}" required>
+                            @error('description')<div class="text-danger small mt-1">{{ $message }}</div>@enderror
+                        </div>
+                        <div class="col-lg-2 col-md-4 mb-3">
+                            <button type="submit" class="btn btn--success w-100">
+                                <i class="las la-plus"></i> Add Due
+                            </button>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+    @endif
 
     <div class="card">
         <div class="table-responsive--md table-responsive">
@@ -43,8 +86,9 @@
                                             <i class="las la-sms"></i> @lang('Send SMS')
                                         </button>
                                     </form>
-                                    <form method="POST" action="{{ route('admin.users.pos.payment.all', $user->id) }}">
+                                    <form method="POST" action="{{ route('admin.users.due.bills.pay', $user->id) }}">
                                         @csrf
+                                        <input type="hidden" name="amount" value="{{ number_format($user->due_amount, 2, '.', '') }}">
                                         <button type="submit" class="btn btn-sm btn-outline--success">
                                             <i class="las la-money-bill-wave"></i> @lang('Pay Full Due')
                                         </button>
@@ -64,6 +108,35 @@
             <div class="card-footer py-3">
                 {{ paginateLinks($users) }}
             </div>
+        @endif
+
+        @if($canAddDue)
+            @push('script')
+                <script>
+                    $(function () {
+                        $('#due-user').select2({
+                            width: '100%',
+                            placeholder: 'Type customer name or phone',
+                            minimumInputLength: 2,
+                            ajax: {
+                                url: @json(route('admin.users.due.bills.customers.search')),
+                                dataType: 'json',
+                                delay: 300,
+                                data: function (params) {
+                                    return { search: params.term, page: params.page || 1 };
+                                },
+                                processResults: function (response) {
+                                    return response;
+                                },
+                                cache: true
+                            }
+                        });
+                        $('#due-user').on('select2:select', function (event) {
+                            $('#due-user-label').val(event.params.data.text);
+                        });
+                    });
+                </script>
+            @endpush
         @endif
     </div>
 @endsection

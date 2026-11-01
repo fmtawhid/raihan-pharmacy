@@ -5,11 +5,14 @@ namespace App\Http\Controllers\Admin;
 use App\Constants\Status;
 use App\Http\Controllers\Controller;
 use App\Models\Deposit;
+use App\Models\CustomerDueEntry;
 use App\Models\NotificationLog;
 use App\Models\NotificationTemplate;
 use App\Models\Order;
+use App\Models\SmsLog;
 use App\Models\SupportTicket;
 use App\Models\User;
+use App\Models\Admin;
 use App\Services\DeelkoSmsService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -41,10 +44,15 @@ class ManageUsersController extends Controller
                 ->where('method_code', 0)
                 ->where('trx', 'like', 'POS-%-DUE-%');
         };
+        $manualDueFilter = fn($query) => $query->where('balance', '>', 0);
 
         $users = User::query()
-            ->whereHas('deposits', $dueFilter)
-            ->withSum(['deposits as due_amount' => $dueFilter], 'amount')
+            ->where(function ($query) use ($dueFilter, $manualDueFilter) {
+                $query->whereHas('deposits', $dueFilter)
+                    ->orWhereHas('dueEntries', $manualDueFilter);
+            })
+            ->withSum(['deposits as pos_due_amount' => $dueFilter], 'amount')
+            ->withSum(['dueEntries as manual_due_amount' => $manualDueFilter], 'balance')
             ->when($request->filled('q'), function ($query) use ($request) {
                 $term = trim($request->input('q'));
                 $query->where(function ($search) use ($term) {
@@ -61,9 +69,16 @@ class ManageUsersController extends Controller
             ->orderByDesc('id')
             ->paginate(getPaginate())
             ->withQueryString();
+        $users->getCollection()->each(function (User $user) {
+            $user->setAttribute(
+                'due_amount',
+                (float) $user->pos_due_amount + (float) $user->manual_due_amount
+            );
+        });
 
         $pageTitle = 'Due Bills';
-        return view('admin.users.due_bills', compact('pageTitle', 'users'));
+        $canAddDue = $this->canAddDueBillEntry();
+        return view('admin.users.due_bills', compact('pageTitle', 'users', 'canAddDue'));
     }
 
     public function dueBillDetails(Request $request, $id)
@@ -77,9 +92,49 @@ class ManageUsersController extends Controller
         return view('admin.users.due_bill_details', $data + compact('pageTitle', 'paidPaymentIds'));
     }
 
+    public function searchDueBillCustomers(Request $request)
+    {
+        abort_unless($this->canAddDueBillEntry(), 403, 'Only the Main Branch can add customer due entries.');
+
+        $validated = $request->validate([
+            'search' => 'required|string|min:2|max:100',
+            'page' => 'sometimes|integer|min:1',
+        ]);
+        $term = trim($validated['search']);
+        $page = (int) ($validated['page'] ?? 1);
+        $perPage = 20;
+
+        $users = User::query()
+            ->where(function ($query) use ($term) {
+                $query->where('firstname', 'like', "%{$term}%")
+                    ->orWhere('lastname', 'like', "%{$term}%")
+                    ->orWhereRaw("CONCAT(COALESCE(firstname, ''), ' ', COALESCE(lastname, '')) LIKE ?", ["%{$term}%"])
+                    ->orWhere('username', 'like', "%{$term}%")
+                    ->orWhere('email', 'like', "%{$term}%")
+                    ->orWhere('mobile', 'like', "%{$term}%")
+                    ->orWhereRaw("CONCAT(COALESCE(dial_code, ''), COALESCE(mobile, '')) LIKE ?", ["%{$term}%"]);
+            })
+            ->orderBy('firstname')
+            ->orderBy('lastname')
+            ->orderBy('id')
+            ->paginate($perPage, ['id', 'firstname', 'lastname', 'username', 'mobile', 'dial_code'], 'page', $page);
+
+        return response()->json([
+            'results' => $users->getCollection()->map(fn(User $user) => [
+                'id' => $user->id,
+                'text' => ($user->fullname ?: $user->username)
+                    . ($user->mobileNumber ? ' · ' . $user->mobileNumber : ''),
+            ]),
+            'pagination' => ['more' => $users->hasMorePages()],
+        ]);
+    }
+
     public function printDueBill($id)
     {
-        return $this->customerPosInvoice($id);
+        $data = $this->dueBillDetailsData($id);
+        $pageTitle = 'Due Bill - ' . $data['user']->username;
+
+        return view('invoice.customer-due-a5', $data + compact('pageTitle'));
     }
 
     public function collectDueBillPayment(Request $request, $id)
@@ -101,8 +156,14 @@ class ManageUsersController extends Controller
                 ->orderBy('id')
                 ->lockForUpdate()
                 ->get();
+            $manualDues = $user->dueEntries()
+                ->where('balance', '>', 0)
+                ->orderBy('id')
+                ->lockForUpdate()
+                ->get();
 
-            $remainingDue = (float) $orders->sum(fn(Order $order) => $this->posOrderDueAmount($order));
+            $remainingDue = (float) $orders->sum(fn(Order $order) => $this->posOrderDueAmount($order))
+                + (float) $manualDues->sum('balance');
             if ($amount > $remainingDue) {
                 throw ValidationException::withMessages([
                     'amount' => 'Payment amount cannot exceed the outstanding due.',
@@ -126,6 +187,29 @@ class ManageUsersController extends Controller
                 $amountToApply = round($amountToApply - (float) $payment->amount, 2);
             }
 
+            foreach ($manualDues as $manualDue) {
+                if ($amountToApply <= 0) {
+                    break;
+                }
+
+                $paymentAmount = min($amountToApply, (float) $manualDue->balance);
+                $manualDue->balance = round((float) $manualDue->balance - $paymentAmount, 2);
+                $manualDue->save();
+
+                $payment = new Deposit();
+                $payment->user_id = $user->id;
+                $payment->order_id = 0;
+                $payment->amount = $paymentAmount;
+                $payment->method_code = 0;
+                $payment->method_currency = gs('cur_text');
+                $payment->trx = 'POS-MANUAL-PAID-' . getTrx();
+                $payment->status = Status::PAYMENT_SUCCESS;
+                $payment->save();
+
+                $paymentIds[] = $payment->id;
+                $amountToApply = round($amountToApply - $paymentAmount, 2);
+            }
+
             if ($amountToApply > 0) {
                 throw ValidationException::withMessages([
                     'amount' => 'The outstanding due changed. Please refresh and try again.',
@@ -139,6 +223,31 @@ class ManageUsersController extends Controller
             'id' => $user->id,
             'payments' => implode(',', $paymentIds),
         ])->withNotify([['success', 'Payment recorded successfully.']]);
+    }
+
+    public function addDueBillEntry(Request $request)
+    {
+        abort_unless($this->canAddDueBillEntry(), 403, 'Only the Main Branch can add customer due entries.');
+
+        $validated = $request->validate([
+            'user_id' => 'required|integer',
+            'amount' => 'required|numeric|min:0.01|max:9999999999999999.99',
+            'description' => 'required|string|max:255',
+        ]);
+        $user = User::findOrFail($validated['user_id']);
+
+        DB::transaction(function () use ($user, $validated) {
+            $entry = new CustomerDueEntry();
+            $entry->user_id = $user->id;
+            $entry->admin_id = Auth::guard('admin')->id();
+            $entry->amount = $validated['amount'];
+            $entry->balance = $validated['amount'];
+            $entry->description = $validated['description'];
+            $entry->save();
+        });
+
+        return redirect()->route('admin.users.due.bills.details', $user->id)
+            ->withNotify([['success', 'Customer due added successfully.']]);
     }
 
     public function printDueBillReceipt(Request $request, $id)
@@ -176,8 +285,10 @@ class ManageUsersController extends Controller
 
     private function dueBillDetailsData($id): array
     {
-        $user = User::whereHas('deposits', function ($query) {
-            $query->where('method_code', 0)->where('trx', 'like', 'POS-%');
+        $user = User::where(function ($query) {
+            $query->whereHas('deposits', function ($depositQuery) {
+                $depositQuery->where('method_code', 0)->where('trx', 'like', 'POS-%');
+            })->orWhereHas('dueEntries');
         })->findOrFail($id);
         $dueDeposits = $user->deposits()
             ->with(['order.orderDetail.product'])
@@ -195,29 +306,71 @@ class ManageUsersController extends Controller
             $order->setAttribute('due_amount', (float) $deposits->sum('amount'));
             return $order;
         })->filter()->values();
-        $dueAmount = (float) $dueOrders->sum('due_amount');
+        $manualDues = $user->dueEntries()
+            ->where('balance', '>', 0)
+            ->orderBy('created_at')
+            ->get();
+        $dueAmount = (float) $dueOrders->sum('due_amount') + (float) $manualDues->sum('balance');
+        $canAddDue = $this->canAddDueBillEntry();
 
-        return compact('user', 'dueOrders', 'dueAmount');
+        return compact('user', 'dueOrders', 'manualDues', 'dueAmount', 'canAddDue');
+    }
+
+    private function canAddDueBillEntry(): bool
+    {
+        $admin = Auth::guard('admin')->user();
+
+        if (!$admin instanceof Admin) {
+            return false;
+        }
+
+        return $admin->id === 1
+            || $admin->hasRole('super_admin')
+            || ($admin->isBranchManager() && $admin->branch?->code === 'MAIN');
     }
 
     public function sendDueBillSms($id, DeelkoSmsService $smsService)
     {
         $user = User::findOrFail($id);
-        $dueAmount = (float) Deposit::where('user_id', $user->id)
-            ->where('status', Status::PAYMENT_PENDING)
-            ->where('method_code', 0)
-            ->where('trx', 'like', 'POS-%-DUE-%')
-            ->sum('amount');
+        $orders = Order::query()
+            ->where('user_id', $user->id)
+            ->where('order_number', 'like', 'POS-%')
+            ->with('deposits')
+            ->get(['id', 'total_amount', 'payment_status']);
+        $totalAmount = (float) $orders->sum('total_amount');
+        $paidAmount = (float) $orders->sum(function (Order $order) {
+            $paid = (float) $order->deposits
+                ->where('status', Status::PAYMENT_SUCCESS)
+                ->sum('amount');
+
+            if ($paid <= 0 && $order->payment_status == Status::PAYMENT_SUCCESS) {
+                $paid = (float) $order->total_amount;
+            }
+
+            return min($paid, (float) $order->total_amount);
+        });
+        $dueAmount = max(round($totalAmount - $paidAmount, 2), 0)
+            + (float) $user->dueEntries()->sum('balance');
 
         if ($dueAmount <= 0 || !$user->mobileNumber) {
-            $notify[] = ['error', 'This customer has no outstanding POS due or phone number'];
+            $notify[] = ['error', 'This customer has no outstanding due or phone number'];
             return back()->withNotify($notify);
         }
 
-        $message = 'রায়হান ফার্মেসি থেকে বলছি, আপনার বকেয়া ৳'
+        $message = 'রায়হান ফার্মেসি: আপনার মোট বকেয়া ৳'
             . number_format($dueAmount, 2)
-            . ' টাকা। অনুগ্রহ করে পরিশোধ করুন। ধন্যবাদ।';
+            . '। অনুগ্রহ করে বকেয়া পরিশোধ করুন। ধন্যবাদ।';
         $result = $smsService->sendMasking($user->mobileNumber, $message);
+        SmsLog::create([
+            'admin_id' => auth('admin')->id(),
+            'user_id' => $user->id,
+            'recipient_number' => $user->mobileNumber,
+            'message' => $message,
+            'status' => $result['success'] ? 'sent' : 'failed',
+            'source' => 'due_bill',
+            'response_message' => $result['message'] ?? null,
+            'sent_at' => $result['success'] ? now() : null,
+        ]);
         $notify[] = [$result['success'] ? 'success' : 'error', $result['message']];
 
         return back()->withNotify($notify);
@@ -481,7 +634,7 @@ class ManageUsersController extends Controller
         });
 
         if ($paymentResult['amount'] <= 0) {
-            $notify[] = ['error', 'There are no POS invoice dues to collect.'];
+            $notify[] = ['error', 'There are no outstanding dues to collect.'];
             return back()->withNotify($notify);
         }
 

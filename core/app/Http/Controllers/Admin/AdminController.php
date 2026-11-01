@@ -21,6 +21,7 @@ use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Schema;
 
 class AdminController extends Controller
 {
@@ -206,14 +207,16 @@ class AdminController extends Controller
         $inventoryBranchId = $ecommerce ? BranchContext::ownerId() : $branchId;
         $stock = $ecommerce
             ? (object) ['quantity' => 0, 'value' => 0, 'product_count' => 0]
-            : DB::table('product_batches')
-                ->when($inventoryBranchId !== null, fn($query) => $query->where('branch_id', $inventoryBranchId))
-                ->selectRaw('COALESCE(SUM(CASE WHEN qty_received > qty_sold THEN qty_received - qty_sold ELSE 0 END), 0) as quantity')
-                ->selectRaw('COALESCE(SUM(CASE WHEN qty_received > qty_sold THEN (qty_received - qty_sold) * COALESCE(purchase_price, 0) ELSE 0 END), 0) as value')
-                ->selectRaw('COUNT(DISTINCT CASE WHEN qty_received > qty_sold THEN product_id END) as product_count')
+            : DB::table('product_batches as pb')
+                ->leftJoin('products as p', 'p.id', '=', 'pb.product_id')
+                ->when($inventoryBranchId !== null, fn($query) => $query->where('pb.branch_id', $inventoryBranchId))
+                ->selectRaw('COALESCE(SUM(CASE WHEN pb.qty_received > pb.qty_sold THEN pb.qty_received - pb.qty_sold ELSE 0 END), 0) as quantity')
+                ->selectRaw('COALESCE(SUM(CASE WHEN pb.qty_received > pb.qty_sold THEN (pb.qty_received - pb.qty_sold) * COALESCE(NULLIF(p.sale_price, 0), p.regular_price, 0) ELSE 0 END), 0) as value')
+                ->selectRaw('COUNT(DISTINCT CASE WHEN pb.qty_received > pb.qty_sold THEN pb.product_id END) as product_count')
                 ->first();
 
         $lowStockProducts = 0;
+        $dueCustomers = collect();
         if (!$ecommerce) {
             $branchInventory = DB::table('product_batches as pb')
                 ->when($inventoryBranchId !== null, fn($query) => $query->where('pb.branch_id', $inventoryBranchId))
@@ -226,6 +229,49 @@ class AdminController extends Controller
                 ->where('p.track_inventory', Status::YES)
                 ->whereRaw('COALESCE(branch_inventory.quantity, 0) <= p.alert_quantity')
                 ->count();
+
+            $customerNameColumns = [];
+            if (Schema::hasColumn('users', 'firstname') && Schema::hasColumn('users', 'lastname')) {
+                $customerNameExpression = "NULLIF(TRIM(CONCAT(COALESCE(u.firstname, ''), ' ', COALESCE(u.lastname, ''))), '')";
+                $customerNameColumns = ['u.firstname', 'u.lastname'];
+            } elseif (Schema::hasColumn('users', 'name')) {
+                $customerNameExpression = "NULLIF(u.name, '')";
+                $customerNameColumns = ['u.name'];
+            } elseif (Schema::hasColumn('users', 'username')) {
+                $customerNameExpression = "NULLIF(u.username, '')";
+                $customerNameColumns = ['u.username'];
+            } else {
+                $customerNameExpression = 'NULL';
+            }
+            if (Schema::hasColumn('users', 'email')) {
+                $customerNameExpression = "COALESCE({$customerNameExpression}, u.email, 'Customer')";
+                $customerNameColumns[] = 'u.email';
+            } else {
+                $customerNameExpression = "COALESCE({$customerNameExpression}, 'Customer')";
+            }
+            $customerPhoneExpression = Schema::hasColumn('users', 'mobile')
+                ? 'u.mobile'
+                : (Schema::hasColumn('users', 'phone') ? 'u.phone' : 'NULL');
+            if ($customerPhoneExpression !== 'NULL') {
+                $customerNameColumns[] = $customerPhoneExpression;
+            }
+
+            $dueCustomers = DB::table('deposits as d')
+                ->join('orders as o', 'o.id', '=', 'd.order_id')
+                ->join('users as u', 'u.id', '=', 'd.user_id')
+                ->where('o.branch_id', $branchId)
+                ->where('o.order_number', 'like', 'POS-%')
+                ->where('d.status', Status::PAYMENT_PENDING)
+                ->where('d.method_code', 0)
+                ->where('d.trx', 'like', 'POS-%-DUE-%')
+                ->select('u.id')
+                ->selectRaw("{$customerNameExpression} as name")
+                ->selectRaw("{$customerPhoneExpression} as mobile")
+                ->selectRaw('SUM(d.amount) as due_amount')
+                ->groupBy('u.id', ...$customerNameColumns)
+                ->orderByDesc('due_amount')
+                ->limit(5)
+                ->get();
         }
         $stockAdded = $ecommerce
             ? DB::table('product_batches')
@@ -267,7 +313,7 @@ class AdminController extends Controller
 
         return view('admin.branch-dashboard', compact(
             'pageTitle', 'branch', 'filters', 'periodOrders', 'totalDue', 'totalPaid', 'openOrders',
-            'stock', 'lowStockProducts', 'recentOrders', 'statusLabels', 'ecommerce', 'stockAdded', 'unitsSold'
+            'stock', 'lowStockProducts', 'dueCustomers', 'recentOrders', 'statusLabels', 'ecommerce', 'stockAdded', 'unitsSold'
         ));
     }
     

@@ -2,8 +2,11 @@
 
 namespace App\Http\Controllers\Admin;
 
+use App\Constants\Status;
 use App\Http\Controllers\Controller;
 use App\Models\Product;
+use App\Support\BranchContext;
+use Illuminate\Support\Facades\DB;
 
 class ProductListController extends Controller
 {
@@ -58,8 +61,37 @@ class ProductListController extends Controller
     {
         $pageTitle = "Low Stock Products";
         $trashed   = false;
-        $products  = Product::select('id', 'name', 'slug', 'brand_id', 'is_published', 'is_showable', 'is_downloadable', 'product_type_id', 'product_type', 'regular_price', 'sale_price', 'in_stock', 'track_inventory', 'show_stock', 'alert_quantity')
-            ->lowStock()
+        $products = Product::query();
+        if ($branchId = BranchContext::id()) {
+            $branchInventory = DB::table('product_batches')
+                ->where('branch_id', $branchId)
+                ->groupBy('product_id')
+                ->select('product_id')
+                ->selectRaw('SUM(CASE WHEN qty_received > qty_sold THEN qty_received - qty_sold ELSE 0 END) as quantity');
+            $products->leftJoinSub($branchInventory, 'branch_inventory', 'branch_inventory.product_id', '=', 'products.id')
+                ->where('products.track_inventory', Status::YES)
+                ->whereRaw('COALESCE(branch_inventory.quantity, 0) <= products.alert_quantity');
+        } else {
+            $products->lowStock();
+        }
+
+        $products = $products->select(
+            'products.id',
+            'products.name',
+            'products.slug',
+            'products.brand_id',
+            'products.is_published',
+            'products.is_showable',
+            'products.is_downloadable',
+            'products.product_type_id',
+            'products.product_type',
+            'products.regular_price',
+            'products.sale_price',
+            'products.in_stock',
+            'products.track_inventory',
+            'products.show_stock',
+            'products.alert_quantity'
+        )
             ->searchable(['name'])
             ->with(['brand', 'categories'])
             ->orderByDesc('id')

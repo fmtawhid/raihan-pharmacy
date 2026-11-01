@@ -53,7 +53,7 @@
             @if($user->address)<div>{{ $user->address }}</div>@endif
         </section>
         <table>
-            <thead><tr><th>POS order</th><th>Date</th><th>Items</th><th class="number">Total</th><th class="number">Due</th></tr></thead>
+            <thead><tr><th>POS order</th><th>Date</th><th>Items / Description</th><th class="number">Total</th><th class="number">Due</th></tr></thead>
             <tbody>
                 @foreach($dueOrders as $order)
                     <tr>
@@ -66,6 +66,15 @@
                         </td>
                         <td class="number">{{ showAmount($order->total_amount) }}</td>
                         <td class="number">{{ showAmount($order->due_amount) }}</td>
+                    </tr>
+                @endforeach
+                @foreach($manualDues as $manualDue)
+                    <tr>
+                        <td>Additional due</td>
+                        <td>{{ showDateTime($manualDue->created_at, 'd M Y') }}</td>
+                        <td class="items">{{ $manualDue->description }}</td>
+                        <td class="number">—</td>
+                        <td class="number">{{ showAmount($manualDue->balance) }}</td>
                     </tr>
                 @endforeach
             </tbody>

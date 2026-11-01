@@ -44,6 +44,7 @@
         "menu_active": ["admin.products.*"],
         "submenu": [
             {"title": "All Products", "route_name": "admin.products.all", "menu_active": "admin.products.all"},
+            {"title": "Low Stock Products", "route_name": "admin.products.low.stock", "menu_active": "admin.products.low.stock"},
             {"title": "Add Stock", "route_name": "admin.products.add.stock", "menu_active": "admin.products.add.stock"},
             {"title": "Purchases", "route_name": "admin.products.purchases.list", "menu_active": "admin.products.purchases.list"},
             {"title": "Expiry Alerts (7 Days)", "route_name": "admin.products.expiry.alerts", "menu_active": "admin.products.expiry.alerts"},

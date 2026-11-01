@@ -67,7 +67,7 @@
                 <div class="card h-100"><div class="card-body">
                     <small class="text-muted">Current stock value</small>
                     <h4 class="mt-2 mb-1">{{ showAmount($stock->value) }}</h4>
-                    <small>At purchase cost</small>
+                    <small>At sale price, or regular price when not on sale</small>
                 </div></div>
             </div>
             <div class="col-xl-3 col-sm-6 mb-3">
@@ -102,6 +102,37 @@
             </div>
         @endunless
     </div>
+
+    @unless ($ecommerce)
+        <div class="card mt-2">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h6 class="mb-0">Due customers</h6>
+                <a href="{{ route('admin.users.due.bills') }}" class="btn btn-sm btn--primary">Show all due customers</a>
+            </div>
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table--light style--two mb-0">
+                        <thead>
+                            <tr><th>Customer</th><th>Phone</th><th class="text-end">Due amount</th></tr>
+                        </thead>
+                        <tbody>
+                            @forelse($dueCustomers as $customer)
+                                <tr>
+                                    <td>{{ $customer->name ?: 'Customer' }}</td>
+                                    <td>{{ $customer->mobile ?: '—' }}</td>
+                                    <td class="text-end">{{ showAmount($customer->due_amount) }}</td>
+                                </tr>
+                            @empty
+                                <tr>
+                                    <td colspan="3" class="text-center text-muted py-3">No due customers found.</td>
+                                </tr>
+                            @endforelse
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    @endunless
 
     <div class="card mt-2">
         <div class="card-header d-flex justify-content-between align-items-center">

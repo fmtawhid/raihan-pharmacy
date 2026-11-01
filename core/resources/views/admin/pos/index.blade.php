@@ -8,6 +8,188 @@
    POS — Bootstrap + Minimal Custom Styles
    ════════════════════════════════════════════════= */
 
+.pos-customer-card {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 0.75rem 1rem;
+  margin: 0;
+  border: 1px solid #bfdbfe;
+  border-radius: 0.625rem;
+  background: linear-gradient(110deg, #eff6ff, #f8fbff);
+}
+
+.pos-customer-main {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  flex: 1;
+  min-width: 0;
+}
+
+.pos-customer-name {
+  color: #172554;
+  font-size: 0.95rem;
+  font-weight: 700;
+  overflow-wrap: anywhere;
+}
+
+.pos-customer-contact {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem 1rem;
+  min-width: 0;
+  color: #64748b;
+  font-size: 0.75rem;
+}
+
+.pos-customer-contact span {
+  overflow-wrap: anywhere;
+}
+
+.pos-customer-due {
+  flex: 0 0 auto;
+  padding: 0.45rem 0.7rem;
+  border-radius: 0.5rem;
+  background: #fff;
+  color: #92400e;
+  font-size: 0.75rem;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.pos-payment-card {
+  padding: 1.1rem;
+  border: 1px solid #a7f3d0;
+  border-radius: 0.75rem;
+  background: linear-gradient(145deg, #f0fdf9, #fff);
+  box-shadow: 0 4px 16px rgba(5, 150, 105, 0.08);
+}
+
+.pos-payment-modes {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.4rem;
+}
+
+.pos-payment-option {
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+}
+
+.pos-payment-option .form-check-input {
+  position: absolute;
+  opacity: 0;
+}
+
+.pos-payment-option .form-check-label {
+  display: block;
+  padding: 0.55rem 0.35rem;
+  border: 1px solid #d1d5db;
+  border-radius: 0.5rem;
+  background: #fff;
+  color: #475569;
+  text-align: center;
+  font-size: 0.72rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.pos-payment-option .form-check-input:checked + .form-check-label {
+  border-color: #059669;
+  background: #dcfce7;
+  color: #065f46;
+  box-shadow: 0 0 0 1px #059669;
+}
+
+.pos-payment-option .form-check-input:focus-visible + .form-check-label {
+  outline: 2px solid #0d9488;
+  outline-offset: 2px;
+}
+
+.pos-payment-summary {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.6rem;
+  margin-top: 0.75rem;
+}
+
+.pos-payment-summary-item {
+  padding: 0.65rem 0.75rem;
+  border-radius: 0.55rem;
+  background: #fff;
+}
+
+.pos-payment-summary-item span {
+  display: block;
+  color: #64748b;
+  font-size: 0.7rem;
+}
+
+.pos-payment-summary-item strong {
+  display: block;
+  margin-top: 0.1rem;
+  font-size: 1rem;
+}
+
+.pos-payment-summary-item.is-paid strong {
+  color: #047857;
+}
+
+.pos-payment-summary-item.is-due strong {
+  color: #b45309;
+}
+
+.pos-total-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 0.75rem;
+  padding-top: 0.8rem;
+  margin-top: 0.8rem;
+  border-top: 1px dashed #6ee7b7;
+}
+
+.pos-total-row strong {
+  color: #047857;
+  font-size: 1.5rem;
+  font-weight: 800;
+}
+
+@media (max-width: 575.98px) {
+  .pos-customer-card,
+  .pos-customer-main {
+    align-items: flex-start;
+  }
+
+  .pos-customer-card {
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    padding: 0.65rem;
+  }
+
+  .pos-customer-main {
+    flex-direction: column;
+    gap: 0.25rem;
+  }
+
+  .pos-customer-contact {
+    flex-direction: column;
+    gap: 0.15rem;
+  }
+
+  .pos-customer-due {
+    padding: 0.35rem 0.45rem;
+    font-size: 0.68rem;
+  }
+
+  .pos-customer-card > #clear-customer {
+    margin-left: auto;
+  }
+}
+
 /* Search Dropdown - Custom Only */
 .search-input-wrapper {
   position: relative;
@@ -611,30 +793,41 @@ input[type="number"] {
 
             <!-- Cart Total -->
             <div class="col-md-4">
-              <div style="background: linear-gradient(135deg, #f0fdf9, #ccfbf1); border: 2px solid #5eead4; border-radius: 0.75rem; padding: 1.5rem; height: 100%; display: flex; flex-direction: column; justify-content: space-between; box-shadow: 0 4px 20px rgba(5, 150, 105, 0.12);">
-                <div class="mb-3">
-                  <div class="form-label small fw-700 mb-2">Payment</div>
-                  <div class="d-flex flex-wrap gap-3 mb-2" role="radiogroup" aria-label="Payment">
-                    <div class="form-check">
-                      <input type="radio" name="payment_mode" id="payment-mode-paid" value="paid" class="form-check-input" checked>
-                      <label for="payment-mode-paid" class="form-check-label small">Paid in full</label>
-                    </div>
-                    <div class="form-check">
-                      <input type="radio" name="payment_mode" id="payment-mode-partial" value="partial" class="form-check-input">
-                      <label for="payment-mode-partial" class="form-check-label small">Partial payment</label>
-                    </div>
-                    <div class="form-check">
-                      <input type="radio" name="payment_mode" id="payment-mode-due" value="due" class="form-check-input">
-                      <label for="payment-mode-due" class="form-check-label small">Due</label>
-                    </div>
+              <div class="pos-payment-card h-100">
+                <div class="d-flex justify-content-between align-items-center mb-2">
+                  <span class="small fw-bold text-dark"><i class="la la-wallet text-success me-1"></i>Payment</span>
+                  <span class="small text-muted">Choose payment type</span>
+                </div>
+                <div class="pos-payment-modes mb-3" role="radiogroup" aria-label="Payment">
+                  <div class="form-check pos-payment-option">
+                    <input type="radio" name="payment_mode" id="payment-mode-paid" value="paid" class="form-check-input" checked>
+                    <label for="payment-mode-paid" class="form-check-label">Paid in full</label>
                   </div>
-                  <label for="payment-amount" class="form-label small mb-1">Received now</label>
-                  <div class="input-group input-group-sm">
-                    <span class="input-group-text">৳</span>
-                    <input type="number" id="payment-amount" class="form-control" min="0" step="0.01" value="0.00" disabled>
+                  <div class="form-check pos-payment-option">
+                    <input type="radio" name="payment_mode" id="payment-mode-partial" value="partial" class="form-check-input">
+                    <label for="payment-mode-partial" class="form-check-label">Partial</label>
+                  </div>
+                  <div class="form-check pos-payment-option">
+                    <input type="radio" name="payment_mode" id="payment-mode-due" value="due" class="form-check-input">
+                    <label for="payment-mode-due" class="form-check-label">Due</label>
                   </div>
                 </div>
-                <div>
+                <label for="payment-amount" class="form-label small fw-semibold mb-1">Received now</label>
+                <div class="input-group">
+                    <span class="input-group-text">৳</span>
+                    <input type="number" id="payment-amount" class="form-control" min="0" step="0.01" value="0.00" disabled>
+                </div>
+                <div class="pos-payment-summary">
+                  <div class="pos-payment-summary-item is-paid">
+                    <span>Paid now</span>
+                    <strong id="payment-paid-amount">৳0.00</strong>
+                  </div>
+                  <div class="pos-payment-summary-item is-due">
+                    <span>Due from this order</span>
+                    <strong id="payment-due-amount">৳0.00</strong>
+                  </div>
+                </div>
+                <div class="mt-3">
                   <div class="d-flex justify-content-between align-items-center mb-3">
                     <span style="color: #1e293b; font-size: 0.8rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px;">Subtotal</span>
                     <span style="color: #059669; font-size: 1rem; font-weight: 800;" id="cart-subtotal">৳0.00</span>
@@ -652,12 +845,9 @@ input[type="number"] {
                   </div>
                 </div>
                 
-                <div>
-                  <div class="border-top" style="border-color: #5eead4; margin: 1rem 0;"></div>
-                  <div class="d-flex justify-content-between align-items-center">
-                    <span style="color: #0d5f42; font-size: 0.8rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px;">Total</span>
-                    <span style="color: #059669; font-size: 1.5rem; font-weight: 900; letter-spacing: 0.5px;" id="cart-grand-total">৳0.00</span>
-                  </div>
+                <div class="pos-total-row">
+                  <span class="small fw-bold text-uppercase text-success">Order total</span>
+                  <strong id="cart-grand-total">৳0.00</strong>
                 </div>
               </div>
             </div>
@@ -678,44 +868,6 @@ input[type="number"] {
   </div>
 </div>
 
-<!-- Create Customer Modal -->
-<div id="create-customer-modal" class="modal fade" tabindex="-1" role="dialog">
-  <div class="modal-dialog modal-dialog-centered" role="document">
-    <div class="modal-content">
-      <div class="modal-header">
-        <h5 class="modal-title">Create New Customer</h5>
-        <button type="button" class="btn-close" data-close-create-customer aria-label="Close"></button>
-      </div>
-      <form id="create-customer-form">
-        <div class="modal-body">
-          <div class="mb-3">
-            <label for="cc-name" class="form-label">Full Name *</label>
-            <input type="text" class="form-control" id="cc-name" name="name" required>
-          </div>
-          <div class="mb-3">
-            <label for="cc-email" class="form-label">Email</label>
-            <input type="email" class="form-control" id="cc-email" name="email">
-          </div>
-          <div class="mb-3">
-            <label for="cc-phone" class="form-label">Phone Number *</label>
-            <input type="tel" class="form-control" id="cc-phone" name="mobile" required>
-          </div>
-          <div class="mb-3">
-            <label for="cc-address" class="form-label">Address</label>
-            <textarea class="form-control" id="cc-address" name="address" rows="2" placeholder="Enter full address"></textarea>
-          </div>
-          <div class="alert alert-info small mb-0">
-            <i class="la la-info-circle"></i> <strong>Note:</strong> Login password will be set to the phone number.
-          </div>
-        </div>
-        <div class="modal-footer">
-          <button type="button" class="btn btn-secondary btn-sm" data-close-create-customer>Cancel</button>
-          <button type="submit" class="btn btn-primary btn-sm">Create Customer</button>
-        </div>
-      </form>
-    </div>
-  </div>
-</div>
 @endsection
 
 
@@ -754,6 +906,7 @@ $(document).ready(function() {
   let discountAmount = 0;
   let paymentMode = 'paid';
   let selectedCustomerId = null;
+  let selectedCustomer = null;
   let cartOrderCounter = 0;
   let posPrintWindow = null;
   const allowBackorderSales = @json($allowBackorderSales);
@@ -888,65 +1041,6 @@ $(document).ready(function() {
     $('#search-suggestions').addClass('show');
   }
 
-  // ── Open create customer modal ────────────────────
-  function openCreateCustomerModal() {
-    let modal = new bootstrap.Modal(document.getElementById('create-customer-modal'));
-    modal.show();
-  }
-
-  // ── Close create customer modal ───────────────────
-  function closeCreateCustomerModal() {
-    let modal = bootstrap.Modal.getInstance(document.getElementById('create-customer-modal'));
-    if (modal) modal.hide();
-    $('#create-customer-form')[0].reset();
-  }
-
-  $(document).on('click', '[data-close-create-customer]', closeCreateCustomerModal);
-
-  // ── Create customer button click ──────────────────
-  $('#create-customer-btn').on('click', function() {
-    openCreateCustomerModal();
-  });
-
-  // ── Handle create customer form submission ────────
-  $('#create-customer-form').on('submit', function(e) {
-    e.preventDefault();
-    let $btn = $(this).find('button[type="submit"]');
-    let originalText = $btn.html();
-    $btn.prop('disabled', true).html('<i class="la la-spinner la-spin"></i> Creating...');
-    
-    let formData = {
-      name: $('#cc-name').val(),
-      email: $('#cc-email').val() || null,
-      mobile: $('#cc-phone').val() || null,
-      address: $('#cc-address').val() || null
-    };
-
-    $.post('{{ route("admin.pos.createCustomer") }}', formData)
-      .done(function(res) {
-        if (res.customer) {
-          toastr.success('Customer created and selected!');
-          renderSelectedCustomer(res.customer);
-          closeCreateCustomerModal();
-          $btn.prop('disabled', false).html(originalText);
-        } else {
-          toastr.error(res.message || 'Failed to create customer');
-          $btn.prop('disabled', false).html(originalText);
-        }
-      })
-      .fail(function(xhr) {
-        let msg = 'Failed to create customer';
-        if (xhr.responseJSON && xhr.responseJSON.message) {
-          msg = xhr.responseJSON.message;
-        }
-        toastr.error(msg);
-        $btn.prop('disabled', false).html(originalText);
-      });
-  });
-
-  // ── Close modal when clicking backdrop ────────────
-  // (Bootstrap handles this automatically with data-bs-dismiss)
-
   $('input[name="price_type"]').on('change', function () {
     selectedPriceType = $(this).val();
     // Enable confirm button with dark gradient
@@ -995,6 +1089,7 @@ $(document).ready(function() {
         $(this).val(total.toFixed(2));
       }
     }
+    updatePaymentSummary();
   });
 
   // ── Discount amount input ───────────────────────
@@ -1597,7 +1692,23 @@ $(document).ready(function() {
       $('#payment-amount').val(total.toFixed(2));
     } else if (paymentMode === 'due') {
       $('#payment-amount').val('0.00');
+    } else {
+      let received = parseFloat($('#payment-amount').val()) || 0;
+      if (received > total) {
+        $('#payment-amount').val(total.toFixed(2));
+      }
     }
+    updatePaymentSummary(total);
+  }
+
+  function updatePaymentSummary(total) {
+    total = Number.isFinite(total) ? Math.max(0, total) : getPayableTotal();
+    let received = paymentMode === 'paid'
+      ? total
+      : (paymentMode === 'partial' ? parseFloat($('#payment-amount').val()) || 0 : 0);
+    received = Math.min(Math.max(0, received), total);
+    $('#payment-paid-amount').text('৳' + received.toFixed(2));
+    $('#payment-due-amount').text('৳' + Math.max(0, total - received).toFixed(2));
   }
 
   // ── CLEAR CART (Instant) ────────────────────────
@@ -2239,6 +2350,7 @@ $(document).ready(function() {
 
   // ── Render selected customer ────────────────────
   function renderSelectedCustomer(customer) {
+    selectedCustomer = customer || null;
     selectedCustomerId = customer ? customer.id : null;
     if (!customer) {
       paymentMode = 'paid';
@@ -2246,21 +2358,27 @@ $(document).ready(function() {
       $('#payment-amount').prop('disabled', true);
       updatePaymentAmount();
       $('#selected-customer').addClass('d-none').html('');
+      renderCustomerDialogSelection();
       return;
     }
+    let previousDue = Number(customer.due_amount || 0);
     let html = `
-      <div class="alert alert-primary mb-0 p-2">
-        <div class="d-flex justify-content-between align-items-start">
+      <div class="pos-customer-card">
+        <div class="pos-customer-main">
           <div>
-            <small class="text-muted fw-600 d-block mb-1"><i class="la la-user-check"></i> Selected Customer</small>
-            <div class="fw-bold" style="font-size: 14px;">${customer.name || 'N/A'}</div>
-            ${customer.email ? '<small class="text-muted d-block"><i class="la la-envelope"></i> ' + customer.email + '</small>' : ''}
-            ${customer.mobile ? '<small class="text-muted d-block"><i class="la la-phone"></i> ' + customer.mobile + '</small>' : ''}
+            <small class="text-muted fw-semibold d-block"><i class="la la-user-check text-primary"></i> Selected customer</small>
+            <div class="pos-customer-name">${escapeHtml(customer.name || 'N/A')}</div>
           </div>
-          <button id="clear-customer" class="btn btn-sm btn-outline-primary" title="Change customer"><i class="la la-exchange"></i></button>
+          <div class="pos-customer-contact">
+            ${customer.mobile ? '<span><i class="la la-phone"></i> ' + escapeHtml(customer.mobile) + '</span>' : ''}
+            ${customer.email ? '<span><i class="la la-envelope"></i> ' + escapeHtml(customer.email) + '</span>' : ''}
+          </div>
         </div>
+        <div class="pos-customer-due"><i class="la la-history"></i> Previous due: ৳${previousDue.toFixed(2)}</div>
+        <button id="clear-customer" class="btn btn-sm btn-outline-primary flex-shrink-0" title="Change customer"><i class="la la-exchange"></i><span class="d-none d-sm-inline"> Change</span></button>
       </div>`;
     $('#selected-customer').removeClass('d-none').html(html).show();
+    renderCustomerDialogSelection();
   }
 
   // ── Select customer from search result ─────────
@@ -2271,9 +2389,6 @@ $(document).ready(function() {
     }, function(res) {
       if (res.customer) {
         renderSelectedCustomer(res.customer);
-        setTimeout(function() {
-          Swal.close();
-        }, 100);
         toastr.success('Customer selected!');
       } else {
         toastr.error('Failed to select customer');
@@ -2307,90 +2422,180 @@ $(document).ready(function() {
     $('#products-container').html(html);
   }
 
-  // ── Select customer button (opens dialog) ──────
-  $('#select-customer-btn').on('click', function() {
+  function renderCustomerDialogSelection() {
+    let $container = $('#swal-current-customer');
+    if (!$container.length) return;
+
+    if (!selectedCustomer) {
+      $container.html('<div class="small text-muted mb-2">No customer selected</div>');
+      return;
+    }
+
+    let dueAmount = Number(selectedCustomer.due_amount || 0);
+    $container.html(`
+      <div class="d-flex justify-content-between align-items-center rounded p-2 mb-2" style="background:#eff6ff">
+        <div class="text-start">
+          <strong>${escapeHtml(selectedCustomer.name || 'N/A')}</strong>
+          <div class="small text-muted">Previous due: ৳${dueAmount.toFixed(2)}</div>
+        </div>
+        <button type="button" id="swal-clear-customer" class="btn btn-sm btn-outline-danger">Clear</button>
+      </div>
+    `);
+  }
+
+  function showCustomerCreateForm() {
+    let searchValue = $('#swal-customer-search').val().trim();
+    $('#swal-customer-search-panel').hide();
+    $('#swal-customer-create-panel').show();
+    $('#swal-create-name').val(/^[0-9+() -]+$/.test(searchValue) ? '' : searchValue).trigger('focus');
+    $('#swal-create-mobile').val(/^[0-9+() -]+$/.test(searchValue) ? searchValue : '');
+  }
+
+  function openCustomerDialog(showCreateForm) {
     Swal.fire({
-      title: 'Select Customer',
+      title: 'Customer',
       html: `
-        <input type="text" id="swal-customer-search" class="swal2-input" placeholder="Search or create customer…" autofocus>
-        <div id="swal-customer-results" style="max-height: 300px; overflow-y: auto; margin-top: 10px;"></div>
+        <div id="swal-current-customer" class="text-start"></div>
+        <div id="swal-customer-search-panel">
+          <input type="text" id="swal-customer-search" class="swal2-input" placeholder="Search by name or phone">
+          <button type="button" id="swal-show-create-customer" class="btn btn-sm btn-outline-success mb-2">
+            <i class="la la-user-plus"></i> Create new customer
+          </button>
+          <div id="swal-customer-results" style="max-height:280px;overflow-y:auto;text-align:left"></div>
+        </div>
+        <div id="swal-customer-create-panel" style="display:none;text-align:left">
+          <form id="swal-create-customer-form">
+            <div class="mb-2"><label class="form-label">Full name *</label><input id="swal-create-name" name="name" class="form-control" required maxlength="255"></div>
+            <div class="mb-2"><label class="form-label">Phone number *</label><input id="swal-create-mobile" name="mobile" class="form-control" required maxlength="50"></div>
+            <div class="mb-2"><label class="form-label">Email</label><input id="swal-create-email" name="email" type="email" class="form-control"></div>
+            <div class="mb-2"><label class="form-label">Address</label><textarea id="swal-create-address" name="address" class="form-control" rows="2"></textarea></div>
+            <div class="small text-muted mb-2">Login password will be set to the phone number.</div>
+            <button type="button" id="swal-back-to-customer-search" class="btn btn-sm btn-secondary">Back</button>
+            <button type="submit" class="btn btn-sm btn-success">Create and select</button>
+          </form>
+        </div>
       `,
-      icon: 'info',
+      width: 520,
       showCancelButton: true,
-      confirmButtonColor: '#059669',
+      showConfirmButton: false,
+      cancelButtonText: 'Close',
       cancelButtonColor: '#94a3b8',
-      confirmButtonText: '<i class="la la-check-circle"></i> Confirm',
-      cancelButtonText: 'Cancel',
       willOpen() {
         let searchTimer;
+        let requestId = 0;
+        renderCustomerDialogSelection();
         $('#swal-customer-search').on('input', function() {
           clearTimeout(searchTimer);
           let query = $(this).val().trim();
-          
-          if (!query || query.length < 1) {
-            $('#swal-customer-results').html('');
+          let currentRequestId = ++requestId;
+
+          if (query.length < 2) {
+            $('#swal-customer-results').html(query ? '<div class="small text-muted p-2">Enter at least 2 characters to search.</div>' : '');
             return;
           }
 
           searchTimer = setTimeout(function() {
-            $.get('{{ route("admin.pos.searchCustomers") }}', {
-              query
-            }).done(function(data) {
-              let html = '';
-              if (!data || data.length === 0) {
-                html = `<div style="text-align:center;padding:10px;color:#94a3b8;font-size:12px"><i class="la la-search"></i> No customers found</div>
-                  <button type="button" style="width:100%;padding:8px;margin:5px 0;background:#059669;color:#fff;border:none;border-radius:6px;font-weight:600;cursor:pointer;font-family:inherit" onclick="
-                    let searchValue = document.getElementById('swal-customer-search').value.trim();
-                    let phoneQuery = /^[0-9+() -]+$/.test(searchValue);
-                    let name = prompt('Full name:', phoneQuery ? '' : searchValue);
-                    if (!name || !name.trim()) return;
-                    let mobile = prompt('Phone number:', phoneQuery ? searchValue : '');
-                    if (!mobile || !mobile.trim()) return;
-                    let email = prompt('Email (optional):', '');
-                    $.post('{{ route("admin.pos.createCustomer") }}', {
-                      _token: '{{ csrf_token() }}',
-                      name: name.trim(),
-                      email: email || null,
-                      mobile: mobile.trim()
-                    }).done(function(res) {
-                      renderSelectedCustomer(res.customer);
-                      Swal.close();
-                      toastr.success('Customer created and selected!');
-                    }).fail(function(xhr) {
-                      toastr.error(xhr.responseJSON?.message || 'Name and phone number are required');
-                    });
-                  "><i class="la la-plus"></i> Create New Customer</button>`;
-              } else {
-                data.forEach(c => {
-                  html += `<div style="padding:8px;border-bottom:1px solid #e2e8f0;cursor:pointer;background:white" onmouseover="this.style.background='#f8fafc'" onmouseout="this.style.background='white'" onclick="
-                    selectCustomerFromSearch(${c.id}, '${c.name.replace(/'/g, "\\'")}')
-                  ">
-                    <div style="font-weight:600;color:#1e293b;font-size:12px">${c.name || 'N/A'}</div>
-                    <div style="font-size:10px;color:#94a3b8">${c.email || '—'} ${c.mobile ? '| ' + c.mobile : ''}</div>
-                  </div>`;
-                });
-              }
-              $('#swal-customer-results').html(html);
-            }).fail(function() {
-              $('#swal-customer-results').html('<div style="color:#dc2626;text-align:center;padding:10px">Search failed</div>');
-            });
+            $.get('{{ route("admin.pos.searchCustomers") }}', { query })
+              .done(function(customers) {
+                if (currentRequestId !== requestId) return;
+                let html = '';
+                if (!customers || customers.length === 0) {
+                  html = '<div class="small text-muted p-2">No customers found.</div>';
+                } else {
+                  customers.forEach(function(customer) {
+                    let name = escapeHtml(customer.name || 'N/A');
+                    let email = escapeHtml(customer.email || '—');
+                    let mobile = escapeHtml(customer.mobile || '');
+                    let due = Number(customer.due_amount || 0);
+                    html += `<button type="button" class="swal-customer-result btn btn-light w-100 text-start border-bottom rounded-0" data-customer-id="${Number(customer.id)}">
+                      <strong>${name}</strong>
+                      <span class="small text-muted d-block">${email}${mobile ? ' | ' + mobile : ''}</span>
+                      <span class="small fw-bold d-block">Previous due: ৳${due.toFixed(2)}</span>
+                    </button>`;
+                  });
+                }
+                $('#swal-customer-results').html(html);
+              })
+              .fail(function() {
+                if (currentRequestId === requestId) {
+                  $('#swal-customer-results').html('<div class="small text-danger p-2">Customer search failed.</div>');
+                }
+              });
           }, 300);
         });
+
+        if (showCreateForm) showCustomerCreateForm();
+        else $('#swal-customer-search').trigger('focus');
       }
     });
+  }
+
+  $('#select-customer-btn').on('click', function() {
+    openCustomerDialog(false);
   });
 
-  // ── Clear selected customer ─────────────────────
+  $('#create-customer-btn').on('click', function() {
+    openCustomerDialog(true);
+  });
+
   $(document).on('click', '#clear-customer', function(e) {
     e.preventDefault();
-    $.post('{{ route("admin.pos.clearCustomer") }}', {
-      _token: '{{ csrf_token() }}'
-    }, function(res) {
-      renderSelectedCustomer(null);
-      toastr.info('Customer cleared. Select a new customer.');
-    }).fail(function() {
-      toastr.error('Failed to clear customer');
-    });
+    openCustomerDialog(false);
+  });
+
+  $(document).on('click', '#swal-show-create-customer', showCustomerCreateForm);
+
+  $(document).on('click', '#swal-back-to-customer-search', function() {
+    $('#swal-customer-create-panel').hide();
+    $('#swal-customer-search-panel').show();
+    $('#swal-customer-search').trigger('focus');
+  });
+
+  $(document).on('click', '.swal-customer-result', function() {
+    window.selectCustomerFromSearch($(this).data('customer-id'));
+  });
+
+  $(document).on('click', '#swal-clear-customer', function() {
+    $.post('{{ route("admin.pos.clearCustomer") }}', { _token: '{{ csrf_token() }}' })
+      .done(function() {
+        renderSelectedCustomer(null);
+        toastr.info('Customer cleared.');
+      })
+      .fail(function() {
+        toastr.error('Failed to clear customer');
+      });
+  });
+
+  $(document).on('submit', '#swal-create-customer-form', function(e) {
+    e.preventDefault();
+    let $form = $(this);
+    let $button = $form.find('button[type="submit"]');
+    $button.prop('disabled', true).text('Creating...');
+
+    $.post('{{ route("admin.pos.createCustomer") }}', {
+      name: $('#swal-create-name').val(),
+      mobile: $('#swal-create-mobile').val(),
+      email: $('#swal-create-email').val() || null,
+      address: $('#swal-create-address').val() || null
+    })
+      .done(function(res) {
+        if (!res.customer) {
+          toastr.error(res.message || 'Failed to create customer');
+          return;
+        }
+        renderSelectedCustomer(res.customer);
+        $('#swal-customer-create-panel').hide();
+        $('#swal-customer-search-panel').show();
+        $('#swal-customer-search').val('').trigger('focus');
+        $('#swal-customer-results').html('');
+        toastr.success('Customer created and selected!');
+      })
+      .fail(function(xhr) {
+        toastr.error(xhr.responseJSON?.message || 'Failed to create customer');
+      })
+      .always(function() {
+        $button.prop('disabled', false).text('Create and select');
+      });
   });
 
 });

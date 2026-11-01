@@ -58,7 +58,7 @@
             <tbody>
                 @foreach($payments as $payment)
                     <tr>
-                        <td>{{ $payment->order->order_number ?? 'POS order' }}</td>
+                        <td>{{ $payment->order->order_number ?? 'Additional due' }}</td>
                         <td>{{ $payment->trx }}</td>
                         <td class="number">{{ showAmount($payment->amount) }}</td>
                     </tr>

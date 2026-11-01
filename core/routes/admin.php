@@ -121,6 +121,8 @@ Route::middleware('admin')->group(function () {
 
     Route::controller(SmsPanelController::class)->prefix('sms-panel')->name('sms.panel.')->group(function () {
         Route::get('/', 'index')->name('index');
+        Route::get('history', 'history')->name('history');
+        Route::get('customers', 'customers')->name('customers');
         Route::post('send', 'send')->name('send');
     });
 
@@ -196,6 +198,8 @@ Route::middleware('admin')->group(function () {
     Route::controller('ManageUsersController')->name('users.')->prefix('users')->group(function () {
         Route::get('/', 'allUsers')->name('all');
         Route::get('due-bills', 'dueBills')->name('due.bills');
+        Route::get('due-bills/customer-search', 'searchDueBillCustomers')->name('due.bills.customers.search');
+        Route::post('due-bills/add', 'addDueBillEntry')->name('due.bills.add');
         Route::get('due-bills/{id}', 'dueBillDetails')->name('due.bills.details');
         Route::get('due-bills/{id}/print', 'printDueBill')->name('due.bills.print');
         Route::post('due-bills/{id}/pay', 'collectDueBillPayment')->name('due.bills.pay');
