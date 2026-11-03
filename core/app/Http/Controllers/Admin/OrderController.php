@@ -27,7 +27,15 @@ class OrderController extends Controller
 
         /* status scope ---------------------------------------------------*/
         if ($status = $request->get('status')) {
-            $query->$status();          // pending(), processing() … cod()
+            if ($status === 'open') {
+                $query->whereIn('status', [
+                    Status::ORDER_PENDING,
+                    Status::ORDER_PROCESSING,
+                    Status::ORDER_DISPATCHED,
+                ]);
+            } elseif (in_array($status, ['pending', 'processing', 'dispatched', 'delivered', 'canceled', 'returned', 'cod'], true)) {
+                $query->$status();
+            }
         }
 
         /* quick-date presets --------------------------------------------*/

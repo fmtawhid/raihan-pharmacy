@@ -139,6 +139,7 @@ class AdminController extends Controller
             'date_filter' => 'nullable|in:today,last_7_days,last_30_days,custom',
             'start_date' => 'nullable|required_if:date_filter,custom|date',
             'end_date' => 'nullable|required_if:date_filter,custom|date|after_or_equal:start_date',
+            'order_status' => 'nullable|in:all,pending,processing,dispatched,delivered,canceled,returned',
         ]);
 
         $dateFilter = $validated['date_filter'] ?? 'today';
@@ -163,7 +164,6 @@ class AdminController extends Controller
 
         $ordersQuery = DB::table('orders')
             ->whereBetween('created_at', [$startDate, $endDate])
-            ->whereNotIn('status', [Status::ORDER_CANCELED, Status::ORDER_RETURNED])
             ->where(function ($query) {
                 $query->where('payment_status', Status::PAYMENT_SUCCESS)
                     ->orWhere('is_cod', Status::YES);
@@ -175,7 +175,9 @@ class AdminController extends Controller
             $ordersQuery->where('order_number', 'like', 'OID-%');
         }
 
-        $periodOrders = (clone $ordersQuery)
+        $reportingOrdersQuery = (clone $ordersQuery)
+            ->whereNotIn('status', [Status::ORDER_CANCELED, Status::ORDER_RETURNED]);
+        $periodOrders = (clone $reportingOrdersQuery)
             ->selectRaw('COUNT(*) as count, COALESCE(SUM(total_amount), 0) as amount')
             ->first();
         $successfulPayments = DB::table('deposits')
@@ -183,7 +185,7 @@ class AdminController extends Controller
             ->groupBy('order_id')
             ->select('order_id')
             ->selectRaw('SUM(amount) as amount');
-        $totalDue = $ecommerce ? 0 : (clone $ordersQuery)
+        $totalDue = $ecommerce ? 0 : (clone $reportingOrdersQuery)
             ->leftJoinSub($successfulPayments, 'successful_payments', 'successful_payments.order_id', '=', 'orders.id')
             ->selectRaw(
                 'COALESCE(SUM(CASE WHEN COALESCE(successful_payments.amount, 0) <= 0 AND orders.payment_status = ? THEN 0 ELSE GREATEST(orders.total_amount - COALESCE(successful_payments.amount, 0), 0) END), 0) as total_due',
@@ -191,7 +193,7 @@ class AdminController extends Controller
             )
             ->value('total_due');
         $totalPaid = $ecommerce
-            ? (clone $ordersQuery)
+            ? (clone $reportingOrdersQuery)
                 ->leftJoinSub($successfulPayments, 'successful_payments', 'successful_payments.order_id', '=', 'orders.id')
                 ->selectRaw(
                     'COALESCE(SUM(CASE WHEN COALESCE(successful_payments.amount, 0) > 0 THEN LEAST(successful_payments.amount, orders.total_amount) WHEN orders.payment_status = ? THEN orders.total_amount ELSE 0 END), 0) as total_paid',
@@ -199,7 +201,7 @@ class AdminController extends Controller
                 )
                 ->value('total_paid')
             : max((float) $periodOrders->amount - (float) $totalDue, 0);
-        $openOrders = (clone $ordersQuery)
+        $openOrders = (clone $reportingOrdersQuery)
             ->whereIn('status', [Status::ORDER_PENDING, Status::ORDER_PROCESSING, Status::ORDER_DISPATCHED])
             ->selectRaw('COUNT(*) as count, COALESCE(SUM(total_amount), 0) as amount')
             ->first();
@@ -292,17 +294,48 @@ class AdminController extends Controller
                 ->sum('order_details.quantity')
             : 0;
 
-        $recentOrders = (clone $ordersQuery)
-            ->select(['order_number', 'created_at', 'status', 'total_amount'])
-            ->orderByDesc('created_at')
-            ->limit(8)
-            ->get();
+        $statusOptions = [
+            'pending' => Status::ORDER_PENDING,
+            'processing' => Status::ORDER_PROCESSING,
+            'dispatched' => Status::ORDER_DISPATCHED,
+            'delivered' => Status::ORDER_DELIVERED,
+            'canceled' => Status::ORDER_CANCELED,
+            'returned' => Status::ORDER_RETURNED,
+        ];
         $statusLabels = [
             Status::ORDER_PENDING => 'Pending',
             Status::ORDER_PROCESSING => 'Processing',
             Status::ORDER_DISPATCHED => 'Dispatched',
             Status::ORDER_DELIVERED => 'Delivered',
+            Status::ORDER_CANCELED => 'Cancelled',
+            Status::ORDER_RETURNED => 'Returned',
         ];
+        $recentOrdersQuery = clone $ordersQuery;
+        if (!$ecommerce) {
+            $recentOrdersQuery->whereNotIn('status', [Status::ORDER_CANCELED, Status::ORDER_RETURNED]);
+        }
+
+        $statusCounts = array_fill_keys(array_merge(['all'], array_keys($statusOptions)), 0);
+        $statusCounts['all'] = (clone $recentOrdersQuery)->count();
+        $countsByStatus = (clone $recentOrdersQuery)
+            ->select('status')
+            ->selectRaw('COUNT(*) as aggregate')
+            ->groupBy('status')
+            ->pluck('aggregate', 'status');
+        foreach ($statusOptions as $key => $status) {
+            $statusCounts[$key] = (int) $countsByStatus->get($status, 0);
+        }
+
+        $selectedRecentOrderStatus = $ecommerce ? ($validated['order_status'] ?? 'all') : 'all';
+        if ($selectedRecentOrderStatus !== 'all') {
+            $recentOrdersQuery->where('status', $statusOptions[$selectedRecentOrderStatus]);
+        }
+        $recentOrdersMatchingCount = (clone $recentOrdersQuery)->count();
+        $recentOrders = $recentOrdersQuery
+            ->select(['order_number', 'created_at', 'status', 'total_amount'])
+            ->orderByDesc('created_at')
+            ->limit(8)
+            ->get();
         $branch = $branchId !== null ? Branch::findOrFail($branchId) : null;
         $pageTitle = $branch ? $branch->name . ' Dashboard' : 'Ecommerce Manager Dashboard';
         $filters = [
@@ -310,10 +343,32 @@ class AdminController extends Controller
             'start_date' => $validated['start_date'] ?? now()->toDateString(),
             'end_date' => $validated['end_date'] ?? now()->toDateString(),
         ];
+        $orderDateParams = match ($dateFilter) {
+            'last_7_days' => ['date' => 'last7'],
+            'last_30_days' => ['date' => 'last30'],
+            'custom' => ['start' => $filters['start_date'], 'end' => $filters['end_date']],
+            default => ['date' => 'today'],
+        };
+        $websiteOrderParams = array_merge($ecommerce ? ['order' => 'OID-'] : [], $orderDateParams);
+        $dashboardCardLinks = [
+            'total_sales' => route('admin.order.index', $websiteOrderParams),
+            'orders' => route('admin.order.index', $websiteOrderParams),
+            'stock_added' => route('admin.products.purchases.list', [
+                'date_from' => $startDate->toDateString(),
+                'date_to' => $endDate->toDateString(),
+            ]),
+            'units_sold' => route('admin.order.index', $websiteOrderParams),
+            'open_orders' => route('admin.order.index', array_merge($websiteOrderParams, ['status' => 'open'])),
+            'total_due' => route('admin.users.due.bills'),
+            'stock' => route('admin.products.stock.log.list'),
+            'total_paid' => route('admin.deposit.list'),
+            'low_stock' => route('admin.products.low.stock'),
+        ];
 
         return view('admin.branch-dashboard', compact(
             'pageTitle', 'branch', 'filters', 'periodOrders', 'totalDue', 'totalPaid', 'openOrders',
-            'stock', 'lowStockProducts', 'dueCustomers', 'recentOrders', 'statusLabels', 'ecommerce', 'stockAdded', 'unitsSold'
+            'stock', 'lowStockProducts', 'dueCustomers', 'recentOrders', 'statusLabels', 'ecommerce', 'stockAdded', 'unitsSold',
+            'statusCounts', 'selectedRecentOrderStatus', 'recentOrdersMatchingCount', 'dashboardCardLinks'
         ));
     }
     

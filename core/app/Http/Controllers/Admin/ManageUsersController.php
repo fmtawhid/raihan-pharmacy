@@ -337,7 +337,8 @@ class ManageUsersController extends Controller
             ->where('order_number', 'like', 'POS-%')
             ->with('deposits')
             ->get(['id', 'total_amount', 'payment_status']);
-        $totalAmount = (float) $orders->sum('total_amount');
+        $manualDueAmount = (float) $user->dueEntries()->sum('balance');
+        $posTotalAmount = (float) $orders->sum('total_amount');
         $paidAmount = (float) $orders->sum(function (Order $order) {
             $paid = (float) $order->deposits
                 ->where('status', Status::PAYMENT_SUCCESS)
@@ -349,17 +350,18 @@ class ManageUsersController extends Controller
 
             return min($paid, (float) $order->total_amount);
         });
-        $dueAmount = max(round($totalAmount - $paidAmount, 2), 0)
-            + (float) $user->dueEntries()->sum('balance');
+        $totalAmount = $posTotalAmount + $manualDueAmount;
+        $dueAmount = max(round($posTotalAmount - $paidAmount, 2), 0) + $manualDueAmount;
 
         if ($dueAmount <= 0 || !$user->mobileNumber) {
             $notify[] = ['error', 'This customer has no outstanding due or phone number'];
             return back()->withNotify($notify);
         }
 
-        $message = 'রায়হান ফার্মেসি: আপনার মোট বকেয়া ৳'
-            . number_format($dueAmount, 2)
-            . '। অনুগ্রহ করে বকেয়া পরিশোধ করুন। ধন্যবাদ।';
+        $message = 'রায়হান ফার্মেসি: আপনার মোট ৳' . number_format($totalAmount, 2)
+            . ', পরিশোধিত ৳' . number_format($paidAmount, 2)
+            . ', বকেয়া ৳' . number_format($dueAmount, 2)
+            . '। ধন্যবাদ।';
         $result = $smsService->sendMasking($user->mobileNumber, $message);
         SmsLog::create([
             'admin_id' => auth('admin')->id(),
