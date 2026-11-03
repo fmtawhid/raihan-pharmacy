@@ -11,6 +11,15 @@
                 <a href="{{ route('admin.users.due.bills.receipt', ['id' => $user->id, 'payments' => implode(',', $paidPaymentIds)]) }}" target="_blank" rel="noopener" class="btn btn--success">
                     <i class="las la-print"></i> Print Paid Receipt
                 </a>
+                @if($user->mobileNumber)
+                    <form id="due-payment-sms-form" method="POST" action="{{ route('admin.users.due.bills.payment.sms', $user->id) }}">
+                        @csrf
+                        <input type="hidden" name="payments" value="{{ implode(',', $paidPaymentIds) }}">
+                        <button type="submit" class="btn btn-outline--primary">
+                            <i class="las la-sms"></i> Send Payment SMS
+                        </button>
+                    </form>
+                @endif
             @endif
             @if($dueAmount > 0)
                 <a href="{{ route('admin.users.due.bills.print', $user->id) }}" target="_blank" rel="noopener" class="btn btn-outline--dark">
@@ -121,3 +130,37 @@
         </div>
     </div>
 @endsection
+
+@if (session('payment_success') && $paidPaymentIds)
+    @php
+        $receiptUrl = route('admin.users.due.bills.receipt', [
+            'id' => $user->id,
+            'payments' => implode(',', $paidPaymentIds),
+        ]);
+    @endphp
+    @push('script')
+        <script>
+            document.addEventListener('DOMContentLoaded', function () {
+                Swal.fire({
+                    title: 'Payment successful',
+                    text: 'Received {{ showAmount(session('payment_success.amount')) }}. Remaining due: {{ showAmount($dueAmount) }}',
+                    icon: 'success',
+                    showDenyButton: {{ $user->mobileNumber ? 'true' : 'false' }},
+                    showCancelButton: true,
+                    confirmButtonText: '<i class="las la-print"></i> Print Receipt',
+                    denyButtonText: '<i class="las la-sms"></i> Send SMS',
+                    cancelButtonText: 'Done',
+                    confirmButtonColor: '#198754',
+                    denyButtonColor: '#0d6efd',
+                    cancelButtonColor: '#6c757d',
+                }).then(function (result) {
+                    if (result.isConfirmed) {
+                        window.open(@json($receiptUrl), '_blank', 'noopener');
+                    } else if (result.isDenied) {
+                        document.getElementById('due-payment-sms-form').requestSubmit();
+                    }
+                });
+            });
+        </script>
+    @endpush
+@endif

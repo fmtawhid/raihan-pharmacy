@@ -219,9 +219,15 @@ class ManageUsersController extends Controller
             return $paymentIds;
         });
 
+        $paymentIdsCsv = implode(',', $paymentIds);
+        $dueBillData = $this->dueBillDetailsData($user->id);
+
         return redirect()->route('admin.users.due.bills.details', [
             'id' => $user->id,
-            'payments' => implode(',', $paymentIds),
+            'payments' => $paymentIdsCsv,
+        ])->with('payment_success', [
+            'amount' => $amount,
+            'remaining_due' => $dueBillData['dueAmount'],
         ])->withNotify([['success', 'Payment recorded successfully.']]);
     }
 
@@ -258,6 +264,42 @@ class ManageUsersController extends Controller
         $pageTitle = 'Payment Receipt - ' . $data['user']->username;
 
         return view('invoice.customer-due-receipt-a5', $data + compact('payments', 'paidAmount', 'pageTitle'));
+    }
+
+    public function sendDuePaymentSms(Request $request, $id, DeelkoSmsService $smsService)
+    {
+        $validated = $request->validate([
+            'payments' => 'required|string',
+        ]);
+        $user = User::findOrFail($id);
+        $payments = $this->paidDuePayments($user, $validated['payments']);
+
+        if (!$user->mobileNumber) {
+            return back()->withNotify([['error', 'This customer has no phone number.']]);
+        }
+
+        $dueBillData = $this->dueBillDetailsData($user->id);
+        $paidAmount = (float) $payments->sum('amount');
+        $remainingDue = (float) $dueBillData['dueAmount'];
+        $message = 'সম্মানিত গ্রাহক, রায়হান ফার্মেসি তে আপনার ৳'
+            . number_format($paidAmount, 2)
+            . ' টাকা পেমেন্ট সফলভাবে গ্রহণ করা হয়েছে। আপনার অবশিষ্ট বকেয়া ৳'
+            . number_format($remainingDue, 2)
+            . ' টাকা। ধন্যবাদ।';
+        $result = $smsService->sendMasking($user->mobileNumber, $message);
+
+        SmsLog::create([
+            'admin_id' => auth('admin')->id(),
+            'user_id' => $user->id,
+            'recipient_number' => $user->mobileNumber,
+            'message' => $message,
+            'status' => $result['success'] ? 'sent' : 'failed',
+            'source' => 'due_payment',
+            'response_message' => $result['message'] ?? null,
+            'sent_at' => $result['success'] ? now() : null,
+        ]);
+
+        return back()->withNotify([[$result['success'] ? 'success' : 'error', $result['message']]]);
     }
 
     private function paidDuePayments(User $user, $paymentIds)
@@ -337,8 +379,6 @@ class ManageUsersController extends Controller
             ->where('order_number', 'like', 'POS-%')
             ->with('deposits')
             ->get(['id', 'total_amount', 'payment_status']);
-        $manualDueAmount = (float) $user->dueEntries()->sum('balance');
-        $posTotalAmount = (float) $orders->sum('total_amount');
         $paidAmount = (float) $orders->sum(function (Order $order) {
             $paid = (float) $order->deposits
                 ->where('status', Status::PAYMENT_SUCCESS)
@@ -350,18 +390,16 @@ class ManageUsersController extends Controller
 
             return min($paid, (float) $order->total_amount);
         });
-        $totalAmount = $posTotalAmount + $manualDueAmount;
-        $dueAmount = max(round($posTotalAmount - $paidAmount, 2), 0) + $manualDueAmount;
+        $dueAmount = max(round((float) $orders->sum('total_amount') - $paidAmount, 2), 0)
+            + (float) $user->dueEntries()->sum('balance');
 
         if ($dueAmount <= 0 || !$user->mobileNumber) {
             $notify[] = ['error', 'This customer has no outstanding due or phone number'];
             return back()->withNotify($notify);
         }
 
-        $message = 'রায়হান ফার্মেসি: আপনার মোট ৳' . number_format($totalAmount, 2)
-            . ', পরিশোধিত ৳' . number_format($paidAmount, 2)
-            . ', বকেয়া ৳' . number_format($dueAmount, 2)
-            . '। ধন্যবাদ।';
+        $message = 'রায়হান ফার্মেসি: আপনার বকেয়া ৳' . number_format($dueAmount, 2)
+            . ' টাকা। অনুগ্রহ করে বকেয়া পরিশোধ করার অনুরোধ রইল। ধন্যবাদ।';
         $result = $smsService->sendMasking($user->mobileNumber, $message);
         SmsLog::create([
             'admin_id' => auth('admin')->id(),

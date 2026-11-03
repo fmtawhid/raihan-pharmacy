@@ -140,37 +140,3 @@
         @endif
     </div>
 @endsection
-
-@if (session('payment_success'))
-    @php
-        $paymentSuccess = session('payment_success');
-        $receiptUrl = route('admin.users.due.bills.receipt', [
-            'id' => $paymentSuccess['user_id'],
-            'payments' => $paymentSuccess['payment_ids'],
-        ]);
-        $receivedAmount = showAmount($paymentSuccess['amount']);
-    @endphp
-    @push('script')
-        <script>
-            document.addEventListener('DOMContentLoaded', function () {
-                const receiptUrl = @json($receiptUrl);
-                const receivedAmount = @json($receivedAmount);
-
-                Swal.fire({
-                    title: 'Payment successful',
-                    text: 'Received ' + receivedAmount,
-                    icon: 'success',
-                    showCancelButton: true,
-                    confirmButtonText: '<i class="las la-print"></i> Print',
-                    cancelButtonText: 'Done',
-                    confirmButtonColor: '#198754',
-                    cancelButtonColor: '#6c757d',
-                }).then(function (result) {
-                    if (result.isConfirmed) {
-                        window.location.href = receiptUrl;
-                    }
-                });
-            });
-        </script>
-    @endpush
-@endif

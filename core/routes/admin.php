@@ -205,6 +205,7 @@ Route::middleware('admin')->group(function () {
         Route::post('due-bills/{id}/pay', 'collectDueBillPayment')->name('due.bills.pay');
         Route::get('due-bills/{id}/receipt', 'printDueBillReceipt')->name('due.bills.receipt');
         Route::post('due-bills/{id}/send-sms', 'sendDueBillSms')->name('due.bills.sms');
+        Route::post('due-bills/{id}/payments/send-sms', 'sendDuePaymentSms')->name('due.bills.payment.sms');
         Route::get('active', 'activeUsers')->name('active');
         Route::get('banned', 'bannedUsers')->name('banned');
         Route::get('profile-completed', 'profileCompletedUsers')->name('profile.completed');
